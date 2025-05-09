@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Card {
+  id     String       @id
+  data   Json
+  prices PriceEntry[]
+}
+
+model PriceEntry {
+  id     Int      @id @default(autoincrement())
+  cardId String
+  price  Float
+  date   DateTime @default(now())
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, date]) // only one price per day can be entered
+}
+
+model Sealed {
+  id        String             @id @default(cuid())
+  product   String             @unique
+  prices    SealedPriceEntry[]
+  createdAt DateTime           @default(now())
+}
+
+model SealedPriceEntry {
+  id       String   @id @default(cuid())
+  sealedId String
+  price    Float
+  title    String   @unique
+  url      String
+  soldAt   DateTime
+
+  sealed Sealed @relation(fields: [sealedId], references: [id])
+
+  @@index([sealedId])
+}

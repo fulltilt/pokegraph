@@ -1,0 +1,5 @@
+GET http://localhost:3000/sealed
+
+###
+
+GET http://localhost:3000/sealed/Lost%20Origin%20Elite%20Trainer%20Box%20-center/prices

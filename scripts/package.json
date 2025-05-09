@@ -1,0 +1,23 @@
+{
+  "name": "pokegraph",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "cards": "tsc && bun dist/cards.js",
+    "sealed": "tsc && bun dist/sealed.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^22.15.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.5.0",
+    "prisma": "^6.7.0"
+  }
+}

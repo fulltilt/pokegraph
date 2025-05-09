@@ -1,0 +1,79 @@
+# Get all distinct series and order by release_date ascending
+SELECT DISTINCT
+  (data->'set'->>'series') AS series,
+  MIN(TO_DATE(data->'set'->>'releaseDate', 'YYYY/MM/DD')) AS earliest_release
+FROM "Card"
+WHERE data->'set'->>'series' IS NOT NULL
+GROUP BY series
+ORDER BY earliest_release ASC;
+
+
+# Get all distinct sets and order by release_date ascending
+SELECT DISTINCT 
+  data->'set'->>'id' AS set_id,
+  data->'set'->>'name' AS set_name,
+  data->'set'->>'releaseDate' AS release_date
+FROM "Card"
+WHERE data->'set' IS NOT NULL
+ORDER BY data->'set'->>'releaseDate' ASC;
+
+# Get all sets in a series and order by release_date ascending
+SELECT DISTINCT
+  c.data->'set'->>'id' AS set_id,
+  c.data->'set'->>'name' AS set_name,
+  c.data->'set'->>'releaseDate' AS release_date
+FROM "Card" c
+WHERE c.data->'set'->>'series' = 'YOUR_SERIES_NAME'
+ORDER BY TO_DATE(c.data->'set'->>'releaseDate', 'YYYY/MM/DD') ASC;
+
+# Postgres fuzzy search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_card_name_trgm ON "Card" USING gin ((data->>'name') gin_trgm_ops);
+
+SELECT *
+FROM "Card"
+WHERE (data->>'name') % $1
+ORDER BY similarity((data->>'name'), $1) DESC
+LIMIT 10
+
+
+# removing outliers (for eBay data)
+To remove rows with outlier price values from your SealedPriceEntry table, you need to define what qualifies as an outlier. A common statistical method is to use the Interquartile Range (IQR) or Z-score.
+
+Here’s how to do it using IQR in SQL (assuming you're using PostgreSQL):
+
+✅ Option 1: Use IQR to detect and delete outliers
+WITH price_stats AS (
+  SELECT
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price) AS q1,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price) AS q3
+  FROM "SealedPriceEntry"
+),
+outliers AS (
+  SELECT spe.*
+  FROM "SealedPriceEntry" spe, price_stats
+  WHERE spe.price < (q1 - 1.5 * (q3 - q1))
+     OR spe.price > (q3 + 1.5 * (q3 - q1))
+)
+DELETE FROM "SealedPriceEntry"
+WHERE id IN (SELECT id FROM outliers);
+
+✅ Option 2: Use Z-score (e.g., remove rows with z-score > 3 or < -3)
+This is more appropriate if your data is normally distributed:
+
+WITH stats AS (
+  SELECT
+    AVG(price) AS mean,
+    STDDEV(price) AS stddev
+  FROM "SealedPriceEntry"
+),
+outliers AS (
+  SELECT spe.*
+  FROM "SealedPriceEntry" spe, stats
+  WHERE ABS(price - mean) / NULLIF(stddev, 0) > 3
+)
+DELETE FROM "SealedPriceEntry"
+WHERE id IN (SELECT id FROM outliers);
+
+sv3pt5-208
+sv9-191
