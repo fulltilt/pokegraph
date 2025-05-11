@@ -13,13 +13,12 @@ export default function CardGrid({ set }: { set: string }) {
 
   useEffect(() => {
     fetch(
-      `${
-        import.meta.env.VITE_ENDPOINT_URL
-      }/api/cards?set=${set}&page=${page}&pageSize=${pageSize}`
+      `${import.meta.env.VITE_ENDPOINT_URL}/api/cards?set=${encodeURIComponent(
+        set
+      )}&page=${page}&pageSize=${pageSize}`
     )
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
         if (data.length < pageSize) setHasMore(false);
         setCards((prev) => {
           const all = [...prev, ...data];
@@ -29,6 +28,7 @@ export default function CardGrid({ set }: { set: string }) {
           return unique;
         });
       })
+      .catch((err) => console.log(err))
       .finally(() => setIsLoading(false));
   }, [page, set]);
 

@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import Sets from "./ui/Sets";
+import Set from "./ui/Set";
 import Main from "./ui/Main";
 import Card from "./ui/Card";
 
@@ -8,6 +9,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Main />} />
       <Route path="/sets" element={<Sets />} />
+      <Route path="/sets/:id" element={<Set />} />
       <Route path="/card/:id" element={<Card />} />
     </Routes>
   );

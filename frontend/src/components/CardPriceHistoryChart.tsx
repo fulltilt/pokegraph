@@ -28,7 +28,7 @@ type Bucket = {
   quantity: number;
 };
 
-function getEvenlySpacedTicks(dates: string[], tickCount: number) {
+function getEvenlySpacedTicks(dates: string[], tickCount = 5) {
   if (dates.length <= tickCount) return dates;
   const step = Math.floor(dates.length / (tickCount - 1));
   return dates.filter((_, idx) => idx % step === 0);
@@ -226,13 +226,7 @@ const CardPriceHistoryChart = ({
          */}
         <XAxis
           dataKey="start"
-          tickFormatter={(value) =>
-            new Date(value).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "2-digit",
-            })
-          }
+          tickFormatter={(value) => new Date(value).toLocaleDateString("en-US")}
           interval="preserveStartEnd"
           ticks={
             data?.length

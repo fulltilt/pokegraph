@@ -23,7 +23,6 @@ const EXCLUDE_KEYWORDS = [
   "bonus",
   "extra",
   "combo",
-  "pokemon center",
   "promo",
 ];
 
@@ -152,6 +151,9 @@ const items = [
   "Evolving Skies Booster Box",
   "Evolving Skies Elite Trainer Box Set -center",
   "Evolving Skies Pokemon Center Elite Trainer Box Set",
+  "Fusion Strike Booster Box",
+  "Fusion Strike Elite Trainer Box -center",
+  "Fusion Strike Pokemon Center Elite Trainer Box",
   "Celebrations Elite Trainer Box -center",
   "Celebrations Pokemon Center Elite Trainer Box",
   "Brilliant Stars Booster Box",

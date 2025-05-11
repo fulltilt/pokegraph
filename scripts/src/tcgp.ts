@@ -46,7 +46,7 @@ async function sleep(time: number) {
 
 async function fetchPage(id: string) {
   const res = await fetch(
-    `https://infinite-api.tcgplayer.com/price/history/${id}/detailed?range=annual`,
+    `https://infinite-api.tcgplayer.com/price/history/${id}/detailed?range=monthly`,
     {
       headers: {
         "User-Agent":
@@ -145,7 +145,7 @@ async function main() {
       }
     }
 
-    console.log(`Finished processing set ${key}. Sleeping for 5 minutes...`);
+    console.log(`Finished processing set ${key}. Sleeping for 4 minutes...`);
     await sleep(240); // 4 minutes
   }
 }

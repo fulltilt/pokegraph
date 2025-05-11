@@ -22,23 +22,13 @@ type Movers = {
   set_name: string;
 };
 
-export function TopMoversChart({
-  url = "",
-  order = "",
-  range = 10,
-  sort = true,
-}) {
+export function TopMoversChart({ url = "", order = "", range = "10d" }) {
   const [data, setData] = useState<Movers[]>([]);
   const [min, setMin] = useState(-Infinity);
   const [max, setMax] = useState(Infinity);
 
   useEffect(() => {
-    // fetch(
-    //   `${
-    //     import.meta.env.VITE_ENDPOINT_URL
-    //   }/api/top-movers/${by}/${order}/${range}`
-    // )
-    fetch(`${url}/${order}`)
+    fetch(`${url}/${order}?timeframe=${range}`)
       .then((res) => res.json())
       .then(async (cards: Movers[]) => {
         const percentageChanges = cards.map(
@@ -51,14 +41,14 @@ export function TopMoversChart({
 
         setData(cards.filter((data) => data.percent_change !== "0"));
       });
-  }, [url]);
+  }, [url, range]);
 
   return (
-    <div className="p-4">
+    <div className="p-4 w-full h-full">
       <h2 className="text-xl font-bold mb-4">
-        Top {order === "DESC" ? "Gainers" : "Losers"} by Set (Last {range} Days)
+        Top {order === "DESC" ? "Gainers" : "Losers"} by Set
       </h2>
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={200}>
         <BarChart
           data={data.sort(
             (a, b) =>

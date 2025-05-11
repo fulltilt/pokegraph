@@ -36,6 +36,13 @@ WHERE (data->>'name') % $1
 ORDER BY similarity((data->>'name'), $1) DESC
 LIMIT 10
 
+# indexes for getting top movers per set
+ -- Filter and join efficiency
+CREATE INDEX IF NOT EXISTS idx_priceentry_cardid_date ON "PriceEntry"("cardId", "date");
+
+-- For JSONB series filtering
+CREATE INDEX IF NOT EXISTS idx_card_series ON "Card" ((data->'set'->>'series'));
+
 
 # removing outliers (for eBay data)
 To remove rows with outlier price values from your SealedPriceEntry table, you need to define what qualifies as an outlier. A common statistical method is to use the Interquartile Range (IQR) or Z-score.
@@ -74,6 +81,3 @@ outliers AS (
 )
 DELETE FROM "SealedPriceEntry"
 WHERE id IN (SELECT id FROM outliers);
-
-sv3pt5-208
-sv9-191

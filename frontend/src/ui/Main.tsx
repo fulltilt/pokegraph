@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,9 @@ const sealed = [
   "Evolving Skies Pokemon Center Elite Trainer Box Set",
   "Celebrations Elite Trainer Box -center",
   "Celebrations Pokemon Center Elite Trainer Box",
+  "Fusion Strike Booster Box",
+  "Fusion Strike Elite Trainer Box -center",
+  "Fusion Strike Pokemon Center Elite Trainer Box",
   "Brilliant Stars Booster Box",
   "Brilliant Stars Elite Trainer Box -center",
   "Brilliant Stars Pokemon Center Elite Trainer Box",
@@ -126,17 +129,19 @@ const sealed = [
   "Journey Together Pokemon Center Elite Trainer Box",
 ];
 
-const TopGainers = React.memo(() => (
+const TopGainers = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
     url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set`}
     order="DESC"
+    range={timeframe}
   />
 ));
 
-const TopLosers = React.memo(() => (
+const TopLosers = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
     url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set`}
     order="ASC"
+    range={timeframe}
   />
 ));
 
@@ -144,30 +149,11 @@ export default function Main() {
   const [product, setProduct] = useState("");
   const [range, setRange] = useState("all");
   const [prices, setPrices] = useState<PriceEntry[]>([]);
-  const [sets, setSets] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const getSets = async (series: string) => {
-    const data = await fetch(
-      `${
-        import.meta.env.VITE_ENDPOINT_URL
-      }/api/sets-by-series?series=${encodeURIComponent(series)}`
-    );
-
-    const sets: SetData[] = await data.json();
-    setSets(sets.map((set) => set.set_name));
-  };
-
-  const getSetData = async (sets: string[]) => {
-    const data = await fetch(
-      `${
-        import.meta.env.VITE_ENDPOINT_URL
-      }/api/top-gainers-per-set?sets=${encodeURIComponent(sets.join(","))}`
-    );
-
-    const setData = await data.json();
-    console.log(setData);
-  };
+  const [timeframe, setTimeframe] = useState<"10d" | "1m" | "3m" | "6m" | "1y">(
+    "10d"
+  );
 
   const fetchPrices = async () => {
     if (!product) return;
@@ -198,7 +184,7 @@ export default function Main() {
     <div className="max-w-4xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Sealed Product Price History</h1>
       <div className="flex gap-2 mb-6 flex-wrap">
-        <CardSearchInput />
+        {/* <CardSearchInput /> */}
         {/* <Input
           placeholder="Enter product name"
           value={product}
@@ -206,7 +192,7 @@ export default function Main() {
         /> */}
         <Select value={product} onValueChange={setProduct}>
           <SelectTrigger className="w-[450px]">
-            <SelectValue placeholder="Select range" />
+            <SelectValue placeholder="Select product" />
           </SelectTrigger>
           <SelectContent>
             {sealed.map((s) => (
@@ -286,8 +272,25 @@ export default function Main() {
         <p>No Results</p>
       )}
 
-      <TopGainers />
-      <TopLosers />
+      <div className="space-y-4 col-span-4">
+        <div className="flex gap-2">
+          {(["10d", "1m", "3m", "6m", "1y"] as const).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeframe(tf)}
+              className={`px-3 py-1 rounded border ${
+                timeframe === tf ? "bg-black text-white" : "bg-white text-black"
+              }`}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
+        <div className="col-span-4 grid grid-cols-2 gap-4">
+          <TopGainers timeframe={timeframe} />
+          <TopLosers timeframe={timeframe} />
+        </div>
+      </div>
 
       {/* <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={data}>

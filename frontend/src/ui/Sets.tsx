@@ -1,28 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { TopMoversChart } from "@/components/TopMoversChart";
+import { useState } from "react";
 import { useSetsBySeries } from "@/hooks/useSetsBySeries";
-import CardGrid from "@/components/CardGrid";
 
 const seriesList = ["Scarlet & Violet", "Sword & Shield", "Sun & Moon"];
 
 export default function Sets() {
   const [activeSeries, setActiveSeries] = useState(seriesList[0]);
-  const [selectedSet, setSelectedSet] = useState("");
 
   const { sets, loading, error } = useSetsBySeries(activeSeries);
-
-  //   useEffect(() => {
-  //     if (!selectedSet) return;
-  //     const fetchCards = async () => {
-  //       const res = await fetch(
-  //         `${import.meta.env.VITE_ENDPOINT_URL}/api/cards?set=${selectedSet}`
-  //       );
-  //       const data = await res.json();
-  //       setCards(data);
-  //       //   setLoading(false);
-  //     };
-  //     fetchCards();
-  //   }, [selectedSet]);
 
   return (
     <div className="p-4">
@@ -60,45 +44,29 @@ export default function Sets() {
         <div className="px-[20%] py-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {sets.map((set) => (
-              <button
-                key={set.set_id}
-                className="bg-white rounded-lg shadow hover:shadow-md transition p-4 flex flex-col items-center text-center cursor-pointer"
-                onClick={() => setSelectedSet(set.set_name)}
+              <a
+                href={`/sets/${set.set_id}?name=${set.set_name}&release_date=${set.release_date}&image=${set.image}`}
               >
-                <img
-                  src={set.image}
-                  alt={set.set_name}
-                  className="h-16 object-contain mb-2"
-                />
-                <span className="font-medium">{set.set_name}</span>
-                <span className="text-xs text-gray-500">
-                  {set.release_date}
-                </span>
-              </button>
+                <button
+                  key={set.set_id}
+                  className="bg-white rounded-lg shadow hover:shadow-md transition p-4 flex flex-col items-center text-center cursor-pointer"
+                  // onClick={() => setSelectedSet(set.set_name)}
+                >
+                  <img
+                    src={set.image}
+                    alt={set.set_name}
+                    className="h-16 object-contain mb-2"
+                  />
+                  <span className="font-medium">{set.set_name}</span>
+                  <span className="text-xs text-gray-500">
+                    {set.release_date}
+                  </span>
+                </button>
+              </a>
             ))}
           </div>
         </div>
       )}
-
-      {/* {selectedSet && (
-        <>
-          <TopMoversChart
-            url={`${
-              import.meta.env.VITE_ENDPOINT_URL
-            }/api/top-movers-by-set/${encodeURIComponent(selectedSet)}`}
-            order="DESC"
-          />
-
-          <TopMoversChart
-            url={`${
-              import.meta.env.VITE_ENDPOINT_URL
-            }/api/top-movers-by-set/${encodeURIComponent(selectedSet)}`}
-            order="ASC"
-          />
-        </>
-      )} */}
-
-      {selectedSet && <CardGrid set={selectedSet} />}
     </div>
   );
 }
