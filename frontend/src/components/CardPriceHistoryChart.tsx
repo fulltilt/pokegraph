@@ -213,7 +213,7 @@ const CardPriceHistoryChart = ({
   });
 
   if (isLoading) return <div>Loading chart...</div>;
-  console.log(data);
+
   return (
     <ResponsiveContainer width="70%" height={400} className="m-auto">
       <ComposedChart data={data ? normalizePriceData(data) : []}>

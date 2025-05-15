@@ -37,6 +37,8 @@ ORDER BY similarity((data->>'name'), $1) DESC
 LIMIT 10
 
 # indexes for getting top movers per set
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_card_name_trgm ON "Card" USING gin ((data->>'name') gin_trgm_ops);
  -- Filter and join efficiency
 CREATE INDEX IF NOT EXISTS idx_priceentry_cardid_date ON "PriceEntry"("cardId", "date");
 
@@ -81,3 +83,26 @@ outliers AS (
 )
 DELETE FROM "SealedPriceEntry"
 WHERE id IN (SELECT id FROM outliers);
+
+# backing up DB
+-note: docker compose has the volume name as 'pgdata'. Docker Compose appends the volume name to the directory
+ the docker-compose.yml file is, in this case it was 'pokegraph' hence the name 'pokegraph_pgdata'
+docker run --rm \
+  -v pokegraph_pgdata:/volume \
+  -v "$(pwd)":/backup \
+  alpine sh -c "tar czf /backup/pokegraph_pgdata-backup.tar.gz -C /volume ."
+
+-- other way I backed up the db
+-- This backs up all data without schema definitions, which avoids Prisma drift issues.
+docker exec -t pokedb pg_dump -U postgres --data-only pokedex > pokedex-data.sql
+
+-- reset db (I was forced to do this)
+npx prisma migrate reset
+
+-- restore from backup
+cat pokedex-data.sql | docker exec -i pokedb psql -U postgres -d pokedex
+
+-- test
+
+
+

@@ -156,7 +156,8 @@ exports.Prisma.SealedPriceEntryScalarFieldEnum = {
   price: 'price',
   title: 'title',
   url: 'url',
-  soldAt: 'soldAt'
+  soldAt: 'soldAt',
+  label: 'label'
 };
 
 exports.Prisma.SortOrder = {

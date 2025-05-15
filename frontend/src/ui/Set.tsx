@@ -1,23 +1,9 @@
-import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import CardGrid from "@/components/CardGrid";
 import { useSearchParams } from "react-router-dom";
 import { TopMoversChart } from "@/components/TopMoversChart";
 
-// Types
-type SetInfo = {
-  id: string;
-  name: string;
-  series: string;
-  releaseDate: string;
-  logo: string;
-  totalCards: number;
-};
-
 export default function Set() {
-  const { setId } = useParams<{ setId: string }>();
-
   const [searchParams] = useSearchParams();
   const setName = searchParams.get("name") || "";
   const releaseDate = searchParams.get("release_date") || "";

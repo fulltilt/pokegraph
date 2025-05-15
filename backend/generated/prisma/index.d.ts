@@ -24,6 +24,11 @@ export type Card = $Result.DefaultSelection<Prisma.$CardPayload>
  */
 export type PriceEntry = $Result.DefaultSelection<Prisma.$PriceEntryPayload>
 /**
+ * Model CardPriceChangeSummary
+ * 
+ */
+export type CardPriceChangeSummary = $Result.DefaultSelection<Prisma.$CardPriceChangeSummaryPayload>
+/**
  * Model Sealed
  * 
  */
@@ -178,6 +183,16 @@ export class PrismaClient<
     * ```
     */
   get priceEntry(): Prisma.PriceEntryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.cardPriceChangeSummary`: Exposes CRUD operations for the **CardPriceChangeSummary** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more CardPriceChangeSummaries
+    * const cardPriceChangeSummaries = await prisma.cardPriceChangeSummary.findMany()
+    * ```
+    */
+  get cardPriceChangeSummary(): Prisma.CardPriceChangeSummaryDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.sealed`: Exposes CRUD operations for the **Sealed** model.
@@ -640,6 +655,7 @@ export namespace Prisma {
   export const ModelName: {
     Card: 'Card',
     PriceEntry: 'PriceEntry',
+    CardPriceChangeSummary: 'CardPriceChangeSummary',
     Sealed: 'Sealed',
     SealedPriceEntry: 'SealedPriceEntry'
   };
@@ -660,7 +676,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "card" | "priceEntry" | "sealed" | "sealedPriceEntry"
+      modelProps: "card" | "priceEntry" | "cardPriceChangeSummary" | "sealed" | "sealedPriceEntry"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -809,6 +825,80 @@ export namespace Prisma {
           count: {
             args: Prisma.PriceEntryCountArgs<ExtArgs>
             result: $Utils.Optional<PriceEntryCountAggregateOutputType> | number
+          }
+        }
+      }
+      CardPriceChangeSummary: {
+        payload: Prisma.$CardPriceChangeSummaryPayload<ExtArgs>
+        fields: Prisma.CardPriceChangeSummaryFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.CardPriceChangeSummaryFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.CardPriceChangeSummaryFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>
+          }
+          findFirst: {
+            args: Prisma.CardPriceChangeSummaryFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.CardPriceChangeSummaryFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>
+          }
+          findMany: {
+            args: Prisma.CardPriceChangeSummaryFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>[]
+          }
+          create: {
+            args: Prisma.CardPriceChangeSummaryCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>
+          }
+          createMany: {
+            args: Prisma.CardPriceChangeSummaryCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.CardPriceChangeSummaryCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>[]
+          }
+          delete: {
+            args: Prisma.CardPriceChangeSummaryDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>
+          }
+          update: {
+            args: Prisma.CardPriceChangeSummaryUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>
+          }
+          deleteMany: {
+            args: Prisma.CardPriceChangeSummaryDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.CardPriceChangeSummaryUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.CardPriceChangeSummaryUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>[]
+          }
+          upsert: {
+            args: Prisma.CardPriceChangeSummaryUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CardPriceChangeSummaryPayload>
+          }
+          aggregate: {
+            args: Prisma.CardPriceChangeSummaryAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCardPriceChangeSummary>
+          }
+          groupBy: {
+            args: Prisma.CardPriceChangeSummaryGroupByArgs<ExtArgs>
+            result: $Utils.Optional<CardPriceChangeSummaryGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.CardPriceChangeSummaryCountArgs<ExtArgs>
+            result: $Utils.Optional<CardPriceChangeSummaryCountAggregateOutputType> | number
           }
         }
       }
@@ -1046,6 +1136,7 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     card?: CardOmit
     priceEntry?: PriceEntryOmit
+    cardPriceChangeSummary?: CardPriceChangeSummaryOmit
     sealed?: SealedOmit
     sealedPriceEntry?: SealedPriceEntryOmit
   }
@@ -1143,10 +1234,12 @@ export namespace Prisma {
 
   export type CardCountOutputType = {
     prices: number
+    priceSummary: number
   }
 
   export type CardCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     prices?: boolean | CardCountOutputTypeCountPricesArgs
+    priceSummary?: boolean | CardCountOutputTypeCountPriceSummaryArgs
   }
 
   // Custom InputTypes
@@ -1165,6 +1258,13 @@ export namespace Prisma {
    */
   export type CardCountOutputTypeCountPricesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PriceEntryWhereInput
+  }
+
+  /**
+   * CardCountOutputType without action
+   */
+  export type CardCountOutputTypeCountPriceSummaryArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CardPriceChangeSummaryWhereInput
   }
 
 
@@ -1340,6 +1440,7 @@ export namespace Prisma {
     id?: boolean
     data?: boolean
     prices?: boolean | Card$pricesArgs<ExtArgs>
+    priceSummary?: boolean | Card$priceSummaryArgs<ExtArgs>
     _count?: boolean | CardCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["card"]>
 
@@ -1361,6 +1462,7 @@ export namespace Prisma {
   export type CardOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "data", ExtArgs["result"]["card"]>
   export type CardInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     prices?: boolean | Card$pricesArgs<ExtArgs>
+    priceSummary?: boolean | Card$priceSummaryArgs<ExtArgs>
     _count?: boolean | CardCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type CardIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1370,6 +1472,7 @@ export namespace Prisma {
     name: "Card"
     objects: {
       prices: Prisma.$PriceEntryPayload<ExtArgs>[]
+      priceSummary: Prisma.$CardPriceChangeSummaryPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -1769,6 +1872,7 @@ export namespace Prisma {
   export interface Prisma__CardClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     prices<T extends Card$pricesArgs<ExtArgs> = {}>(args?: Subset<T, Card$pricesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    priceSummary<T extends Card$priceSummaryArgs<ExtArgs> = {}>(args?: Subset<T, Card$priceSummaryArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2212,6 +2316,30 @@ export namespace Prisma {
   }
 
   /**
+   * Card.priceSummary
+   */
+  export type Card$priceSummaryArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    where?: CardPriceChangeSummaryWhereInput
+    orderBy?: CardPriceChangeSummaryOrderByWithRelationInput | CardPriceChangeSummaryOrderByWithRelationInput[]
+    cursor?: CardPriceChangeSummaryWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CardPriceChangeSummaryScalarFieldEnum | CardPriceChangeSummaryScalarFieldEnum[]
+  }
+
+  /**
    * Card without action
    */
   export type CardDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2245,17 +2373,20 @@ export namespace Prisma {
   export type PriceEntryAvgAggregateOutputType = {
     id: number | null
     price: number | null
+    quantity: number | null
   }
 
   export type PriceEntrySumAggregateOutputType = {
     id: number | null
     price: number | null
+    quantity: number | null
   }
 
   export type PriceEntryMinAggregateOutputType = {
     id: number | null
     cardId: string | null
     price: number | null
+    quantity: number | null
     date: Date | null
   }
 
@@ -2263,6 +2394,7 @@ export namespace Prisma {
     id: number | null
     cardId: string | null
     price: number | null
+    quantity: number | null
     date: Date | null
   }
 
@@ -2270,6 +2402,7 @@ export namespace Prisma {
     id: number
     cardId: number
     price: number
+    quantity: number
     date: number
     _all: number
   }
@@ -2278,17 +2411,20 @@ export namespace Prisma {
   export type PriceEntryAvgAggregateInputType = {
     id?: true
     price?: true
+    quantity?: true
   }
 
   export type PriceEntrySumAggregateInputType = {
     id?: true
     price?: true
+    quantity?: true
   }
 
   export type PriceEntryMinAggregateInputType = {
     id?: true
     cardId?: true
     price?: true
+    quantity?: true
     date?: true
   }
 
@@ -2296,6 +2432,7 @@ export namespace Prisma {
     id?: true
     cardId?: true
     price?: true
+    quantity?: true
     date?: true
   }
 
@@ -2303,6 +2440,7 @@ export namespace Prisma {
     id?: true
     cardId?: true
     price?: true
+    quantity?: true
     date?: true
     _all?: true
   }
@@ -2397,6 +2535,7 @@ export namespace Prisma {
     id: number
     cardId: string
     price: number
+    quantity: number | null
     date: Date
     _count: PriceEntryCountAggregateOutputType | null
     _avg: PriceEntryAvgAggregateOutputType | null
@@ -2423,6 +2562,7 @@ export namespace Prisma {
     id?: boolean
     cardId?: boolean
     price?: boolean
+    quantity?: boolean
     date?: boolean
     card?: boolean | CardDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["priceEntry"]>
@@ -2431,6 +2571,7 @@ export namespace Prisma {
     id?: boolean
     cardId?: boolean
     price?: boolean
+    quantity?: boolean
     date?: boolean
     card?: boolean | CardDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["priceEntry"]>
@@ -2439,6 +2580,7 @@ export namespace Prisma {
     id?: boolean
     cardId?: boolean
     price?: boolean
+    quantity?: boolean
     date?: boolean
     card?: boolean | CardDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["priceEntry"]>
@@ -2447,10 +2589,11 @@ export namespace Prisma {
     id?: boolean
     cardId?: boolean
     price?: boolean
+    quantity?: boolean
     date?: boolean
   }
 
-  export type PriceEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "cardId" | "price" | "date", ExtArgs["result"]["priceEntry"]>
+  export type PriceEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "cardId" | "price" | "quantity" | "date", ExtArgs["result"]["priceEntry"]>
   export type PriceEntryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     card?: boolean | CardDefaultArgs<ExtArgs>
   }
@@ -2470,6 +2613,7 @@ export namespace Prisma {
       id: number
       cardId: string
       price: number
+      quantity: number | null
       date: Date
     }, ExtArgs["result"]["priceEntry"]>
     composites: {}
@@ -2898,6 +3042,7 @@ export namespace Prisma {
     readonly id: FieldRef<"PriceEntry", 'Int'>
     readonly cardId: FieldRef<"PriceEntry", 'String'>
     readonly price: FieldRef<"PriceEntry", 'Float'>
+    readonly quantity: FieldRef<"PriceEntry", 'Int'>
     readonly date: FieldRef<"PriceEntry", 'DateTime'>
   }
     
@@ -3310,6 +3455,1141 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PriceEntryInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model CardPriceChangeSummary
+   */
+
+  export type AggregateCardPriceChangeSummary = {
+    _count: CardPriceChangeSummaryCountAggregateOutputType | null
+    _avg: CardPriceChangeSummaryAvgAggregateOutputType | null
+    _sum: CardPriceChangeSummarySumAggregateOutputType | null
+    _min: CardPriceChangeSummaryMinAggregateOutputType | null
+    _max: CardPriceChangeSummaryMaxAggregateOutputType | null
+  }
+
+  export type CardPriceChangeSummaryAvgAggregateOutputType = {
+    id: number | null
+    changePct: number | null
+  }
+
+  export type CardPriceChangeSummarySumAggregateOutputType = {
+    id: number | null
+    changePct: number | null
+  }
+
+  export type CardPriceChangeSummaryMinAggregateOutputType = {
+    id: number | null
+    setId: string | null
+    series: string | null
+    timeframe: string | null
+    type: string | null
+    cardId: string | null
+    changePct: number | null
+    createdAt: Date | null
+  }
+
+  export type CardPriceChangeSummaryMaxAggregateOutputType = {
+    id: number | null
+    setId: string | null
+    series: string | null
+    timeframe: string | null
+    type: string | null
+    cardId: string | null
+    changePct: number | null
+    createdAt: Date | null
+  }
+
+  export type CardPriceChangeSummaryCountAggregateOutputType = {
+    id: number
+    setId: number
+    series: number
+    timeframe: number
+    type: number
+    cardId: number
+    changePct: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type CardPriceChangeSummaryAvgAggregateInputType = {
+    id?: true
+    changePct?: true
+  }
+
+  export type CardPriceChangeSummarySumAggregateInputType = {
+    id?: true
+    changePct?: true
+  }
+
+  export type CardPriceChangeSummaryMinAggregateInputType = {
+    id?: true
+    setId?: true
+    series?: true
+    timeframe?: true
+    type?: true
+    cardId?: true
+    changePct?: true
+    createdAt?: true
+  }
+
+  export type CardPriceChangeSummaryMaxAggregateInputType = {
+    id?: true
+    setId?: true
+    series?: true
+    timeframe?: true
+    type?: true
+    cardId?: true
+    changePct?: true
+    createdAt?: true
+  }
+
+  export type CardPriceChangeSummaryCountAggregateInputType = {
+    id?: true
+    setId?: true
+    series?: true
+    timeframe?: true
+    type?: true
+    cardId?: true
+    changePct?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type CardPriceChangeSummaryAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CardPriceChangeSummary to aggregate.
+     */
+    where?: CardPriceChangeSummaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardPriceChangeSummaries to fetch.
+     */
+    orderBy?: CardPriceChangeSummaryOrderByWithRelationInput | CardPriceChangeSummaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: CardPriceChangeSummaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardPriceChangeSummaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardPriceChangeSummaries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned CardPriceChangeSummaries
+    **/
+    _count?: true | CardPriceChangeSummaryCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: CardPriceChangeSummaryAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: CardPriceChangeSummarySumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CardPriceChangeSummaryMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CardPriceChangeSummaryMaxAggregateInputType
+  }
+
+  export type GetCardPriceChangeSummaryAggregateType<T extends CardPriceChangeSummaryAggregateArgs> = {
+        [P in keyof T & keyof AggregateCardPriceChangeSummary]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCardPriceChangeSummary[P]>
+      : GetScalarType<T[P], AggregateCardPriceChangeSummary[P]>
+  }
+
+
+
+
+  export type CardPriceChangeSummaryGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CardPriceChangeSummaryWhereInput
+    orderBy?: CardPriceChangeSummaryOrderByWithAggregationInput | CardPriceChangeSummaryOrderByWithAggregationInput[]
+    by: CardPriceChangeSummaryScalarFieldEnum[] | CardPriceChangeSummaryScalarFieldEnum
+    having?: CardPriceChangeSummaryScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CardPriceChangeSummaryCountAggregateInputType | true
+    _avg?: CardPriceChangeSummaryAvgAggregateInputType
+    _sum?: CardPriceChangeSummarySumAggregateInputType
+    _min?: CardPriceChangeSummaryMinAggregateInputType
+    _max?: CardPriceChangeSummaryMaxAggregateInputType
+  }
+
+  export type CardPriceChangeSummaryGroupByOutputType = {
+    id: number
+    setId: string | null
+    series: string | null
+    timeframe: string
+    type: string
+    cardId: string
+    changePct: number
+    createdAt: Date
+    _count: CardPriceChangeSummaryCountAggregateOutputType | null
+    _avg: CardPriceChangeSummaryAvgAggregateOutputType | null
+    _sum: CardPriceChangeSummarySumAggregateOutputType | null
+    _min: CardPriceChangeSummaryMinAggregateOutputType | null
+    _max: CardPriceChangeSummaryMaxAggregateOutputType | null
+  }
+
+  type GetCardPriceChangeSummaryGroupByPayload<T extends CardPriceChangeSummaryGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<CardPriceChangeSummaryGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CardPriceChangeSummaryGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CardPriceChangeSummaryGroupByOutputType[P]>
+            : GetScalarType<T[P], CardPriceChangeSummaryGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CardPriceChangeSummarySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    setId?: boolean
+    series?: boolean
+    timeframe?: boolean
+    type?: boolean
+    cardId?: boolean
+    changePct?: boolean
+    createdAt?: boolean
+    card?: boolean | CardDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["cardPriceChangeSummary"]>
+
+  export type CardPriceChangeSummarySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    setId?: boolean
+    series?: boolean
+    timeframe?: boolean
+    type?: boolean
+    cardId?: boolean
+    changePct?: boolean
+    createdAt?: boolean
+    card?: boolean | CardDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["cardPriceChangeSummary"]>
+
+  export type CardPriceChangeSummarySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    setId?: boolean
+    series?: boolean
+    timeframe?: boolean
+    type?: boolean
+    cardId?: boolean
+    changePct?: boolean
+    createdAt?: boolean
+    card?: boolean | CardDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["cardPriceChangeSummary"]>
+
+  export type CardPriceChangeSummarySelectScalar = {
+    id?: boolean
+    setId?: boolean
+    series?: boolean
+    timeframe?: boolean
+    type?: boolean
+    cardId?: boolean
+    changePct?: boolean
+    createdAt?: boolean
+  }
+
+  export type CardPriceChangeSummaryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "setId" | "series" | "timeframe" | "type" | "cardId" | "changePct" | "createdAt", ExtArgs["result"]["cardPriceChangeSummary"]>
+  export type CardPriceChangeSummaryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    card?: boolean | CardDefaultArgs<ExtArgs>
+  }
+  export type CardPriceChangeSummaryIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    card?: boolean | CardDefaultArgs<ExtArgs>
+  }
+  export type CardPriceChangeSummaryIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    card?: boolean | CardDefaultArgs<ExtArgs>
+  }
+
+  export type $CardPriceChangeSummaryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "CardPriceChangeSummary"
+    objects: {
+      card: Prisma.$CardPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      setId: string | null
+      series: string | null
+      timeframe: string
+      type: string
+      cardId: string
+      changePct: number
+      createdAt: Date
+    }, ExtArgs["result"]["cardPriceChangeSummary"]>
+    composites: {}
+  }
+
+  type CardPriceChangeSummaryGetPayload<S extends boolean | null | undefined | CardPriceChangeSummaryDefaultArgs> = $Result.GetResult<Prisma.$CardPriceChangeSummaryPayload, S>
+
+  type CardPriceChangeSummaryCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<CardPriceChangeSummaryFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: CardPriceChangeSummaryCountAggregateInputType | true
+    }
+
+  export interface CardPriceChangeSummaryDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['CardPriceChangeSummary'], meta: { name: 'CardPriceChangeSummary' } }
+    /**
+     * Find zero or one CardPriceChangeSummary that matches the filter.
+     * @param {CardPriceChangeSummaryFindUniqueArgs} args - Arguments to find a CardPriceChangeSummary
+     * @example
+     * // Get one CardPriceChangeSummary
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends CardPriceChangeSummaryFindUniqueArgs>(args: SelectSubset<T, CardPriceChangeSummaryFindUniqueArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one CardPriceChangeSummary that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {CardPriceChangeSummaryFindUniqueOrThrowArgs} args - Arguments to find a CardPriceChangeSummary
+     * @example
+     * // Get one CardPriceChangeSummary
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends CardPriceChangeSummaryFindUniqueOrThrowArgs>(args: SelectSubset<T, CardPriceChangeSummaryFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CardPriceChangeSummary that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardPriceChangeSummaryFindFirstArgs} args - Arguments to find a CardPriceChangeSummary
+     * @example
+     * // Get one CardPriceChangeSummary
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends CardPriceChangeSummaryFindFirstArgs>(args?: SelectSubset<T, CardPriceChangeSummaryFindFirstArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CardPriceChangeSummary that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardPriceChangeSummaryFindFirstOrThrowArgs} args - Arguments to find a CardPriceChangeSummary
+     * @example
+     * // Get one CardPriceChangeSummary
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends CardPriceChangeSummaryFindFirstOrThrowArgs>(args?: SelectSubset<T, CardPriceChangeSummaryFindFirstOrThrowArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more CardPriceChangeSummaries that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardPriceChangeSummaryFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all CardPriceChangeSummaries
+     * const cardPriceChangeSummaries = await prisma.cardPriceChangeSummary.findMany()
+     * 
+     * // Get first 10 CardPriceChangeSummaries
+     * const cardPriceChangeSummaries = await prisma.cardPriceChangeSummary.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const cardPriceChangeSummaryWithIdOnly = await prisma.cardPriceChangeSummary.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends CardPriceChangeSummaryFindManyArgs>(args?: SelectSubset<T, CardPriceChangeSummaryFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a CardPriceChangeSummary.
+     * @param {CardPriceChangeSummaryCreateArgs} args - Arguments to create a CardPriceChangeSummary.
+     * @example
+     * // Create one CardPriceChangeSummary
+     * const CardPriceChangeSummary = await prisma.cardPriceChangeSummary.create({
+     *   data: {
+     *     // ... data to create a CardPriceChangeSummary
+     *   }
+     * })
+     * 
+     */
+    create<T extends CardPriceChangeSummaryCreateArgs>(args: SelectSubset<T, CardPriceChangeSummaryCreateArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many CardPriceChangeSummaries.
+     * @param {CardPriceChangeSummaryCreateManyArgs} args - Arguments to create many CardPriceChangeSummaries.
+     * @example
+     * // Create many CardPriceChangeSummaries
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends CardPriceChangeSummaryCreateManyArgs>(args?: SelectSubset<T, CardPriceChangeSummaryCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many CardPriceChangeSummaries and returns the data saved in the database.
+     * @param {CardPriceChangeSummaryCreateManyAndReturnArgs} args - Arguments to create many CardPriceChangeSummaries.
+     * @example
+     * // Create many CardPriceChangeSummaries
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many CardPriceChangeSummaries and only return the `id`
+     * const cardPriceChangeSummaryWithIdOnly = await prisma.cardPriceChangeSummary.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends CardPriceChangeSummaryCreateManyAndReturnArgs>(args?: SelectSubset<T, CardPriceChangeSummaryCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a CardPriceChangeSummary.
+     * @param {CardPriceChangeSummaryDeleteArgs} args - Arguments to delete one CardPriceChangeSummary.
+     * @example
+     * // Delete one CardPriceChangeSummary
+     * const CardPriceChangeSummary = await prisma.cardPriceChangeSummary.delete({
+     *   where: {
+     *     // ... filter to delete one CardPriceChangeSummary
+     *   }
+     * })
+     * 
+     */
+    delete<T extends CardPriceChangeSummaryDeleteArgs>(args: SelectSubset<T, CardPriceChangeSummaryDeleteArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one CardPriceChangeSummary.
+     * @param {CardPriceChangeSummaryUpdateArgs} args - Arguments to update one CardPriceChangeSummary.
+     * @example
+     * // Update one CardPriceChangeSummary
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends CardPriceChangeSummaryUpdateArgs>(args: SelectSubset<T, CardPriceChangeSummaryUpdateArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more CardPriceChangeSummaries.
+     * @param {CardPriceChangeSummaryDeleteManyArgs} args - Arguments to filter CardPriceChangeSummaries to delete.
+     * @example
+     * // Delete a few CardPriceChangeSummaries
+     * const { count } = await prisma.cardPriceChangeSummary.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends CardPriceChangeSummaryDeleteManyArgs>(args?: SelectSubset<T, CardPriceChangeSummaryDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CardPriceChangeSummaries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardPriceChangeSummaryUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many CardPriceChangeSummaries
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends CardPriceChangeSummaryUpdateManyArgs>(args: SelectSubset<T, CardPriceChangeSummaryUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CardPriceChangeSummaries and returns the data updated in the database.
+     * @param {CardPriceChangeSummaryUpdateManyAndReturnArgs} args - Arguments to update many CardPriceChangeSummaries.
+     * @example
+     * // Update many CardPriceChangeSummaries
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more CardPriceChangeSummaries and only return the `id`
+     * const cardPriceChangeSummaryWithIdOnly = await prisma.cardPriceChangeSummary.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends CardPriceChangeSummaryUpdateManyAndReturnArgs>(args: SelectSubset<T, CardPriceChangeSummaryUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one CardPriceChangeSummary.
+     * @param {CardPriceChangeSummaryUpsertArgs} args - Arguments to update or create a CardPriceChangeSummary.
+     * @example
+     * // Update or create a CardPriceChangeSummary
+     * const cardPriceChangeSummary = await prisma.cardPriceChangeSummary.upsert({
+     *   create: {
+     *     // ... data to create a CardPriceChangeSummary
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the CardPriceChangeSummary we want to update
+     *   }
+     * })
+     */
+    upsert<T extends CardPriceChangeSummaryUpsertArgs>(args: SelectSubset<T, CardPriceChangeSummaryUpsertArgs<ExtArgs>>): Prisma__CardPriceChangeSummaryClient<$Result.GetResult<Prisma.$CardPriceChangeSummaryPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of CardPriceChangeSummaries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardPriceChangeSummaryCountArgs} args - Arguments to filter CardPriceChangeSummaries to count.
+     * @example
+     * // Count the number of CardPriceChangeSummaries
+     * const count = await prisma.cardPriceChangeSummary.count({
+     *   where: {
+     *     // ... the filter for the CardPriceChangeSummaries we want to count
+     *   }
+     * })
+    **/
+    count<T extends CardPriceChangeSummaryCountArgs>(
+      args?: Subset<T, CardPriceChangeSummaryCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CardPriceChangeSummaryCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a CardPriceChangeSummary.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardPriceChangeSummaryAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CardPriceChangeSummaryAggregateArgs>(args: Subset<T, CardPriceChangeSummaryAggregateArgs>): Prisma.PrismaPromise<GetCardPriceChangeSummaryAggregateType<T>>
+
+    /**
+     * Group by CardPriceChangeSummary.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CardPriceChangeSummaryGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CardPriceChangeSummaryGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CardPriceChangeSummaryGroupByArgs['orderBy'] }
+        : { orderBy?: CardPriceChangeSummaryGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CardPriceChangeSummaryGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCardPriceChangeSummaryGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the CardPriceChangeSummary model
+   */
+  readonly fields: CardPriceChangeSummaryFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for CardPriceChangeSummary.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__CardPriceChangeSummaryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    card<T extends CardDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CardDefaultArgs<ExtArgs>>): Prisma__CardClient<$Result.GetResult<Prisma.$CardPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the CardPriceChangeSummary model
+   */
+  interface CardPriceChangeSummaryFieldRefs {
+    readonly id: FieldRef<"CardPriceChangeSummary", 'Int'>
+    readonly setId: FieldRef<"CardPriceChangeSummary", 'String'>
+    readonly series: FieldRef<"CardPriceChangeSummary", 'String'>
+    readonly timeframe: FieldRef<"CardPriceChangeSummary", 'String'>
+    readonly type: FieldRef<"CardPriceChangeSummary", 'String'>
+    readonly cardId: FieldRef<"CardPriceChangeSummary", 'String'>
+    readonly changePct: FieldRef<"CardPriceChangeSummary", 'Float'>
+    readonly createdAt: FieldRef<"CardPriceChangeSummary", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * CardPriceChangeSummary findUnique
+   */
+  export type CardPriceChangeSummaryFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * Filter, which CardPriceChangeSummary to fetch.
+     */
+    where: CardPriceChangeSummaryWhereUniqueInput
+  }
+
+  /**
+   * CardPriceChangeSummary findUniqueOrThrow
+   */
+  export type CardPriceChangeSummaryFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * Filter, which CardPriceChangeSummary to fetch.
+     */
+    where: CardPriceChangeSummaryWhereUniqueInput
+  }
+
+  /**
+   * CardPriceChangeSummary findFirst
+   */
+  export type CardPriceChangeSummaryFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * Filter, which CardPriceChangeSummary to fetch.
+     */
+    where?: CardPriceChangeSummaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardPriceChangeSummaries to fetch.
+     */
+    orderBy?: CardPriceChangeSummaryOrderByWithRelationInput | CardPriceChangeSummaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CardPriceChangeSummaries.
+     */
+    cursor?: CardPriceChangeSummaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardPriceChangeSummaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardPriceChangeSummaries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CardPriceChangeSummaries.
+     */
+    distinct?: CardPriceChangeSummaryScalarFieldEnum | CardPriceChangeSummaryScalarFieldEnum[]
+  }
+
+  /**
+   * CardPriceChangeSummary findFirstOrThrow
+   */
+  export type CardPriceChangeSummaryFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * Filter, which CardPriceChangeSummary to fetch.
+     */
+    where?: CardPriceChangeSummaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardPriceChangeSummaries to fetch.
+     */
+    orderBy?: CardPriceChangeSummaryOrderByWithRelationInput | CardPriceChangeSummaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CardPriceChangeSummaries.
+     */
+    cursor?: CardPriceChangeSummaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardPriceChangeSummaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardPriceChangeSummaries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CardPriceChangeSummaries.
+     */
+    distinct?: CardPriceChangeSummaryScalarFieldEnum | CardPriceChangeSummaryScalarFieldEnum[]
+  }
+
+  /**
+   * CardPriceChangeSummary findMany
+   */
+  export type CardPriceChangeSummaryFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * Filter, which CardPriceChangeSummaries to fetch.
+     */
+    where?: CardPriceChangeSummaryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CardPriceChangeSummaries to fetch.
+     */
+    orderBy?: CardPriceChangeSummaryOrderByWithRelationInput | CardPriceChangeSummaryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing CardPriceChangeSummaries.
+     */
+    cursor?: CardPriceChangeSummaryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CardPriceChangeSummaries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CardPriceChangeSummaries.
+     */
+    skip?: number
+    distinct?: CardPriceChangeSummaryScalarFieldEnum | CardPriceChangeSummaryScalarFieldEnum[]
+  }
+
+  /**
+   * CardPriceChangeSummary create
+   */
+  export type CardPriceChangeSummaryCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * The data needed to create a CardPriceChangeSummary.
+     */
+    data: XOR<CardPriceChangeSummaryCreateInput, CardPriceChangeSummaryUncheckedCreateInput>
+  }
+
+  /**
+   * CardPriceChangeSummary createMany
+   */
+  export type CardPriceChangeSummaryCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many CardPriceChangeSummaries.
+     */
+    data: CardPriceChangeSummaryCreateManyInput | CardPriceChangeSummaryCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * CardPriceChangeSummary createManyAndReturn
+   */
+  export type CardPriceChangeSummaryCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * The data used to create many CardPriceChangeSummaries.
+     */
+    data: CardPriceChangeSummaryCreateManyInput | CardPriceChangeSummaryCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * CardPriceChangeSummary update
+   */
+  export type CardPriceChangeSummaryUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * The data needed to update a CardPriceChangeSummary.
+     */
+    data: XOR<CardPriceChangeSummaryUpdateInput, CardPriceChangeSummaryUncheckedUpdateInput>
+    /**
+     * Choose, which CardPriceChangeSummary to update.
+     */
+    where: CardPriceChangeSummaryWhereUniqueInput
+  }
+
+  /**
+   * CardPriceChangeSummary updateMany
+   */
+  export type CardPriceChangeSummaryUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update CardPriceChangeSummaries.
+     */
+    data: XOR<CardPriceChangeSummaryUpdateManyMutationInput, CardPriceChangeSummaryUncheckedUpdateManyInput>
+    /**
+     * Filter which CardPriceChangeSummaries to update
+     */
+    where?: CardPriceChangeSummaryWhereInput
+    /**
+     * Limit how many CardPriceChangeSummaries to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * CardPriceChangeSummary updateManyAndReturn
+   */
+  export type CardPriceChangeSummaryUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * The data used to update CardPriceChangeSummaries.
+     */
+    data: XOR<CardPriceChangeSummaryUpdateManyMutationInput, CardPriceChangeSummaryUncheckedUpdateManyInput>
+    /**
+     * Filter which CardPriceChangeSummaries to update
+     */
+    where?: CardPriceChangeSummaryWhereInput
+    /**
+     * Limit how many CardPriceChangeSummaries to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * CardPriceChangeSummary upsert
+   */
+  export type CardPriceChangeSummaryUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * The filter to search for the CardPriceChangeSummary to update in case it exists.
+     */
+    where: CardPriceChangeSummaryWhereUniqueInput
+    /**
+     * In case the CardPriceChangeSummary found by the `where` argument doesn't exist, create a new CardPriceChangeSummary with this data.
+     */
+    create: XOR<CardPriceChangeSummaryCreateInput, CardPriceChangeSummaryUncheckedCreateInput>
+    /**
+     * In case the CardPriceChangeSummary was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<CardPriceChangeSummaryUpdateInput, CardPriceChangeSummaryUncheckedUpdateInput>
+  }
+
+  /**
+   * CardPriceChangeSummary delete
+   */
+  export type CardPriceChangeSummaryDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
+    /**
+     * Filter which CardPriceChangeSummary to delete.
+     */
+    where: CardPriceChangeSummaryWhereUniqueInput
+  }
+
+  /**
+   * CardPriceChangeSummary deleteMany
+   */
+  export type CardPriceChangeSummaryDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CardPriceChangeSummaries to delete
+     */
+    where?: CardPriceChangeSummaryWhereInput
+    /**
+     * Limit how many CardPriceChangeSummaries to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * CardPriceChangeSummary without action
+   */
+  export type CardPriceChangeSummaryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CardPriceChangeSummary
+     */
+    select?: CardPriceChangeSummarySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CardPriceChangeSummary
+     */
+    omit?: CardPriceChangeSummaryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CardPriceChangeSummaryInclude<ExtArgs> | null
   }
 
 
@@ -4384,6 +5664,7 @@ export namespace Prisma {
     title: string | null
     url: string | null
     soldAt: Date | null
+    label: string | null
   }
 
   export type SealedPriceEntryMaxAggregateOutputType = {
@@ -4393,6 +5674,7 @@ export namespace Prisma {
     title: string | null
     url: string | null
     soldAt: Date | null
+    label: string | null
   }
 
   export type SealedPriceEntryCountAggregateOutputType = {
@@ -4402,6 +5684,7 @@ export namespace Prisma {
     title: number
     url: number
     soldAt: number
+    label: number
     _all: number
   }
 
@@ -4421,6 +5704,7 @@ export namespace Prisma {
     title?: true
     url?: true
     soldAt?: true
+    label?: true
   }
 
   export type SealedPriceEntryMaxAggregateInputType = {
@@ -4430,6 +5714,7 @@ export namespace Prisma {
     title?: true
     url?: true
     soldAt?: true
+    label?: true
   }
 
   export type SealedPriceEntryCountAggregateInputType = {
@@ -4439,6 +5724,7 @@ export namespace Prisma {
     title?: true
     url?: true
     soldAt?: true
+    label?: true
     _all?: true
   }
 
@@ -4535,6 +5821,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date
+    label: string | null
     _count: SealedPriceEntryCountAggregateOutputType | null
     _avg: SealedPriceEntryAvgAggregateOutputType | null
     _sum: SealedPriceEntrySumAggregateOutputType | null
@@ -4563,6 +5850,7 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["sealedPriceEntry"]>
 
@@ -4573,6 +5861,7 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["sealedPriceEntry"]>
 
@@ -4583,6 +5872,7 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["sealedPriceEntry"]>
 
@@ -4593,9 +5883,10 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
   }
 
-  export type SealedPriceEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "sealedId" | "price" | "title" | "url" | "soldAt", ExtArgs["result"]["sealedPriceEntry"]>
+  export type SealedPriceEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "sealedId" | "price" | "title" | "url" | "soldAt" | "label", ExtArgs["result"]["sealedPriceEntry"]>
   export type SealedPriceEntryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }
@@ -4618,6 +5909,7 @@ export namespace Prisma {
       title: string
       url: string
       soldAt: Date
+      label: string | null
     }, ExtArgs["result"]["sealedPriceEntry"]>
     composites: {}
   }
@@ -5048,6 +6340,7 @@ export namespace Prisma {
     readonly title: FieldRef<"SealedPriceEntry", 'String'>
     readonly url: FieldRef<"SealedPriceEntry", 'String'>
     readonly soldAt: FieldRef<"SealedPriceEntry", 'DateTime'>
+    readonly label: FieldRef<"SealedPriceEntry", 'String'>
   }
     
 
@@ -5488,10 +6781,25 @@ export namespace Prisma {
     id: 'id',
     cardId: 'cardId',
     price: 'price',
+    quantity: 'quantity',
     date: 'date'
   };
 
   export type PriceEntryScalarFieldEnum = (typeof PriceEntryScalarFieldEnum)[keyof typeof PriceEntryScalarFieldEnum]
+
+
+  export const CardPriceChangeSummaryScalarFieldEnum: {
+    id: 'id',
+    setId: 'setId',
+    series: 'series',
+    timeframe: 'timeframe',
+    type: 'type',
+    cardId: 'cardId',
+    changePct: 'changePct',
+    createdAt: 'createdAt'
+  };
+
+  export type CardPriceChangeSummaryScalarFieldEnum = (typeof CardPriceChangeSummaryScalarFieldEnum)[keyof typeof CardPriceChangeSummaryScalarFieldEnum]
 
 
   export const SealedScalarFieldEnum: {
@@ -5509,7 +6817,8 @@ export namespace Prisma {
     price: 'price',
     title: 'title',
     url: 'url',
-    soldAt: 'soldAt'
+    soldAt: 'soldAt',
+    label: 'label'
   };
 
   export type SealedPriceEntryScalarFieldEnum = (typeof SealedPriceEntryScalarFieldEnum)[keyof typeof SealedPriceEntryScalarFieldEnum]
@@ -5545,6 +6854,14 @@ export namespace Prisma {
   };
 
   export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+  export const NullsOrder: {
+    first: 'first',
+    last: 'last'
+  };
+
+  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
   /**
@@ -5632,12 +6949,14 @@ export namespace Prisma {
     id?: StringFilter<"Card"> | string
     data?: JsonFilter<"Card">
     prices?: PriceEntryListRelationFilter
+    priceSummary?: CardPriceChangeSummaryListRelationFilter
   }
 
   export type CardOrderByWithRelationInput = {
     id?: SortOrder
     data?: SortOrder
     prices?: PriceEntryOrderByRelationAggregateInput
+    priceSummary?: CardPriceChangeSummaryOrderByRelationAggregateInput
   }
 
   export type CardWhereUniqueInput = Prisma.AtLeast<{
@@ -5647,6 +6966,7 @@ export namespace Prisma {
     NOT?: CardWhereInput | CardWhereInput[]
     data?: JsonFilter<"Card">
     prices?: PriceEntryListRelationFilter
+    priceSummary?: CardPriceChangeSummaryListRelationFilter
   }, "id">
 
   export type CardOrderByWithAggregationInput = {
@@ -5672,6 +6992,7 @@ export namespace Prisma {
     id?: IntFilter<"PriceEntry"> | number
     cardId?: StringFilter<"PriceEntry"> | string
     price?: FloatFilter<"PriceEntry"> | number
+    quantity?: IntNullableFilter<"PriceEntry"> | number | null
     date?: DateTimeFilter<"PriceEntry"> | Date | string
     card?: XOR<CardScalarRelationFilter, CardWhereInput>
   }
@@ -5680,6 +7001,7 @@ export namespace Prisma {
     id?: SortOrder
     cardId?: SortOrder
     price?: SortOrder
+    quantity?: SortOrderInput | SortOrder
     date?: SortOrder
     card?: CardOrderByWithRelationInput
   }
@@ -5692,6 +7014,7 @@ export namespace Prisma {
     NOT?: PriceEntryWhereInput | PriceEntryWhereInput[]
     cardId?: StringFilter<"PriceEntry"> | string
     price?: FloatFilter<"PriceEntry"> | number
+    quantity?: IntNullableFilter<"PriceEntry"> | number | null
     date?: DateTimeFilter<"PriceEntry"> | Date | string
     card?: XOR<CardScalarRelationFilter, CardWhereInput>
   }, "id" | "cardId_date">
@@ -5700,6 +7023,7 @@ export namespace Prisma {
     id?: SortOrder
     cardId?: SortOrder
     price?: SortOrder
+    quantity?: SortOrderInput | SortOrder
     date?: SortOrder
     _count?: PriceEntryCountOrderByAggregateInput
     _avg?: PriceEntryAvgOrderByAggregateInput
@@ -5715,7 +7039,80 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"PriceEntry"> | number
     cardId?: StringWithAggregatesFilter<"PriceEntry"> | string
     price?: FloatWithAggregatesFilter<"PriceEntry"> | number
+    quantity?: IntNullableWithAggregatesFilter<"PriceEntry"> | number | null
     date?: DateTimeWithAggregatesFilter<"PriceEntry"> | Date | string
+  }
+
+  export type CardPriceChangeSummaryWhereInput = {
+    AND?: CardPriceChangeSummaryWhereInput | CardPriceChangeSummaryWhereInput[]
+    OR?: CardPriceChangeSummaryWhereInput[]
+    NOT?: CardPriceChangeSummaryWhereInput | CardPriceChangeSummaryWhereInput[]
+    id?: IntFilter<"CardPriceChangeSummary"> | number
+    setId?: StringNullableFilter<"CardPriceChangeSummary"> | string | null
+    series?: StringNullableFilter<"CardPriceChangeSummary"> | string | null
+    timeframe?: StringFilter<"CardPriceChangeSummary"> | string
+    type?: StringFilter<"CardPriceChangeSummary"> | string
+    cardId?: StringFilter<"CardPriceChangeSummary"> | string
+    changePct?: FloatFilter<"CardPriceChangeSummary"> | number
+    createdAt?: DateTimeFilter<"CardPriceChangeSummary"> | Date | string
+    card?: XOR<CardScalarRelationFilter, CardWhereInput>
+  }
+
+  export type CardPriceChangeSummaryOrderByWithRelationInput = {
+    id?: SortOrder
+    setId?: SortOrderInput | SortOrder
+    series?: SortOrderInput | SortOrder
+    timeframe?: SortOrder
+    type?: SortOrder
+    cardId?: SortOrder
+    changePct?: SortOrder
+    createdAt?: SortOrder
+    card?: CardOrderByWithRelationInput
+  }
+
+  export type CardPriceChangeSummaryWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: CardPriceChangeSummaryWhereInput | CardPriceChangeSummaryWhereInput[]
+    OR?: CardPriceChangeSummaryWhereInput[]
+    NOT?: CardPriceChangeSummaryWhereInput | CardPriceChangeSummaryWhereInput[]
+    setId?: StringNullableFilter<"CardPriceChangeSummary"> | string | null
+    series?: StringNullableFilter<"CardPriceChangeSummary"> | string | null
+    timeframe?: StringFilter<"CardPriceChangeSummary"> | string
+    type?: StringFilter<"CardPriceChangeSummary"> | string
+    cardId?: StringFilter<"CardPriceChangeSummary"> | string
+    changePct?: FloatFilter<"CardPriceChangeSummary"> | number
+    createdAt?: DateTimeFilter<"CardPriceChangeSummary"> | Date | string
+    card?: XOR<CardScalarRelationFilter, CardWhereInput>
+  }, "id">
+
+  export type CardPriceChangeSummaryOrderByWithAggregationInput = {
+    id?: SortOrder
+    setId?: SortOrderInput | SortOrder
+    series?: SortOrderInput | SortOrder
+    timeframe?: SortOrder
+    type?: SortOrder
+    cardId?: SortOrder
+    changePct?: SortOrder
+    createdAt?: SortOrder
+    _count?: CardPriceChangeSummaryCountOrderByAggregateInput
+    _avg?: CardPriceChangeSummaryAvgOrderByAggregateInput
+    _max?: CardPriceChangeSummaryMaxOrderByAggregateInput
+    _min?: CardPriceChangeSummaryMinOrderByAggregateInput
+    _sum?: CardPriceChangeSummarySumOrderByAggregateInput
+  }
+
+  export type CardPriceChangeSummaryScalarWhereWithAggregatesInput = {
+    AND?: CardPriceChangeSummaryScalarWhereWithAggregatesInput | CardPriceChangeSummaryScalarWhereWithAggregatesInput[]
+    OR?: CardPriceChangeSummaryScalarWhereWithAggregatesInput[]
+    NOT?: CardPriceChangeSummaryScalarWhereWithAggregatesInput | CardPriceChangeSummaryScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"CardPriceChangeSummary"> | number
+    setId?: StringNullableWithAggregatesFilter<"CardPriceChangeSummary"> | string | null
+    series?: StringNullableWithAggregatesFilter<"CardPriceChangeSummary"> | string | null
+    timeframe?: StringWithAggregatesFilter<"CardPriceChangeSummary"> | string
+    type?: StringWithAggregatesFilter<"CardPriceChangeSummary"> | string
+    cardId?: StringWithAggregatesFilter<"CardPriceChangeSummary"> | string
+    changePct?: FloatWithAggregatesFilter<"CardPriceChangeSummary"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"CardPriceChangeSummary"> | Date | string
   }
 
   export type SealedWhereInput = {
@@ -5773,6 +7170,7 @@ export namespace Prisma {
     title?: StringFilter<"SealedPriceEntry"> | string
     url?: StringFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableFilter<"SealedPriceEntry"> | string | null
     sealed?: XOR<SealedScalarRelationFilter, SealedWhereInput>
   }
 
@@ -5783,21 +7181,24 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrderInput | SortOrder
     sealed?: SealedOrderByWithRelationInput
   }
 
   export type SealedPriceEntryWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    title?: string
+    title_soldAt?: SealedPriceEntryTitleSoldAtCompoundUniqueInput
     AND?: SealedPriceEntryWhereInput | SealedPriceEntryWhereInput[]
     OR?: SealedPriceEntryWhereInput[]
     NOT?: SealedPriceEntryWhereInput | SealedPriceEntryWhereInput[]
     sealedId?: StringFilter<"SealedPriceEntry"> | string
     price?: FloatFilter<"SealedPriceEntry"> | number
+    title?: StringFilter<"SealedPriceEntry"> | string
     url?: StringFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableFilter<"SealedPriceEntry"> | string | null
     sealed?: XOR<SealedScalarRelationFilter, SealedWhereInput>
-  }, "id" | "title">
+  }, "id" | "title_soldAt">
 
   export type SealedPriceEntryOrderByWithAggregationInput = {
     id?: SortOrder
@@ -5806,6 +7207,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrderInput | SortOrder
     _count?: SealedPriceEntryCountOrderByAggregateInput
     _avg?: SealedPriceEntryAvgOrderByAggregateInput
     _max?: SealedPriceEntryMaxOrderByAggregateInput
@@ -5823,30 +7225,35 @@ export namespace Prisma {
     title?: StringWithAggregatesFilter<"SealedPriceEntry"> | string
     url?: StringWithAggregatesFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeWithAggregatesFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableWithAggregatesFilter<"SealedPriceEntry"> | string | null
   }
 
   export type CardCreateInput = {
     id: string
     data: JsonNullValueInput | InputJsonValue
     prices?: PriceEntryCreateNestedManyWithoutCardInput
+    priceSummary?: CardPriceChangeSummaryCreateNestedManyWithoutCardInput
   }
 
   export type CardUncheckedCreateInput = {
     id: string
     data: JsonNullValueInput | InputJsonValue
     prices?: PriceEntryUncheckedCreateNestedManyWithoutCardInput
+    priceSummary?: CardPriceChangeSummaryUncheckedCreateNestedManyWithoutCardInput
   }
 
   export type CardUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     data?: JsonNullValueInput | InputJsonValue
     prices?: PriceEntryUpdateManyWithoutCardNestedInput
+    priceSummary?: CardPriceChangeSummaryUpdateManyWithoutCardNestedInput
   }
 
   export type CardUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     data?: JsonNullValueInput | InputJsonValue
     prices?: PriceEntryUncheckedUpdateManyWithoutCardNestedInput
+    priceSummary?: CardPriceChangeSummaryUncheckedUpdateManyWithoutCardNestedInput
   }
 
   export type CardCreateManyInput = {
@@ -5866,6 +7273,7 @@ export namespace Prisma {
 
   export type PriceEntryCreateInput = {
     price: number
+    quantity?: number | null
     date?: Date | string
     card: CardCreateNestedOneWithoutPricesInput
   }
@@ -5874,11 +7282,13 @@ export namespace Prisma {
     id?: number
     cardId: string
     price: number
+    quantity?: number | null
     date?: Date | string
   }
 
   export type PriceEntryUpdateInput = {
     price?: FloatFieldUpdateOperationsInput | number
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     card?: CardUpdateOneRequiredWithoutPricesNestedInput
   }
@@ -5887,6 +7297,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     cardId?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -5894,11 +7305,13 @@ export namespace Prisma {
     id?: number
     cardId: string
     price: number
+    quantity?: number | null
     date?: Date | string
   }
 
   export type PriceEntryUpdateManyMutationInput = {
     price?: FloatFieldUpdateOperationsInput | number
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -5906,7 +7319,81 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     cardId?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CardPriceChangeSummaryCreateInput = {
+    setId?: string | null
+    series?: string | null
+    timeframe: string
+    type: string
+    changePct: number
+    createdAt?: Date | string
+    card: CardCreateNestedOneWithoutPriceSummaryInput
+  }
+
+  export type CardPriceChangeSummaryUncheckedCreateInput = {
+    id?: number
+    setId?: string | null
+    series?: string | null
+    timeframe: string
+    type: string
+    cardId: string
+    changePct: number
+    createdAt?: Date | string
+  }
+
+  export type CardPriceChangeSummaryUpdateInput = {
+    setId?: NullableStringFieldUpdateOperationsInput | string | null
+    series?: NullableStringFieldUpdateOperationsInput | string | null
+    timeframe?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    changePct?: FloatFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    card?: CardUpdateOneRequiredWithoutPriceSummaryNestedInput
+  }
+
+  export type CardPriceChangeSummaryUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    setId?: NullableStringFieldUpdateOperationsInput | string | null
+    series?: NullableStringFieldUpdateOperationsInput | string | null
+    timeframe?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    cardId?: StringFieldUpdateOperationsInput | string
+    changePct?: FloatFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CardPriceChangeSummaryCreateManyInput = {
+    id?: number
+    setId?: string | null
+    series?: string | null
+    timeframe: string
+    type: string
+    cardId: string
+    changePct: number
+    createdAt?: Date | string
+  }
+
+  export type CardPriceChangeSummaryUpdateManyMutationInput = {
+    setId?: NullableStringFieldUpdateOperationsInput | string | null
+    series?: NullableStringFieldUpdateOperationsInput | string | null
+    timeframe?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    changePct?: FloatFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CardPriceChangeSummaryUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    setId?: NullableStringFieldUpdateOperationsInput | string | null
+    series?: NullableStringFieldUpdateOperationsInput | string | null
+    timeframe?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    cardId?: StringFieldUpdateOperationsInput | string
+    changePct?: FloatFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type SealedCreateInput = {
@@ -5961,6 +7448,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
     sealed: SealedCreateNestedOneWithoutPricesInput
   }
 
@@ -5971,6 +7459,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUpdateInput = {
@@ -5979,6 +7468,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     sealed?: SealedUpdateOneRequiredWithoutPricesNestedInput
   }
 
@@ -5989,6 +7479,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryCreateManyInput = {
@@ -5998,6 +7489,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUpdateManyMutationInput = {
@@ -6006,6 +7498,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryUncheckedUpdateManyInput = {
@@ -6015,6 +7508,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -6061,7 +7555,17 @@ export namespace Prisma {
     none?: PriceEntryWhereInput
   }
 
+  export type CardPriceChangeSummaryListRelationFilter = {
+    every?: CardPriceChangeSummaryWhereInput
+    some?: CardPriceChangeSummaryWhereInput
+    none?: CardPriceChangeSummaryWhereInput
+  }
+
   export type PriceEntryOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type CardPriceChangeSummaryOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -6144,6 +7648,17 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -6160,6 +7675,11 @@ export namespace Prisma {
     isNot?: CardWhereInput
   }
 
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
+  }
+
   export type PriceEntryCardIdDateCompoundUniqueInput = {
     cardId: string
     date: Date | string
@@ -6169,18 +7689,21 @@ export namespace Prisma {
     id?: SortOrder
     cardId?: SortOrder
     price?: SortOrder
+    quantity?: SortOrder
     date?: SortOrder
   }
 
   export type PriceEntryAvgOrderByAggregateInput = {
     id?: SortOrder
     price?: SortOrder
+    quantity?: SortOrder
   }
 
   export type PriceEntryMaxOrderByAggregateInput = {
     id?: SortOrder
     cardId?: SortOrder
     price?: SortOrder
+    quantity?: SortOrder
     date?: SortOrder
   }
 
@@ -6188,12 +7711,14 @@ export namespace Prisma {
     id?: SortOrder
     cardId?: SortOrder
     price?: SortOrder
+    quantity?: SortOrder
     date?: SortOrder
   }
 
   export type PriceEntrySumOrderByAggregateInput = {
     id?: SortOrder
     price?: SortOrder
+    quantity?: SortOrder
   }
 
   export type IntWithAggregatesFilter<$PrismaModel = never> = {
@@ -6228,6 +7753,22 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -6240,6 +7781,82 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type CardPriceChangeSummaryCountOrderByAggregateInput = {
+    id?: SortOrder
+    setId?: SortOrder
+    series?: SortOrder
+    timeframe?: SortOrder
+    type?: SortOrder
+    cardId?: SortOrder
+    changePct?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type CardPriceChangeSummaryAvgOrderByAggregateInput = {
+    id?: SortOrder
+    changePct?: SortOrder
+  }
+
+  export type CardPriceChangeSummaryMaxOrderByAggregateInput = {
+    id?: SortOrder
+    setId?: SortOrder
+    series?: SortOrder
+    timeframe?: SortOrder
+    type?: SortOrder
+    cardId?: SortOrder
+    changePct?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type CardPriceChangeSummaryMinOrderByAggregateInput = {
+    id?: SortOrder
+    setId?: SortOrder
+    series?: SortOrder
+    timeframe?: SortOrder
+    type?: SortOrder
+    cardId?: SortOrder
+    changePct?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type CardPriceChangeSummarySumOrderByAggregateInput = {
+    id?: SortOrder
+    changePct?: SortOrder
+  }
+
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type SealedPriceEntryListRelationFilter = {
@@ -6275,6 +7892,11 @@ export namespace Prisma {
     isNot?: SealedWhereInput
   }
 
+  export type SealedPriceEntryTitleSoldAtCompoundUniqueInput = {
+    title: string
+    soldAt: Date | string
+  }
+
   export type SealedPriceEntryCountOrderByAggregateInput = {
     id?: SortOrder
     sealedId?: SortOrder
@@ -6282,6 +7904,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrder
   }
 
   export type SealedPriceEntryAvgOrderByAggregateInput = {
@@ -6295,6 +7918,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrder
   }
 
   export type SealedPriceEntryMinOrderByAggregateInput = {
@@ -6304,6 +7928,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrder
   }
 
   export type SealedPriceEntrySumOrderByAggregateInput = {
@@ -6317,11 +7942,25 @@ export namespace Prisma {
     connect?: PriceEntryWhereUniqueInput | PriceEntryWhereUniqueInput[]
   }
 
+  export type CardPriceChangeSummaryCreateNestedManyWithoutCardInput = {
+    create?: XOR<CardPriceChangeSummaryCreateWithoutCardInput, CardPriceChangeSummaryUncheckedCreateWithoutCardInput> | CardPriceChangeSummaryCreateWithoutCardInput[] | CardPriceChangeSummaryUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardPriceChangeSummaryCreateOrConnectWithoutCardInput | CardPriceChangeSummaryCreateOrConnectWithoutCardInput[]
+    createMany?: CardPriceChangeSummaryCreateManyCardInputEnvelope
+    connect?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+  }
+
   export type PriceEntryUncheckedCreateNestedManyWithoutCardInput = {
     create?: XOR<PriceEntryCreateWithoutCardInput, PriceEntryUncheckedCreateWithoutCardInput> | PriceEntryCreateWithoutCardInput[] | PriceEntryUncheckedCreateWithoutCardInput[]
     connectOrCreate?: PriceEntryCreateOrConnectWithoutCardInput | PriceEntryCreateOrConnectWithoutCardInput[]
     createMany?: PriceEntryCreateManyCardInputEnvelope
     connect?: PriceEntryWhereUniqueInput | PriceEntryWhereUniqueInput[]
+  }
+
+  export type CardPriceChangeSummaryUncheckedCreateNestedManyWithoutCardInput = {
+    create?: XOR<CardPriceChangeSummaryCreateWithoutCardInput, CardPriceChangeSummaryUncheckedCreateWithoutCardInput> | CardPriceChangeSummaryCreateWithoutCardInput[] | CardPriceChangeSummaryUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardPriceChangeSummaryCreateOrConnectWithoutCardInput | CardPriceChangeSummaryCreateOrConnectWithoutCardInput[]
+    createMany?: CardPriceChangeSummaryCreateManyCardInputEnvelope
+    connect?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -6342,6 +7981,20 @@ export namespace Prisma {
     deleteMany?: PriceEntryScalarWhereInput | PriceEntryScalarWhereInput[]
   }
 
+  export type CardPriceChangeSummaryUpdateManyWithoutCardNestedInput = {
+    create?: XOR<CardPriceChangeSummaryCreateWithoutCardInput, CardPriceChangeSummaryUncheckedCreateWithoutCardInput> | CardPriceChangeSummaryCreateWithoutCardInput[] | CardPriceChangeSummaryUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardPriceChangeSummaryCreateOrConnectWithoutCardInput | CardPriceChangeSummaryCreateOrConnectWithoutCardInput[]
+    upsert?: CardPriceChangeSummaryUpsertWithWhereUniqueWithoutCardInput | CardPriceChangeSummaryUpsertWithWhereUniqueWithoutCardInput[]
+    createMany?: CardPriceChangeSummaryCreateManyCardInputEnvelope
+    set?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    disconnect?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    delete?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    connect?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    update?: CardPriceChangeSummaryUpdateWithWhereUniqueWithoutCardInput | CardPriceChangeSummaryUpdateWithWhereUniqueWithoutCardInput[]
+    updateMany?: CardPriceChangeSummaryUpdateManyWithWhereWithoutCardInput | CardPriceChangeSummaryUpdateManyWithWhereWithoutCardInput[]
+    deleteMany?: CardPriceChangeSummaryScalarWhereInput | CardPriceChangeSummaryScalarWhereInput[]
+  }
+
   export type PriceEntryUncheckedUpdateManyWithoutCardNestedInput = {
     create?: XOR<PriceEntryCreateWithoutCardInput, PriceEntryUncheckedCreateWithoutCardInput> | PriceEntryCreateWithoutCardInput[] | PriceEntryUncheckedCreateWithoutCardInput[]
     connectOrCreate?: PriceEntryCreateOrConnectWithoutCardInput | PriceEntryCreateOrConnectWithoutCardInput[]
@@ -6356,6 +8009,20 @@ export namespace Prisma {
     deleteMany?: PriceEntryScalarWhereInput | PriceEntryScalarWhereInput[]
   }
 
+  export type CardPriceChangeSummaryUncheckedUpdateManyWithoutCardNestedInput = {
+    create?: XOR<CardPriceChangeSummaryCreateWithoutCardInput, CardPriceChangeSummaryUncheckedCreateWithoutCardInput> | CardPriceChangeSummaryCreateWithoutCardInput[] | CardPriceChangeSummaryUncheckedCreateWithoutCardInput[]
+    connectOrCreate?: CardPriceChangeSummaryCreateOrConnectWithoutCardInput | CardPriceChangeSummaryCreateOrConnectWithoutCardInput[]
+    upsert?: CardPriceChangeSummaryUpsertWithWhereUniqueWithoutCardInput | CardPriceChangeSummaryUpsertWithWhereUniqueWithoutCardInput[]
+    createMany?: CardPriceChangeSummaryCreateManyCardInputEnvelope
+    set?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    disconnect?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    delete?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    connect?: CardPriceChangeSummaryWhereUniqueInput | CardPriceChangeSummaryWhereUniqueInput[]
+    update?: CardPriceChangeSummaryUpdateWithWhereUniqueWithoutCardInput | CardPriceChangeSummaryUpdateWithWhereUniqueWithoutCardInput[]
+    updateMany?: CardPriceChangeSummaryUpdateManyWithWhereWithoutCardInput | CardPriceChangeSummaryUpdateManyWithWhereWithoutCardInput[]
+    deleteMany?: CardPriceChangeSummaryScalarWhereInput | CardPriceChangeSummaryScalarWhereInput[]
+  }
+
   export type CardCreateNestedOneWithoutPricesInput = {
     create?: XOR<CardCreateWithoutPricesInput, CardUncheckedCreateWithoutPricesInput>
     connectOrCreate?: CardCreateOrConnectWithoutPricesInput
@@ -6364,6 +8031,14 @@ export namespace Prisma {
 
   export type FloatFieldUpdateOperationsInput = {
     set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
     increment?: number
     decrement?: number
     multiply?: number
@@ -6388,6 +8063,24 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
+  }
+
+  export type CardCreateNestedOneWithoutPriceSummaryInput = {
+    create?: XOR<CardCreateWithoutPriceSummaryInput, CardUncheckedCreateWithoutPriceSummaryInput>
+    connectOrCreate?: CardCreateOrConnectWithoutPriceSummaryInput
+    connect?: CardWhereUniqueInput
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
+  export type CardUpdateOneRequiredWithoutPriceSummaryNestedInput = {
+    create?: XOR<CardCreateWithoutPriceSummaryInput, CardUncheckedCreateWithoutPriceSummaryInput>
+    connectOrCreate?: CardCreateOrConnectWithoutPriceSummaryInput
+    upsert?: CardUpsertWithoutPriceSummaryInput
+    connect?: CardWhereUniqueInput
+    update?: XOR<XOR<CardUpdateToOneWithWhereWithoutPriceSummaryInput, CardUpdateWithoutPriceSummaryInput>, CardUncheckedUpdateWithoutPriceSummaryInput>
   }
 
   export type SealedPriceEntryCreateNestedManyWithoutSealedInput = {
@@ -6522,6 +8215,17 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -6565,6 +8269,33 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -6579,14 +8310,47 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
   export type PriceEntryCreateWithoutCardInput = {
     price: number
+    quantity?: number | null
     date?: Date | string
   }
 
   export type PriceEntryUncheckedCreateWithoutCardInput = {
     id?: number
     price: number
+    quantity?: number | null
     date?: Date | string
   }
 
@@ -6597,6 +8361,35 @@ export namespace Prisma {
 
   export type PriceEntryCreateManyCardInputEnvelope = {
     data: PriceEntryCreateManyCardInput | PriceEntryCreateManyCardInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type CardPriceChangeSummaryCreateWithoutCardInput = {
+    setId?: string | null
+    series?: string | null
+    timeframe: string
+    type: string
+    changePct: number
+    createdAt?: Date | string
+  }
+
+  export type CardPriceChangeSummaryUncheckedCreateWithoutCardInput = {
+    id?: number
+    setId?: string | null
+    series?: string | null
+    timeframe: string
+    type: string
+    changePct: number
+    createdAt?: Date | string
+  }
+
+  export type CardPriceChangeSummaryCreateOrConnectWithoutCardInput = {
+    where: CardPriceChangeSummaryWhereUniqueInput
+    create: XOR<CardPriceChangeSummaryCreateWithoutCardInput, CardPriceChangeSummaryUncheckedCreateWithoutCardInput>
+  }
+
+  export type CardPriceChangeSummaryCreateManyCardInputEnvelope = {
+    data: CardPriceChangeSummaryCreateManyCardInput | CardPriceChangeSummaryCreateManyCardInput[]
     skipDuplicates?: boolean
   }
 
@@ -6623,17 +8416,50 @@ export namespace Prisma {
     id?: IntFilter<"PriceEntry"> | number
     cardId?: StringFilter<"PriceEntry"> | string
     price?: FloatFilter<"PriceEntry"> | number
+    quantity?: IntNullableFilter<"PriceEntry"> | number | null
     date?: DateTimeFilter<"PriceEntry"> | Date | string
+  }
+
+  export type CardPriceChangeSummaryUpsertWithWhereUniqueWithoutCardInput = {
+    where: CardPriceChangeSummaryWhereUniqueInput
+    update: XOR<CardPriceChangeSummaryUpdateWithoutCardInput, CardPriceChangeSummaryUncheckedUpdateWithoutCardInput>
+    create: XOR<CardPriceChangeSummaryCreateWithoutCardInput, CardPriceChangeSummaryUncheckedCreateWithoutCardInput>
+  }
+
+  export type CardPriceChangeSummaryUpdateWithWhereUniqueWithoutCardInput = {
+    where: CardPriceChangeSummaryWhereUniqueInput
+    data: XOR<CardPriceChangeSummaryUpdateWithoutCardInput, CardPriceChangeSummaryUncheckedUpdateWithoutCardInput>
+  }
+
+  export type CardPriceChangeSummaryUpdateManyWithWhereWithoutCardInput = {
+    where: CardPriceChangeSummaryScalarWhereInput
+    data: XOR<CardPriceChangeSummaryUpdateManyMutationInput, CardPriceChangeSummaryUncheckedUpdateManyWithoutCardInput>
+  }
+
+  export type CardPriceChangeSummaryScalarWhereInput = {
+    AND?: CardPriceChangeSummaryScalarWhereInput | CardPriceChangeSummaryScalarWhereInput[]
+    OR?: CardPriceChangeSummaryScalarWhereInput[]
+    NOT?: CardPriceChangeSummaryScalarWhereInput | CardPriceChangeSummaryScalarWhereInput[]
+    id?: IntFilter<"CardPriceChangeSummary"> | number
+    setId?: StringNullableFilter<"CardPriceChangeSummary"> | string | null
+    series?: StringNullableFilter<"CardPriceChangeSummary"> | string | null
+    timeframe?: StringFilter<"CardPriceChangeSummary"> | string
+    type?: StringFilter<"CardPriceChangeSummary"> | string
+    cardId?: StringFilter<"CardPriceChangeSummary"> | string
+    changePct?: FloatFilter<"CardPriceChangeSummary"> | number
+    createdAt?: DateTimeFilter<"CardPriceChangeSummary"> | Date | string
   }
 
   export type CardCreateWithoutPricesInput = {
     id: string
     data: JsonNullValueInput | InputJsonValue
+    priceSummary?: CardPriceChangeSummaryCreateNestedManyWithoutCardInput
   }
 
   export type CardUncheckedCreateWithoutPricesInput = {
     id: string
     data: JsonNullValueInput | InputJsonValue
+    priceSummary?: CardPriceChangeSummaryUncheckedCreateNestedManyWithoutCardInput
   }
 
   export type CardCreateOrConnectWithoutPricesInput = {
@@ -6655,11 +8481,53 @@ export namespace Prisma {
   export type CardUpdateWithoutPricesInput = {
     id?: StringFieldUpdateOperationsInput | string
     data?: JsonNullValueInput | InputJsonValue
+    priceSummary?: CardPriceChangeSummaryUpdateManyWithoutCardNestedInput
   }
 
   export type CardUncheckedUpdateWithoutPricesInput = {
     id?: StringFieldUpdateOperationsInput | string
     data?: JsonNullValueInput | InputJsonValue
+    priceSummary?: CardPriceChangeSummaryUncheckedUpdateManyWithoutCardNestedInput
+  }
+
+  export type CardCreateWithoutPriceSummaryInput = {
+    id: string
+    data: JsonNullValueInput | InputJsonValue
+    prices?: PriceEntryCreateNestedManyWithoutCardInput
+  }
+
+  export type CardUncheckedCreateWithoutPriceSummaryInput = {
+    id: string
+    data: JsonNullValueInput | InputJsonValue
+    prices?: PriceEntryUncheckedCreateNestedManyWithoutCardInput
+  }
+
+  export type CardCreateOrConnectWithoutPriceSummaryInput = {
+    where: CardWhereUniqueInput
+    create: XOR<CardCreateWithoutPriceSummaryInput, CardUncheckedCreateWithoutPriceSummaryInput>
+  }
+
+  export type CardUpsertWithoutPriceSummaryInput = {
+    update: XOR<CardUpdateWithoutPriceSummaryInput, CardUncheckedUpdateWithoutPriceSummaryInput>
+    create: XOR<CardCreateWithoutPriceSummaryInput, CardUncheckedCreateWithoutPriceSummaryInput>
+    where?: CardWhereInput
+  }
+
+  export type CardUpdateToOneWithWhereWithoutPriceSummaryInput = {
+    where?: CardWhereInput
+    data: XOR<CardUpdateWithoutPriceSummaryInput, CardUncheckedUpdateWithoutPriceSummaryInput>
+  }
+
+  export type CardUpdateWithoutPriceSummaryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    data?: JsonNullValueInput | InputJsonValue
+    prices?: PriceEntryUpdateManyWithoutCardNestedInput
+  }
+
+  export type CardUncheckedUpdateWithoutPriceSummaryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    data?: JsonNullValueInput | InputJsonValue
+    prices?: PriceEntryUncheckedUpdateManyWithoutCardNestedInput
   }
 
   export type SealedPriceEntryCreateWithoutSealedInput = {
@@ -6668,6 +8536,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUncheckedCreateWithoutSealedInput = {
@@ -6676,6 +8545,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryCreateOrConnectWithoutSealedInput = {
@@ -6714,6 +8584,7 @@ export namespace Prisma {
     title?: StringFilter<"SealedPriceEntry"> | string
     url?: StringFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableFilter<"SealedPriceEntry"> | string | null
   }
 
   export type SealedCreateWithoutPricesInput = {
@@ -6759,24 +8630,67 @@ export namespace Prisma {
   export type PriceEntryCreateManyCardInput = {
     id?: number
     price: number
+    quantity?: number | null
     date?: Date | string
+  }
+
+  export type CardPriceChangeSummaryCreateManyCardInput = {
+    id?: number
+    setId?: string | null
+    series?: string | null
+    timeframe: string
+    type: string
+    changePct: number
+    createdAt?: Date | string
   }
 
   export type PriceEntryUpdateWithoutCardInput = {
     price?: FloatFieldUpdateOperationsInput | number
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PriceEntryUncheckedUpdateWithoutCardInput = {
     id?: IntFieldUpdateOperationsInput | number
     price?: FloatFieldUpdateOperationsInput | number
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PriceEntryUncheckedUpdateManyWithoutCardInput = {
     id?: IntFieldUpdateOperationsInput | number
     price?: FloatFieldUpdateOperationsInput | number
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
     date?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CardPriceChangeSummaryUpdateWithoutCardInput = {
+    setId?: NullableStringFieldUpdateOperationsInput | string | null
+    series?: NullableStringFieldUpdateOperationsInput | string | null
+    timeframe?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    changePct?: FloatFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CardPriceChangeSummaryUncheckedUpdateWithoutCardInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    setId?: NullableStringFieldUpdateOperationsInput | string | null
+    series?: NullableStringFieldUpdateOperationsInput | string | null
+    timeframe?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    changePct?: FloatFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CardPriceChangeSummaryUncheckedUpdateManyWithoutCardInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    setId?: NullableStringFieldUpdateOperationsInput | string | null
+    series?: NullableStringFieldUpdateOperationsInput | string | null
+    timeframe?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    changePct?: FloatFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type SealedPriceEntryCreateManySealedInput = {
@@ -6785,6 +8699,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUpdateWithoutSealedInput = {
@@ -6793,6 +8708,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryUncheckedUpdateWithoutSealedInput = {
@@ -6801,6 +8717,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryUncheckedUpdateManyWithoutSealedInput = {
@@ -6809,6 +8726,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 

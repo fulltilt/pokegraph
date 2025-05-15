@@ -60,6 +60,7 @@ model SealedPriceEntry {
   title    String
   url      String
   soldAt   DateTime
+  label    String? // "keep" | "remove"
 
   sealed Sealed @relation(fields: [sealedId], references: [id])
 

@@ -108,3 +108,16 @@ type TCGPriceDetails = {
   market: number;
   directLow: number | null;
 };
+
+export type Label = "keep" | "remove" | null;
+
+export interface SealedPriceEntry {
+  id: string;
+  sealedId: string;
+  product: string; // from joined Sealed.product
+  price: number;
+  title: string;
+  url: string;
+  soldAt: string;
+  label: Label;
+}

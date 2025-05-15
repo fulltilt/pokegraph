@@ -46,7 +46,7 @@ async function sleep(time: number) {
 
 async function fetchPage(id: string) {
   const res = await fetch(
-    `https://infinite-api.tcgplayer.com/price/history/${id}/detailed?range=monthly`,
+    `https://infinite-api.tcgplayer.com/price/history/${id}/detailed?range=month`,
     {
       headers: {
         "User-Agent":

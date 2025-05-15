@@ -5664,6 +5664,7 @@ export namespace Prisma {
     title: string | null
     url: string | null
     soldAt: Date | null
+    label: string | null
   }
 
   export type SealedPriceEntryMaxAggregateOutputType = {
@@ -5673,6 +5674,7 @@ export namespace Prisma {
     title: string | null
     url: string | null
     soldAt: Date | null
+    label: string | null
   }
 
   export type SealedPriceEntryCountAggregateOutputType = {
@@ -5682,6 +5684,7 @@ export namespace Prisma {
     title: number
     url: number
     soldAt: number
+    label: number
     _all: number
   }
 
@@ -5701,6 +5704,7 @@ export namespace Prisma {
     title?: true
     url?: true
     soldAt?: true
+    label?: true
   }
 
   export type SealedPriceEntryMaxAggregateInputType = {
@@ -5710,6 +5714,7 @@ export namespace Prisma {
     title?: true
     url?: true
     soldAt?: true
+    label?: true
   }
 
   export type SealedPriceEntryCountAggregateInputType = {
@@ -5719,6 +5724,7 @@ export namespace Prisma {
     title?: true
     url?: true
     soldAt?: true
+    label?: true
     _all?: true
   }
 
@@ -5815,6 +5821,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date
+    label: string | null
     _count: SealedPriceEntryCountAggregateOutputType | null
     _avg: SealedPriceEntryAvgAggregateOutputType | null
     _sum: SealedPriceEntrySumAggregateOutputType | null
@@ -5843,6 +5850,7 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["sealedPriceEntry"]>
 
@@ -5853,6 +5861,7 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["sealedPriceEntry"]>
 
@@ -5863,6 +5872,7 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["sealedPriceEntry"]>
 
@@ -5873,9 +5883,10 @@ export namespace Prisma {
     title?: boolean
     url?: boolean
     soldAt?: boolean
+    label?: boolean
   }
 
-  export type SealedPriceEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "sealedId" | "price" | "title" | "url" | "soldAt", ExtArgs["result"]["sealedPriceEntry"]>
+  export type SealedPriceEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "sealedId" | "price" | "title" | "url" | "soldAt" | "label", ExtArgs["result"]["sealedPriceEntry"]>
   export type SealedPriceEntryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sealed?: boolean | SealedDefaultArgs<ExtArgs>
   }
@@ -5898,6 +5909,7 @@ export namespace Prisma {
       title: string
       url: string
       soldAt: Date
+      label: string | null
     }, ExtArgs["result"]["sealedPriceEntry"]>
     composites: {}
   }
@@ -6328,6 +6340,7 @@ export namespace Prisma {
     readonly title: FieldRef<"SealedPriceEntry", 'String'>
     readonly url: FieldRef<"SealedPriceEntry", 'String'>
     readonly soldAt: FieldRef<"SealedPriceEntry", 'DateTime'>
+    readonly label: FieldRef<"SealedPriceEntry", 'String'>
   }
     
 
@@ -6804,7 +6817,8 @@ export namespace Prisma {
     price: 'price',
     title: 'title',
     url: 'url',
-    soldAt: 'soldAt'
+    soldAt: 'soldAt',
+    label: 'label'
   };
 
   export type SealedPriceEntryScalarFieldEnum = (typeof SealedPriceEntryScalarFieldEnum)[keyof typeof SealedPriceEntryScalarFieldEnum]
@@ -7156,6 +7170,7 @@ export namespace Prisma {
     title?: StringFilter<"SealedPriceEntry"> | string
     url?: StringFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableFilter<"SealedPriceEntry"> | string | null
     sealed?: XOR<SealedScalarRelationFilter, SealedWhereInput>
   }
 
@@ -7166,6 +7181,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrderInput | SortOrder
     sealed?: SealedOrderByWithRelationInput
   }
 
@@ -7180,6 +7196,7 @@ export namespace Prisma {
     title?: StringFilter<"SealedPriceEntry"> | string
     url?: StringFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableFilter<"SealedPriceEntry"> | string | null
     sealed?: XOR<SealedScalarRelationFilter, SealedWhereInput>
   }, "id" | "title_soldAt">
 
@@ -7190,6 +7207,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrderInput | SortOrder
     _count?: SealedPriceEntryCountOrderByAggregateInput
     _avg?: SealedPriceEntryAvgOrderByAggregateInput
     _max?: SealedPriceEntryMaxOrderByAggregateInput
@@ -7207,6 +7225,7 @@ export namespace Prisma {
     title?: StringWithAggregatesFilter<"SealedPriceEntry"> | string
     url?: StringWithAggregatesFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeWithAggregatesFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableWithAggregatesFilter<"SealedPriceEntry"> | string | null
   }
 
   export type CardCreateInput = {
@@ -7429,6 +7448,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
     sealed: SealedCreateNestedOneWithoutPricesInput
   }
 
@@ -7439,6 +7459,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUpdateInput = {
@@ -7447,6 +7468,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
     sealed?: SealedUpdateOneRequiredWithoutPricesNestedInput
   }
 
@@ -7457,6 +7479,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryCreateManyInput = {
@@ -7466,6 +7489,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUpdateManyMutationInput = {
@@ -7474,6 +7498,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryUncheckedUpdateManyInput = {
@@ -7483,6 +7508,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -7878,6 +7904,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrder
   }
 
   export type SealedPriceEntryAvgOrderByAggregateInput = {
@@ -7891,6 +7918,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrder
   }
 
   export type SealedPriceEntryMinOrderByAggregateInput = {
@@ -7900,6 +7928,7 @@ export namespace Prisma {
     title?: SortOrder
     url?: SortOrder
     soldAt?: SortOrder
+    label?: SortOrder
   }
 
   export type SealedPriceEntrySumOrderByAggregateInput = {
@@ -8507,6 +8536,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUncheckedCreateWithoutSealedInput = {
@@ -8515,6 +8545,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryCreateOrConnectWithoutSealedInput = {
@@ -8553,6 +8584,7 @@ export namespace Prisma {
     title?: StringFilter<"SealedPriceEntry"> | string
     url?: StringFilter<"SealedPriceEntry"> | string
     soldAt?: DateTimeFilter<"SealedPriceEntry"> | Date | string
+    label?: StringNullableFilter<"SealedPriceEntry"> | string | null
   }
 
   export type SealedCreateWithoutPricesInput = {
@@ -8667,6 +8699,7 @@ export namespace Prisma {
     title: string
     url: string
     soldAt: Date | string
+    label?: string | null
   }
 
   export type SealedPriceEntryUpdateWithoutSealedInput = {
@@ -8675,6 +8708,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryUncheckedUpdateWithoutSealedInput = {
@@ -8683,6 +8717,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SealedPriceEntryUncheckedUpdateManyWithoutSealedInput = {
@@ -8691,6 +8726,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
     soldAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    label?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 

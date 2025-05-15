@@ -129,7 +129,19 @@ exports.Prisma.PriceEntryScalarFieldEnum = {
   id: 'id',
   cardId: 'cardId',
   price: 'price',
+  quantity: 'quantity',
   date: 'date'
+};
+
+exports.Prisma.CardPriceChangeSummaryScalarFieldEnum = {
+  id: 'id',
+  setId: 'setId',
+  series: 'series',
+  timeframe: 'timeframe',
+  type: 'type',
+  cardId: 'cardId',
+  changePct: 'changePct',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.SealedScalarFieldEnum = {
@@ -144,7 +156,8 @@ exports.Prisma.SealedPriceEntryScalarFieldEnum = {
   price: 'price',
   title: 'title',
   url: 'url',
-  soldAt: 'soldAt'
+  soldAt: 'soldAt',
+  label: 'label'
 };
 
 exports.Prisma.SortOrder = {
@@ -167,10 +180,16 @@ exports.Prisma.JsonNullValueFilter = {
   AnyNull: Prisma.AnyNull
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
   Card: 'Card',
   PriceEntry: 'PriceEntry',
+  CardPriceChangeSummary: 'CardPriceChangeSummary',
   Sealed: 'Sealed',
   SealedPriceEntry: 'SealedPriceEntry'
 };

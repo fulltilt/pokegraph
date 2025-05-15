@@ -34,7 +34,7 @@ services:
     volumes:
       - ./frontend:/app
     working_dir: /app
-    command: ["npm", "run", "dev"]
+    command: ["bun", "run", "dev"]
 
 volumes:
   pgdata:

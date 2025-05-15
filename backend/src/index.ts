@@ -62,7 +62,13 @@ app.get(
           mode: "insensitive", // makes the match case-insensitive. Can't use findUnique
         },
       },
-      include: { prices: true },
+      include: {
+        prices: {
+          orderBy: {
+            soldAt: "asc",
+          },
+        },
+      },
     });
 
     if (!sealed) {
@@ -182,7 +188,7 @@ app.get("/api/card/history/:id", async (req, res) => {
 
 app.get("/api/cards-search", async (req, res) => {
   const name = req.query.name as string;
-  console.log(name);
+
   if (!name) {
     res.status(400).json({ error: "Missing card name" });
     return;
@@ -199,7 +205,7 @@ app.get("/api/cards-search", async (req, res) => {
     `,
       name
     );
-    console.log(results);
+
     res.json(results);
   } catch (err) {
     console.error("Search failed:", err);
@@ -224,56 +230,6 @@ app.get("/api/cards/:id", async (req, res) => {
   res.json(card);
 });
 
-// WITH price_bounds AS (
-//   SELECT
-//     c.id AS card_id,
-//     (c.data->'set'->>'id') AS set_id,
-//     (c.data->'set'->>'name') AS set_name,
-//     (c.data->'name') AS card_name,
-//     (c.data->'images'->>'large') AS image,
-//     (c.data->'set'->>'releaseDate') AS release_date,
-//     MIN(p.date) FILTER (WHERE p.date >= NOW() - INTERVAL '10 days') AS earliest_date,
-//     MAX(p.date) FILTER (WHERE p.date >= NOW() - INTERVAL '10 days') AS latest_date
-//   FROM "Card" c
-//   JOIN "PriceEntry" p ON p."cardId" = c.id
-//   WHERE p.date >= NOW() - INTERVAL '10 days'
-//     AND (c.data->'set'->>'series') IN ('Sun & Moon', 'Sword & Shield', 'Scarlet & Violet')
-//   GROUP BY c.id, set_id, set_name, card_name, image
-// ),
-// price_changes AS (
-//   SELECT
-//     pb.set_id,
-//     pb.set_name,
-//     pb.card_id,
-//     pb.card_name,
-//     pb.image,
-//     pb.release_date,
-//     MIN(p1.price) FILTER (WHERE p1.date = pb.earliest_date) AS early_price,
-//     MAX(p2.price) FILTER (WHERE p2.date = pb.latest_date) AS recent_price
-//   FROM price_bounds pb
-//   JOIN "PriceEntry" p1 ON p1."cardId" = pb.card_id
-//   JOIN "PriceEntry" p2 ON p2."cardId" = pb.card_id
-//   GROUP BY pb.set_id, pb.set_name, pb.card_id, pb.card_name, pb.image, pb.release_date
-// ),
-// with_percent_change AS (
-//   SELECT
-//     *,
-//     ROUND(((recent_price - early_price) / NULLIF(early_price, 0) * 100)::numeric, 2) AS percent_change
-//   FROM price_changes
-// )
-// SELECT DISTINCT ON (set_id)
-//   set_id,
-//   set_name,
-//   card_id,
-//   card_name,
-//   image,
-//   early_price,
-//   recent_price,
-//   release_date,
-//   percent_change
-// FROM with_percent_change
-// WHERE early_price != 0 AND recent_price != 0
-// ORDER BY set_id, percent_change ${order};
 app.get("/api/top-mover-per-set/:order", async (req, res) => {
   const { order } = req.params;
   const timeframe = req.query.timeframe || "10d";
@@ -287,7 +243,7 @@ app.get("/api/top-mover-per-set/:order", async (req, res) => {
   };
 
   const sqlInterval = intervalMap[timeframe as string] || "10 days";
-  console.log(sqlInterval);
+
   try {
     const result = await prisma.$queryRawUnsafe(
       `
@@ -312,6 +268,7 @@ app.get("/api/top-mover-per-set/:order", async (req, res) => {
         FROM "Card" c
         JOIN recent_prices p ON p."cardId" = c.id
         WHERE (c.data->'set'->>'series') IN ('Sun & Moon', 'Sword & Shield', 'Scarlet & Violet')
+          AND (c.data->'set'->>'id') NOT IN ('smp', 'swshp', 'svp')
         GROUP BY c.id, set_id, set_name, card_name, image, release_date
       ),
 
@@ -356,7 +313,7 @@ app.get("/api/top-mover-per-set/:order", async (req, res) => {
     `,
       sqlInterval
     );
-    console.log(result);
+
     res.json(result);
   } catch (err) {
     console.error(err);
@@ -471,126 +428,81 @@ app.get(
   }
 );
 
-// app.get("/api/top-gainers-per-set", async (req, res) => {
-//   const sets = req.query.sets;
+app.get("/api/sealed/unlabeled", async (req, res) => {
+  try {
+    const entries = await prisma.sealedPriceEntry.findMany({
+      where: { label: null },
+      include: {
+        sealed: {
+          select: { product: true },
+        },
+      },
+      take: 100, // optional: limit for performance
+      orderBy: { soldAt: "desc" },
+    });
 
-//   if (!sets || typeof sets !== "string") {
-//     res.status(400).json({ error: "Missing or invalid 'sets' query param." });
-//     return;
-//   }
+    const result = entries.map((entry) => ({
+      id: entry.id,
+      sealedId: entry.sealedId,
+      title: entry.title,
+      price: entry.price,
+      url: entry.url,
+      soldAt: entry.soldAt,
+      label: entry.label,
+      product: entry.sealed.product,
+    }));
 
-//   try {
-//     const setIds = Array.isArray(sets) ? sets : sets.split(",");
-//     const placeholders = setIds.map((_, i) => `$${i + 1}`).join(", ");
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching unlabeled entries:", error);
+    res.status(500).json({ error: "Failed to fetch entries" });
+  }
+});
 
-//     const query = await prisma.$queryRawUnsafe(
-//       `
-//       WITH price_data AS (
-//     SELECT
-//       c.id::uuid AS card_id,
-//       (c.data->'set'->>'id') AS set_id,
-//       MIN(p.date) AS earliest_date,
-//       MAX(p.date) AS latest_date
-//     FROM "Card" c
-//     JOIN "PriceEntry" p ON p."cardId" = c.id
-//     WHERE p.date >= NOW() - INTERVAL '30 days'
-//       AND (c.data->'set'->>'name') IN (${placeholders})
-//     GROUP BY c.id, set_id
-//   ),
-//   price_changes AS (
-//     SELECT
-//       pd.set_id,
-//       pd.card_id,
-//       (
-//         SELECT price::numeric
-//         FROM "PriceEntry"
-//         WHERE "cardId" = pd.card_id::uuid AND date = pd.earliest_date
-//         LIMIT 1
-//       ) AS early_price,
-//       (
-//         SELECT price::numeric
-//         FROM "PriceEntry"
-//         WHERE "cardId" = pd.card_id::uuid AND date = pd.latest_date
-//         LIMIT 1
-//       ) AS recent_price
-//     FROM price_data pd
-//   ),
-//   with_percent_change AS (
-//     SELECT
-//       pc.set_id,
-//       pc.card_id,
-//       pc.early_price,
-//       pc.recent_price,
-//       ROUND(((pc.recent_price - pc.early_price) / NULLIF(pc.early_price, 0) * 100)::numeric, 2) AS percent_change
-//     FROM price_changes pc
-//   ),
-//   ranked_changes AS (
-//     SELECT *,
-//            ROW_NUMBER() OVER (PARTITION BY set_id ORDER BY percent_change DESC) AS rank
-//     FROM with_percent_change
-//   )
-//   SELECT
-//     set_id,
-//     card_id::text,
-//     early_price,
-//     recent_price,
-//     percent_change,
-//     rank
-//   FROM ranked_changes
-//   WHERE rank <= 10
-//   ORDER BY set_id, rank;
-//     `,
-//       ...setIds
-//     );
+app.post("/api/sealed/label", async (req, res) => {
+  const { id, label } = req.body;
 
-//     // try {
-//     //   const placeholders = setIds.map((_, i) => `$${i + 1}`).join(", ");
-//     //   console.log(setIds, placeholders);
-//     //   const query = `
-//     //     WITH price_points AS (
-//     //       SELECT
-//     //         c.id AS card_id,
-//     //         (c.data->'set'->>'id') AS set_id,
-//     //         MIN(p.date) FILTER (WHERE p.date >= NOW() - INTERVAL '10 days') AS earliest_date,
-//     //         MAX(p.date) FILTER (WHERE p.date >= NOW() - INTERVAL '10 days') AS latest_date
-//     //       FROM "Card" c
-//     //       JOIN "PriceEntry" p ON p."cardId" = c.id
-//     //       WHERE (c.data->'set'->>'name') IN (${placeholders})
-//     //         AND p.date >= NOW() - INTERVAL '10 days'
-//     //       GROUP BY c.id, set_id
-//     //     ),
-//     //     price_changes AS (
-//     //       SELECT
-//     //         pp.set_id,
-//     //         pp.card_id,
-//     //         MIN(p1.price) FILTER (WHERE p1.date = pp.earliest_date) AS early_price,
-//     //         MAX(p2.price) FILTER (WHERE p2.date = pp.latest_date) AS recent_price
-//     //       FROM price_points pp
-//     //       JOIN "PriceEntry" p1 ON p1."cardId" = pp.card_id
-//     //       JOIN "PriceEntry" p2 ON p2."cardId" = pp.card_id
-//     //       GROUP BY pp.set_id, pp.card_id
-//     //     ),
-//     //     with_percent_change AS (
-//     //       SELECT
-//     //         set_id,
-//     //         card_id,
-//     //         early_price,
-//     //         recent_price,
-//     //         ROUND(((recent_price - early_price) / NULLIF(early_price, 0) * 100)::numeric, 2) AS percent_change
-//     //       FROM price_changes
-//     //     )
-//     //     SELECT DISTINCT ON (set_id) *
-//     //     FROM with_percent_change
-//     //     WHERE early_price IS NOT NULL AND recent_price IS NOT NULL
-//     //     ORDER BY set_id, percent_change DESC;
-//     //   `;
+  if (!id || (label !== "keep" && label !== "remove")) {
+    res.status(400).json({ error: "Invalid id or label" });
+    return;
+  }
 
-//     res.json(query);
-//   } catch (error) {
-//     console.error("Error fetching top movers by set:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
+  try {
+    await prisma.sealedPriceEntry.update({
+      where: { id },
+      data: { label },
+    });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error labeling entry:", error);
+    res.status(500).json({ error: "Failed to label entry" });
+  }
+});
+
+app.get("/api/sealed/predictions", async (req, res) => {
+  const { label, search, page = 1, perPage = 20 } = req.query;
+  const where: any = {};
+
+  if (label) where.label = label;
+  if (search)
+    where.OR = [
+      { title: { contains: search, mode: "insensitive" } },
+      { sealed: { product: { contains: search, mode: "insensitive" } } },
+    ];
+
+  const items = await prisma.sealedPriceEntry.findMany({
+    where,
+    include: { sealed: true },
+    orderBy: { soldAt: "desc" },
+    skip: (+page - 1) * +perPage,
+    take: +perPage,
+  });
+
+  const total = await prisma.sealedPriceEntry.count({ where });
+
+  res.json({ items, total });
+});
 
 // Start the server
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;

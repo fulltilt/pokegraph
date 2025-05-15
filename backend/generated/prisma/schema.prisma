@@ -15,20 +15,35 @@ datasource db {
 }
 
 model Card {
-  id     String       @id
-  data   Json
-  prices PriceEntry[]
+  id           String                   @id
+  data         Json
+  prices       PriceEntry[]
+  priceSummary CardPriceChangeSummary[]
 }
 
 model PriceEntry {
-  id     Int      @id @default(autoincrement())
-  cardId String
-  price  Float
-  date   DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  cardId   String
+  price    Float
+  quantity Int?
+  date     DateTime @default(now())
 
   card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@unique([cardId, date]) // only one price per day can be entered
+}
+
+model CardPriceChangeSummary {
+  id        Int      @id @default(autoincrement())
+  setId     String? // For grouping by set
+  series    String? // For grouping by series
+  timeframe String // '10d', '1m', '6m', '1y', 'all'
+  type      String // 'gainer' or 'loser'
+  cardId    String // reference to Card
+  changePct Float
+  createdAt DateTime @default(now())
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 }
 
 model Sealed {
@@ -42,11 +57,13 @@ model SealedPriceEntry {
   id       String   @id @default(cuid())
   sealedId String
   price    Float
-  title    String   @unique
+  title    String
   url      String
   soldAt   DateTime
+  label    String? // "keep" | "remove"
 
   sealed Sealed @relation(fields: [sealedId], references: [id])
 
+  @@unique([title, soldAt]) // composite unique key
   @@index([sealedId])
 }

@@ -1,16 +1,24 @@
-import { Route, Routes } from "react-router-dom";
+// AppRoutes.tsx
+import { Routes, Route } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import Main from "./ui/Main";
 import Sets from "./ui/Sets";
 import Set from "./ui/Set";
-import Main from "./ui/Main";
 import Card from "./ui/Card";
+import Sealed from "./ui/Sealed";
+import Labeler from "./ui/Labeler";
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Main />} />
-      <Route path="/sets" element={<Sets />} />
-      <Route path="/sets/:id" element={<Set />} />
-      <Route path="/card/:id" element={<Card />} />
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Main />} />
+        <Route path="sets" element={<Sets />} />
+        <Route path="sets/:id" element={<Set />} />
+        <Route path="card/:id" element={<Card />} />
+        <Route path="sealed" element={<Sealed />} />
+        <Route path="label" element={<Labeler />} />
+      </Route>
     </Routes>
   );
 }
