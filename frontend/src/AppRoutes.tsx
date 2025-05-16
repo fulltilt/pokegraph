@@ -7,6 +7,7 @@ import Set from "./ui/Set";
 import Card from "./ui/Card";
 import Sealed from "./ui/Sealed";
 import Labeler from "./ui/Labeler";
+import Predictions from "./ui/Predictions";
 
 export function AppRoutes() {
   return (
@@ -18,6 +19,7 @@ export function AppRoutes() {
         <Route path="card/:id" element={<Card />} />
         <Route path="sealed" element={<Sealed />} />
         <Route path="label" element={<Labeler />} />
+        <Route path="predictions" element={<Predictions />} />
       </Route>
     </Routes>
   );

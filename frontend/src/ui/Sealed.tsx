@@ -10,6 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ComposedChart,
   Bar,
   Line,
@@ -27,11 +33,15 @@ import React from "react";
 import CardSearchInput from "@/components/CardSearchInput";
 import useSealedSearch from "@/hooks/useSealedSearch";
 
-const data = [...json.result[0].buckets].reverse().map((bucket) => ({
-  date: bucket.bucketStartDate,
-  quantitySold: Number(bucket.quantitySold),
-  marketPrice: Number(bucket.marketPrice),
-}));
+type PointData = {
+  id: string;
+  label: string;
+  price: number;
+  sealedId: string;
+  soldAt: string;
+  title: string;
+  url: string;
+};
 
 const timeframes = [
   { label: "10 Days", value: "10d" },
@@ -121,6 +131,7 @@ const sealed = [
 export default function Sealed() {
   const [product, setProduct] = useState("");
   const [range, setRange] = useState("all");
+  const [selectedPoint, setSelectedPoint] = useState<PointData | null>(null);
 
   const [timeframe, setTimeframe] = useState<"10d" | "1m" | "3m" | "6m" | "1y">(
     "10d"
@@ -131,6 +142,7 @@ export default function Sealed() {
   return (
     <div className="max-w-4xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Sealed Product Price History</h1>
+
       <div className="flex gap-2 mb-6 flex-wrap">
         {/* <CardSearchInput /> */}
         {/* <Input
@@ -167,6 +179,23 @@ export default function Sealed() {
         </Button> */}
       </div>
 
+      <div className="space-y-4 col-span-4">
+        <div className="flex gap-2">
+          {(["10d", "1m", "3m", "6m", "1y"] as const).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeframe(tf)}
+              className={`px-3 py-1 rounded border ${
+                timeframe === tf ? "bg-black text-white" : "bg-white text-black"
+              }`}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
+        <div className="col-span-4 grid grid-cols-2 gap-4"></div>
+      </div>
+
       {prices && prices.length > 0 ? (
         <div>
           <Card>
@@ -181,12 +210,33 @@ export default function Sealed() {
                 >
                   <XAxis dataKey="soldAt" />
                   <YAxis domain={["auto", "auto"]} />
-                  <Tooltip />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0].payload;
+
+                      return (
+                        <div className="bg-white p-2 border rounded shadow">
+                          <div>Price: ${d.price}</div>
+                          <div>Date: {d.soldAt}</div>
+                          <div>
+                            Id: <a href={`${d.url}`}>{d.id}</a>
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
                   <Line
                     type="monotone"
                     dataKey="price"
                     stroke="#4f46e5"
                     strokeWidth={2}
+                    activeDot={{
+                      onClick: (e: any, props: any) => {
+                        const { payload } = props;
+                        setSelectedPoint(payload);
+                      },
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -219,23 +269,6 @@ export default function Sealed() {
       ) : (
         <p>No Results</p>
       )}
-
-      <div className="space-y-4 col-span-4">
-        <div className="flex gap-2">
-          {(["10d", "1m", "3m", "6m", "1y"] as const).map((tf) => (
-            <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              className={`px-3 py-1 rounded border ${
-                timeframe === tf ? "bg-black text-white" : "bg-white text-black"
-              }`}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
-        <div className="col-span-4 grid grid-cols-2 gap-4"></div>
-      </div>
 
       {/* <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={data}>
@@ -276,6 +309,22 @@ export default function Sealed() {
           />
         </ComposedChart>
       </ResponsiveContainer> */}
+
+      <Dialog
+        open={!!selectedPoint}
+        onOpenChange={() => setSelectedPoint(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle></DialogTitle>
+          </DialogHeader>
+          <div>
+            <a href={`${selectedPoint?.url}`} target="_blank">
+              ID: {selectedPoint?.id}
+            </a>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

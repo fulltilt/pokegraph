@@ -20,9 +20,14 @@ export function useCardSearch(query: string, delay = 500) {
     const controller = new AbortController();
     setLoading(true);
 
-    fetch(`/api/cards-search?name=${encodeURIComponent(debouncedQuery)}`, {
-      signal: controller.signal,
-    })
+    fetch(
+      `${
+        import.meta.env.VITE_ENDPOINT_URL
+      }/api/cards-search?name=${encodeURIComponent(debouncedQuery)}`,
+      {
+        signal: controller.signal,
+      }
+    )
       .then((res) => res.json())
       .then((data) => {
         if (data.error || !Array.isArray(data)) {

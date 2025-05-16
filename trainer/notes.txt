@@ -1,0 +1,33 @@
+#1 Train the model
+python train.py
+
+#2 Evaluate the model
+-This runs on your test set (split from labeled entries) and prints accuracy, 
+ precision, recall, and F1 score.
+python eval.py
+
+#3 3. Auto-Label Unlabeled Listings (with Confidence Threshold)
+-This uses the trained model to predict labels for entries with label IS NULL, 
+ and only writes predictions above your set threshold (e.g., 0.9).
+-Only rows with high-confidence predictions are updated in the DB.
+python predict_and_label.py
+
+Configuration
+Edit trainer/config.py to:
+-Set confidence threshold
+-Adjust batch size, epochs, model path, etc.
+-Change the minimum number of training rows required
+
+Docker
+docker build -t listing-trainer .
+docker run --env-file ../.env listing-trainer
+
+Manual
+python3 -m venv .venv
+virtualenv .venv --python=/opt/local/bin/python3.12
+virtualenv .venv --python=$(which python3.12)
+
+source .venv/bin/activate
+
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+pip install transformers scikit-learn pandas psycopg2-binary python-dotenv

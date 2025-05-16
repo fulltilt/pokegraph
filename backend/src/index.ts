@@ -1,12 +1,39 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import { PrismaClient } from "../generated/prisma/index.js";
+import { pipeline as hfPipeline, env } from "@xenova/transformers";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+// Let the library know to use local files
+env.localModelPath = true;
+
+const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
+const __dirname = path.dirname(__filename); // get the name of the directory
 
 const app = express();
 const prisma = new PrismaClient();
 
 app.use(cors());
 app.use(express.json());
+
+let classifier: any;
+async function loadModel() {
+  if (!classifier) {
+    // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
+    const modelDir = `file://${path.resolve(__dirname, "../../trainer/model")}`;
+    console.log("Loading model from:", modelDir);
+    console.log(
+      "Files:",
+      fs.readdirSync(path.resolve(__dirname, "../../trainer/model"))
+    );
+
+    classifier = await hfPipeline("text-classification", modelDir, {
+      local_files_only: true, // ⬅️ Tells Xenova to load from local dir
+    });
+  }
+}
 
 function convertDate(timeframe: string) {
   let fromDate = new Date();
@@ -64,6 +91,9 @@ app.get(
       },
       include: {
         prices: {
+          where: {
+            label: "keep",
+          },
           orderBy: {
             soldAt: "asc",
           },
@@ -502,6 +532,57 @@ app.get("/api/sealed/predictions", async (req, res) => {
   const total = await prisma.sealedPriceEntry.count({ where });
 
   res.json({ items, total });
+});
+
+app.post("/api/sealed/auto-label", async (req, res) => {
+  try {
+    await loadModel();
+
+    const threshold: number = req.body.threshold ?? 0.9;
+
+    const entries = await prisma.sealedPriceEntry.findMany({
+      where: { label: null },
+      include: { sealed: true },
+    });
+
+    if (!entries.length) {
+      res.json({ message: "No unlabeled entries found." });
+      return;
+    }
+
+    const updates = [];
+    const skipped = [];
+
+    for (const entry of entries) {
+      const inputText = `${entry.sealed.product} ${entry.title} $${entry.price}`;
+      const [result] = await classifier(inputText);
+
+      const prediction = result.label.toLowerCase(); // "keep" or "remove"
+      const confidence = result.score;
+
+      if (confidence >= threshold) {
+        updates.push(
+          prisma.sealedPriceEntry.update({
+            where: { id: entry.id },
+            data: { label: prediction },
+          })
+        );
+      } else {
+        skipped.push({ id: entry.id, score: confidence });
+      }
+    }
+
+    await prisma.$transaction(updates);
+
+    res.json({
+      message: `Auto-labeled ${updates.length} entries.`,
+      skipped: skipped.length,
+      threshold,
+    });
+  } catch (err) {
+    console.error("Auto-label error:", err);
+    res.status(500).json({ error: "Failed to auto-label entries." });
+  }
 });
 
 // Start the server

@@ -1,0 +1,6 @@
+torch
+transformers
+scikit-learn
+pandas
+psycopg2-binary
+dotenv

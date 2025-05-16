@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 
 interface SealedPriceEntry {
@@ -36,7 +36,9 @@ export default function Predictions() {
       });
       if (search) params.append("search", search);
       if (labelFilter !== "all") params.append("label", labelFilter);
-      const res = await fetch(`/api/sealed/predictions?${params}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_ENDPOINT_URL}/api/sealed/predictions?${params}`
+      );
       return res.json();
     },
   });
@@ -49,11 +51,14 @@ export default function Predictions() {
       id: string;
       label: "keep" | "remove" | null;
     }) => {
-      const res = await fetch(`/api/sealed/${id}/label`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_ENDPOINT_URL}/api/sealed/${id}/label`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label }),
+        }
+      );
       return res.json();
     },
     onSuccess: () =>
@@ -62,7 +67,10 @@ export default function Predictions() {
 
   const autoLabelMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/sealed/auto-label", { method: "POST" });
+      const res = await fetch(
+        `${import.meta.env.VITE_ENDPOINT_URL}/api/sealed/auto-label`,
+        { method: "POST" }
+      );
       return res.json();
     },
     onSuccess: () =>
@@ -78,10 +86,12 @@ export default function Predictions() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <Select value={labelFilter} onValueChange={setLabelFilter}>
-          <SelectItem value="all">All</SelectItem>
-          <SelectItem value="keep">Keep</SelectItem>
-          <SelectItem value="remove">Remove</SelectItem>
-          <SelectItem value="null">Unlabeled</SelectItem>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="keep">Keep</SelectItem>
+            <SelectItem value="remove">Remove</SelectItem>
+            <SelectItem value="null">Unlabeled</SelectItem>
+          </SelectContent>
         </Select>
         <Button
           onClick={() => autoLabelMutation.mutate()}
@@ -112,14 +122,14 @@ export default function Predictions() {
                 <p className="text-sm text-muted-foreground">
                   ${entry.price.toFixed(2)}
                 </p>
-                {entry.confidence !== null && (
+                {/* {entry.confidence !== null && (
                   <div>
                     <p className="text-xs text-muted-foreground">
                       Confidence: {(entry.confidence * 100).toFixed(1)}%
                     </p>
                     <Progress value={entry.confidence * 100} className="h-1" />
                   </div>
-                )}
+                )} */}
                 <div className="flex gap-2">
                   <Button
                     variant={entry.label === "keep" ? "default" : "outline"}
