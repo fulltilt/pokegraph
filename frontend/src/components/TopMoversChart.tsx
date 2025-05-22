@@ -16,6 +16,7 @@ type Movers = {
   early_price: number;
   recent_price: number;
   percent_change: string;
+  absolute_change: string;
   image: string;
   release_date: string;
   set_id: string;
@@ -31,18 +32,34 @@ export function TopMoversChart({ url = "", order = "", range = "10d" }) {
     fetch(`${url}/${order}?timeframe=${range}`)
       .then((res) => res.json())
       .then(async (cards: Movers[]) => {
-        const percentageChanges = cards.map(
-          (d) => parseFloat(d.percent_change) ?? 0
-        );
-        const dataMin = Math.min(...percentageChanges);
-        const dataMax = Math.max(...percentageChanges);
-        setMin(dataMin);
-        setMax(dataMax);
+        let dataMin;
+        let dataMax;
+        if (cards[0].percent_change) {
+          const percentageChanges = cards.map(
+            (d) => parseFloat(d.percent_change) ?? 0
+          );
+          dataMin = Math.min(...percentageChanges);
+          dataMax = Math.max(...percentageChanges);
+          setMin(dataMin);
+          setMax(dataMax);
 
-        setData(cards.filter((data) => data.percent_change !== "0"));
+          setData(cards.filter((data) => data.percent_change !== "0"));
+        } else {
+          const priceChanges = cards.map(
+            (d) => parseFloat(d.absolute_change) ?? 0
+          );
+          dataMin = Math.min(...priceChanges);
+          dataMax = Math.max(...priceChanges);
+          setMin(dataMin);
+          setMax(dataMax);
+
+          setData(cards.filter((data) => data.absolute_change !== "0"));
+        }
       });
   }, [url, range]);
 
+  if (data.length === 0) return;
+  console.log(min, max);
   return (
     <div className="p-4 w-full h-full">
       <h2 className="text-xl font-bold mb-4">
@@ -62,7 +79,11 @@ export function TopMoversChart({ url = "", order = "", range = "10d" }) {
           ) : (
             <YAxis
               domain={[min, 0]} // y-axis starts at highest negative value and ends at 0
-              tickFormatter={(value) => `${value}%`}
+              tickFormatter={(value) =>
+                `${data[0].absolute_change ? "$" : ""}${value}${
+                  data[0].percent_change ? "%" : ""
+                }`
+              }
             />
           )}
           <Tooltip
@@ -86,7 +107,7 @@ export function TopMoversChart({ url = "", order = "", range = "10d" }) {
                     Change:&nbsp;
                     {d.percent_change != null
                       ? Number(d.percent_change).toFixed(2) + "%"
-                      : "N/A"}
+                      : `$${Number(d.absolute_change).toFixed(2)}`}
                   </div>
                 </div>
               );
@@ -94,7 +115,9 @@ export function TopMoversChart({ url = "", order = "", range = "10d" }) {
           />
           {order === "ASC" && <ReferenceLine y={0} stroke="#000" />}
           <Bar
-            dataKey="percent_change"
+            dataKey={
+              data[0].percent_change ? "percent_change" : "absolute_change"
+            }
             fill={order === "DESC" ? "#22c55e" : "#ef4444"}
           >
             {data.map((entry, index) => (

@@ -351,6 +351,96 @@ app.get("/api/top-mover-per-set/:order", async (req, res) => {
   }
 });
 
+app.get("/api/top-mover-per-set-price/:order", async (req, res) => {
+  const { order } = req.params;
+  const timeframe = req.query.timeframe || "10d";
+
+  const intervalMap: Record<string, string> = {
+    "10d": "10 days",
+    "1m": "1 month",
+    "3m": "3 months",
+    "6m": "6 months",
+    "1y": "1 year",
+  };
+
+  const sqlInterval = intervalMap[timeframe as string] || "10 days";
+
+  try {
+    const result = await prisma.$queryRawUnsafe(
+      `-- Step 1: Pre-filter relevant PriceEntries
+        WITH recent_prices AS (
+          SELECT *
+          FROM "PriceEntry"
+          WHERE date >= NOW() - $1::interval
+        ),
+
+        -- Step 2: Precompute price boundaries per card
+        price_bounds AS (
+          SELECT
+            c.id AS card_id,
+            (c.data->'set'->>'id') AS set_id,
+            (c.data->'set'->>'name') AS set_name,
+            (c.data->'name') AS card_name,
+            (c.data->'images'->>'large') AS image,
+            (c.data->'set'->>'releaseDate') AS release_date,
+            MIN(p.date) AS earliest_date,
+            MAX(p.date) AS latest_date
+          FROM "Card" c
+          JOIN recent_prices p ON p."cardId" = c.id
+          WHERE (c.data->'set'->>'series') IN ('Sun & Moon', 'Sword & Shield', 'Scarlet & Violet')
+            AND (c.data->'set'->>'id') NOT IN ('smp', 'swshp', 'svp')
+          GROUP BY c.id, set_id, set_name, card_name, image, release_date
+        ),
+
+        -- Step 3: Get early and recent prices with conditional aggregation
+        price_changes AS (
+          SELECT
+            pb.set_id,
+            pb.set_name,
+            pb.card_id,
+            pb.card_name,
+            pb.image,
+            pb.release_date,
+            MAX(CASE WHEN p.date = pb.earliest_date THEN p.price END) AS early_price,
+            MAX(CASE WHEN p.date = pb.latest_date THEN p.price END) AS recent_price
+          FROM price_bounds pb
+          JOIN recent_prices p ON p."cardId" = pb.card_id
+          GROUP BY pb.set_id, pb.set_name, pb.card_id, pb.card_name, pb.image, pb.release_date
+        ),
+
+        -- Step 4: Calculate absolute price change
+        with_price_change AS (
+          SELECT
+            *,
+            ROUND((recent_price - early_price)::numeric, 2) AS absolute_change
+          FROM price_changes
+        )
+
+        -- Step 5: Pick top movers per set by absolute price change
+        SELECT DISTINCT ON (set_id)
+          set_id,
+          set_name,
+          card_id,
+          card_name,
+          image,
+          early_price,
+          recent_price,
+          release_date,
+          absolute_change
+        FROM with_price_change
+        WHERE early_price IS NOT NULL AND recent_price IS NOT NULL AND early_price != 0
+        ORDER BY set_id, absolute_change ${order};  -- ${order} = DESC (gainers) or ASC (losers)
+        `,
+      sqlInterval
+    );
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch top movers." });
+  }
+});
+
 app.get("/api/sets-by-series", async (req, res) => {
   const series = req.query.series as string;
 

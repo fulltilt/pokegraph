@@ -10,9 +10,25 @@ const TopGainers = memo(({ timeframe }: { timeframe: string }) => (
   />
 ));
 
+const TopGainersByPrice = memo(({ timeframe }: { timeframe: string }) => (
+  <TopMoversChart
+    url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set-price`}
+    order="DESC"
+    range={timeframe}
+  />
+));
+
 const TopLosers = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
     url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set`}
+    order="ASC"
+    range={timeframe}
+  />
+));
+
+const TopLosersByPrice = memo(({ timeframe }: { timeframe: string }) => (
+  <TopMoversChart
+    url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set-price`}
     order="ASC"
     range={timeframe}
   />
@@ -46,6 +62,10 @@ export default function Main() {
         <div className="col-span-4 grid grid-cols-2 gap-4">
           <TopGainers timeframe={timeframe} />
           <TopLosers timeframe={timeframe} />
+        </div>
+        <div className="col-span-4 grid grid-cols-2 gap-4">
+          <TopGainersByPrice timeframe={timeframe} />
+          <TopLosersByPrice timeframe={timeframe} />
         </div>
       </div>
     </div>
