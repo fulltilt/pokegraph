@@ -15,6 +15,7 @@
 import { PrismaClient } from "../generated/prisma";
 const prisma = new PrismaClient();
 import { sets } from "./data/sets";
+// import { sets } from "./data/sets2";
 
 type CardData = {
   skuId: string;

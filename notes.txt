@@ -106,3 +106,4 @@ cat pokedex-data.sql | docker exec -i pokedb psql -U postgres -d pokedex
 
 
 
+docker exec -t pokedb pg_dump -U postgres -d postgres > backup.sql

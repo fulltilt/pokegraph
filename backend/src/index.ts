@@ -463,7 +463,7 @@ app.get("/api/sets-by-series", async (req, res) => {
     `,
       series
     );
-
+    console.log(series, sets);
     res.json(sets);
   } catch (error) {
     console.error("Error fetching sets by series:", error);
