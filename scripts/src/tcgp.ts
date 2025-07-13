@@ -15,7 +15,7 @@
 import { PrismaClient } from "../generated/prisma";
 const prisma = new PrismaClient();
 import { sets } from "./data/sets";
-// import { sets } from "./data/sets2";
+import { sets2 } from "./data/sets2";
 
 type CardData = {
   skuId: string;
@@ -130,6 +130,28 @@ const normalizeCardNumber = (set: string, idx: number) => {
 
 async function main() {
   for (const key of Object.keys(sets)) {
+    const typedKey = key as keyof typeof sets; // key will always be a valid key of ids
+    const { startIdx, ids } = sets[typedKey];
+
+    for (let idx = 0; idx < ids.length; idx++) {
+      const id = ids[idx];
+      try {
+        const buckets = await fetchPage(id);
+        await updateCard(
+          buckets,
+          `${key}-${normalizeCardNumber(key, startIdx + idx)}`
+        );
+      } catch (err) {
+        console.error(`Failed on card ${id}:`, err);
+      }
+    }
+
+    console.log(`Finished processing set ${key}. Sleeping for 4 minutes...`);
+    await sleep(240); // 4 minutes
+  }
+
+  // definitely a better way of doing this without the repetitive logic
+  for (const key of Object.keys(sets2)) {
     const typedKey = key as keyof typeof sets; // key will always be a valid key of ids
     const { startIdx, ids } = sets[typedKey];
 
