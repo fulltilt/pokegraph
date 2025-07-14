@@ -17,6 +17,8 @@ services:
   backend:
     build: ./backend
     container_name: pokemon-backend
+    ports:
+      - "3457:3457"
     depends_on:
       - db
     environment:
