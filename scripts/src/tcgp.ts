@@ -152,8 +152,8 @@ async function main() {
 
   // definitely a better way of doing this without the repetitive logic
   for (const key of Object.keys(sets2)) {
-    const typedKey = key as keyof typeof sets; // key will always be a valid key of ids
-    const { startIdx, ids } = sets[typedKey];
+    const typedKey = key as keyof typeof sets2; // key will always be a valid key of ids
+    const { startIdx, ids } = sets2[typedKey];
 
     for (let idx = 0; idx < ids.length; idx++) {
       const id = ids[idx];

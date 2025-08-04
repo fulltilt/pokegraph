@@ -37,8 +37,6 @@ ORDER BY similarity((data->>'name'), $1) DESC
 LIMIT 10
 
 # indexes for getting top movers per set
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX idx_card_name_trgm ON "Card" USING gin ((data->>'name') gin_trgm_ops);
  -- Filter and join efficiency
 CREATE INDEX IF NOT EXISTS idx_priceentry_cardid_date ON "PriceEntry"("cardId", "date");
 
