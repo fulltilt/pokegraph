@@ -4,6 +4,7 @@ import CardSearchInput from "@/components/CardSearchInput";
 
 const TopGainers = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
+    subtitle="% Change"
     url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set`}
     order="DESC"
     range={timeframe}
@@ -12,6 +13,7 @@ const TopGainers = memo(({ timeframe }: { timeframe: string }) => (
 
 const TopGainersByPrice = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
+    subtitle="% Change"
     url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set-price`}
     order="DESC"
     range={timeframe}
@@ -20,6 +22,7 @@ const TopGainersByPrice = memo(({ timeframe }: { timeframe: string }) => (
 
 const TopLosers = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
+    subtitle="$ Change"
     url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set`}
     order="ASC"
     range={timeframe}
@@ -28,6 +31,7 @@ const TopLosers = memo(({ timeframe }: { timeframe: string }) => (
 
 const TopLosersByPrice = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
+    subtitle="$ Change"
     url={`${import.meta.env.VITE_ENDPOINT_URL}/api/top-mover-per-set-price`}
     order="ASC"
     range={timeframe}

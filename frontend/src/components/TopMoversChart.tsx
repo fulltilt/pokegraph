@@ -23,7 +23,12 @@ type Movers = {
   set_name: string;
 };
 
-export function TopMoversChart({ url = "", order = "", range = "10d" }) {
+export function TopMoversChart({
+  url = "",
+  order = "",
+  range = "10d",
+  subtitle = "",
+}) {
   const [data, setData] = useState<Movers[]>([]);
   const [min, setMin] = useState(-Infinity);
   const [max, setMax] = useState(Infinity);
@@ -63,7 +68,7 @@ export function TopMoversChart({ url = "", order = "", range = "10d" }) {
   return (
     <div className="p-4 w-full h-full">
       <h2 className="text-xl font-bold mb-4">
-        Top {order === "DESC" ? "Gainers" : "Losers"} by Set
+        Top {order === "DESC" ? "Gainers" : "Losers"} by Set ({subtitle})
       </h2>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart
