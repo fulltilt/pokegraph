@@ -1,0 +1,295 @@
+NOTES: 
+
+-NextAuth session
+  -server: const session = await auth()
+  -client: const { data: session } = useSession()
+-middleware was making my server actions return undefined (middleware intercepted request). Here is the fix: https://github.com/vercel/next.js/issues/50659
+-getting url in server components: https://www.propelauth.com/post/getting-url-in-next-server-components
+https://www.youtube.com/watch?v=XxGMuoje1g0 (react-syntax-highlighter)
+-Icons: https://lucide.dev/icons/
+-Advanced Destructuring: https://medium.com/@pyrolistical/destructuring-nested-objects-9dabdd01a3b8
+-jsonb can't handle single quotes so keep that in mind when you try to import data and you get unhelpful errors
+-when you try to edit jsonb fields in Drizzle Studio, apparently it turns the data into a string upon save so don't edit jsonb columns in Drizzle Studio
+-super basic Framer Motion div (ex. https://wallet-kosh.vercel.app/):
+<motion.div
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{
+    duration: 0.3,
+    ease: "easeInOut",
+  }}
+  className="flex gap-4 flex-col my-12"
+>....</motion.div>
+
+pokemontcg.io api key: 604db011-43f2-406f-bc0f-85332c0f950c
+https://api.pokemontcg.io/v2/cards?q=id:sv6pt5
+
+// update new set
+https://api.pokemontcg.io/v2/sets
+https://api.pokemontcg.io/v2/cards?q=set.id:sv7
+
+-insert into DB from JSON (will need to format to proper JSON (https://jsonformatter.curiousconcept.com/#))
+https://medium.com/@connect.ajkumar/postgresql-insert-data-from-json-a6487800ac47
+
+// raw select
+SELECT * FROM poketrades_card
+WHERE poketrades_card.id IN ('hgss1-1')
+
+// get a list of ids and delete rows that have that id
+let apiUrl = `https://api.pokemontcg.io/v2/cards?select=id,page=${i}`;
+...
+const updateValues = `(${res.map((r) => `'${r.id}'`).join(",")})`;
+const data = await client.query(`
+    DELETE FROM poketrades_card
+    WHERE poketrades_card.id IN ${updateValues}
+`);
+
+// insert data
+let apiUrl = `https://api.pokemontcg.io/v2/cards?page=${i}`;
+Currently can't figure out why it doesn't work so for now, manually inserting using seedData fxn in queries.ts
+-maybe try jsonb_insert
+-for now, do all inserts via queries as manually jsonb doesn't seem to cut it
+
+// updata set info
+// manually
+export const cardTable = createTable("card_table", {
+  id: varchar("id").primaryKey(),
+  info: jsonb("info"),
+});
+
+const new_data = {
+  id: "idx",
+  new_field: {
+    x: 'test'
+  }
+}
+
+    UPDATE poketrades_card_table
+    SET
+      info = jsonb_set(
+                info, '{new_field}', '${JSON.stringify(new_data.new_field)}'
+              )
+    WHERE info ->> 'id' = '${new_data.id}'
+    // this works too: WHERE poketrades_card_table.id = '${new_data.id}'
+    RETURNING *
+
+// bulk version
+const new_data = [
+      {
+        id: "id1",
+        new_field: {
+          y: "test",
+        },
+      },
+      {
+        id: "id2",
+        new_field: {
+          x: "test",
+        },
+      },
+    ];
+
+const updateValues = JSON.stringify(
+      new_data.map((d) => ({
+        id: d.id,
+        new_field: d.new_field,
+      }))
+    );
+
+UPDATE poketrades_card_table
+    SET
+       info = jsonb_set(
+                info, '{new_field}', (j.elem->'new_field')::jsonb
+              )
+    FROM jsonb_array_elements('${updateValues}') as j(elem)
+    WHERE (info ->> 'id')::text = (j.elem->'id')::text
+        RETURNING *
+
+let apiUrl = `https://api.pokemontcg.io/v2/cards?select=id,set,page=${i}`;
+
+// search for text in jsonb column
+`SELECT * FROM poketrades_card
+      WHERE data::text LIKE '%XY80%'`
+
+// update "number" field in jsonb column "data" to strip off non-numerics
+// NOTE: fails if there's a leading zero, i.e. 'XY01' and also deleted some "data" 
+//  column data entirely
+`UPDATE poketrades_card
+      SET
+               data = jsonb_set(
+                  data, '{number}', regexp_replace(data->>'number', '[^0-9]+', '', 'g')::jsonb
+               )
+      WHERE id LIKE 'xyp-%'
+      RETURNING *`
+
+// query nested value
+SELECT * 
+      FROM poketrades_card
+      WHERE (data->>'number')::text LIKE 'A'
+
+SELECT * 
+      FROM poketrades_card
+      WHERE (data->'set'->>'id')::text = 'sv5'
+
+// default value on SELECT
+SELECT cl.id, cl.name, cli.card_id, (CASE WHEN cli.quantity IS NULL THEN 0 ELSE cli.quantity END)
+or you can use COALESCE: SELECT cl.id, cl.name, cli.card_id, COALESCE(cli.quantity, 0) quantity
+
+// NOTE: orderBy wasn't working when I had {data: cards.data} in the Select. Once I took it out, sort worked
+const res = await db
+    .select()
+    .from(cards)
+    .where(inArray(cards.id, card_list))
+    .orderBy(
+      sql`data->'set'->>'releaseDate' DESC, CAST(DATA->>'number' AS INTEGER)`,
+    )
+    .limit(pageSize)
+    .offset((page - 1) * pageSize)
+    .execute();
+
+// 
+SELECT COUNT(DISTINCT id) FROM (
+      SELECT id, data, jsonb_path_query(data, '$.tcgplayer.prices.*.market') AS price
+      FROM poketrades_card
+      WHERE poketrades_card.id ILIKE '%sv6pt5%'
+      GROUP BY id
+      ORDER BY id)
+
+// it takes the first row with a particular id so there's no real method on which card version is picked
+SELECT id, data, price 
+FROM (
+      SELECT distinct on (id) id, data, jsonb_path_query(data, '$.tcgplayer.prices.*.market') AS price
+      FROM poketrades_card
+      WHERE poketrades_card.id ILIKE '%sv6pt5%'
+      )
+ORDER BY price DESC 
+
+// export db
+pg_dump -Fc -v --dbname="postgres://default:t8fkzQ7rqAgE@ep-crimson-unit-a62twnxk-pooler.us-west-2.aws.neon.tech:5432/verceldb?sslmode=require" -f db-poketrades.dump
+pg_dump -Fp -v --dbname="postgres://default:t8fkzQ7rqAgE@ep-crimson-unit-a62twnxk-pooler.us-west-2.aws.neon.tech:5432/verceldb?sslmode=require" -f db-poketrades.sql
+sudo apt-get install postgresql-client
+pg_restore -v -O --no-owner -d postgresql://postgres:postgres@localhost:5432/poketrades db-poketrades.sql (need to do this to get around neon_superuser requirement: https://neon.tech/docs/import/import-from-postgres)
+
+// upsert in Postgres
+-use ON CONFLICT to do upserts and if it's on the id field which is the default index you don't have to do anything extra 
+
+CREATE UNIQUE INDEX [index name] on example_table (col1, col2);
+
+INSERT into example_table (col1, col2, col3)
+VALUES (1, 2, 3)
+ON CONFLICT (col1, col2) DO UPDATE 
+SET col3 = 42
+
+
+// NEXT headaches
+-apparently in client components, you can make api calls but the return types have to be simple
+-not a NEXT thing but a React thing but remember when using useState with an object, in order to trigger a rerender, the object
+ has to be a different object else a rerender won't trigger which is why you see stuff like Object.assign({}, ...) as the reference
+ has to be different
+
+
+// non-sticky header issue
+-nav container has to have a height which it did as: height: 100vh, however after 100vh, the 
+ nav stopped being sticky so fixed it with: min-height: 100vh
+
+//
+54.210.15.244
+ssh -i poketrades.pem ubuntu@54.210.15.244
+http://54.210.15.244:3000/
+https://aqibhafeez473.hashnode.dev/day-13-setting-up-docker-compose-on-aws-ec2-instance-with-ubuntu
+https://medium.com/@srijaanaparthy/step-by-step-guide-to-install-docker-on-ubuntu-in-aws-a39746e5a63d (Docker in Ubuntu EC2)
+https://stackoverflow.com/questions/68800332/permission-denied-when-execute-docker-compose-command-in-ubuntu-linux (sudo usermod -aG docker ubuntu)
+https://stackoverflow.com/questions/36884991/how-to-rebuild-docker-container-in-docker-compose-yml
+# sudo apt update
+# sudo apt-get install -y nodejs npm
+# node -v
+# npm -v
+# git clone [nextJS repo]
+# cd [nextJS repo]/
+# sudo npm install -g pnpm
+# pnpm i
+# pnpm run build
+scp -i poketrades.pem db-poketrades.sql ubuntu@ec2-54-210-15-244.compute-1.amazonaws.com:~/.
+docker-compose up -d
+docker stop [container id]
+docker image rm -f [image name]
+psql -h localhost -U [username] // log into postgres instance to create a database
+
+//
+https://community.cloudflare.com/t/error-redirected-you-too-many-times-right-after-the-domain-was-moved-to-cloudflare/476825
+
+// POSTGRES TRIGGER
+select * from information_schema.triggers;
+
+drop function create_notification()
+
+
+CLOUDFLARE
+https://community.cloudflare.com/t/error-redirected-you-too-many-times-right-after-the-domain-was-moved-to-cloudflare/476825/4
+
+
+
+https://www.tcgcollector.com/cards/intl
+?cardSource=all
+&releaseDateOrder=newToOld
+&cardsPerPage=120
+&displayAs=images
+&viewUser=hansbrixx
+
+
+https://github.com/vercel/examples/issues/701
+https://github.com/vercel/storage/issues/123
+
+STRIPE
+stripe listen --forward-to localhost:3000/api/webhook/stripe (https://www.youtube.com/watch?v=R9PwoQwVpPQ)
+
+CLOUDFLARE
+-https://www.youtube.com/watch?v=nNGcvz1Sc_8 (email routing)
+
+REACT
+-when initializing useState with prop variables, it isn't enough just to pass it into useState. You have to initialize it through the 
+set variable in useEffect
+
+function MyComponent(props) {
+  const [stateValue, setStateValue] = useState(props.initialValue);
+
+  useEffect(() => {
+    setStateValue(props.initialValue);
+  }, [props.initialValue]); // Only re-run if props.initialValue changes
+...
+}
+
+You need useEffect to keep your state in sync with the prop because the initial value you pass to useState is only used on the initial render.
+
+
+pg_dump -Fc -v --dbname="postgresql://ai-short-video-generator_owner:X0OoSauM8FQR@ep-floral-feather-a6tvf95y.us-west-2.aws.neon.tech/ai-short-video-generator?sslmode=require" -f cs925.dump
+pg_dump -Fc -v --dbname="postgresql://ai-short-video-generator_owner:X0OoSauM8FQR@ep-floral-feather-a6tvf95y.us-west-2.aws.neon.tech/ai-short-video-generator?sslmode=require" -f db-cs925.sql
+
+
+# Use to test if data request is working correctly
+curl -H "X-Api-Key: e5f992bc-7cb1-45ff-978c-8083c73a3fb8" "https://api.pokemontcg.io/v2/cards?q=set.id:zsv10pt5"
+
+# PROCESS WHEN NEW SET COMES OUT
+1. # Get all sets (use to get set id for new sets by looking at the id of the last entry(ies) returned)
+curl -H "X-Api-Key: e5f992bc-7cb1-45ff-978c-8083c73a3fb8" "https://api.pokemontcg.io/v2/sets"
+
+2. bun run scripts/src/db/master/insertSet2.cjs
+
+3. Pull id data from TCGPlayer from new sets: 
+(() => {
+  // Select all <a> elements with class 'pdp-url'
+  const links = document.querySelectorAll('a.pdp-url')
+
+  // Extract the numeric ID from href
+  const ids = Array.from(links)
+    .map(a => {
+      const match = a.href.match(/\/product\/(\d+)\//)
+      return match ? match[1] : null
+    })
+    .filter(Boolean) // remove nulls
+
+  console.log(ids)
+  return ids
+})()
+
+4. Make new entry in scripts/src/data/sets.ts (if too many entries, overflow into scripts/src/data/sets2.ts)

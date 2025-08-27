@@ -13,6 +13,7 @@ export default defineConfig({
   },
   server: {
     host: "0.0.0.0",
+    allowedHosts: ['poke-trades.com', 'www.poke-trades.com'], // allow this domain
     port: 5173,
   },
 });

@@ -105,3 +105,27 @@ cat pokedex-data.sql | docker exec -i pokedb psql -U postgres -d pokedex
 
 
 docker exec -t pokedb pg_dump -U postgres -d postgres > backup.sql
+
+
+// everyday at 4 run script (nohup ensures it doesn't terminate when you log out, also make sure you run ‘date’ to see what the time is on the server)
+0 16 \* \* \* /usr/bin/nohup /home/ddoria/.bun/bin/bun run /home/ddoria/pokegraph/scripts/src/tcgp.ts > /home/ddoria/logs/pokegraph-log.txt 2>&1 &
+
+// If you want to manually trigger tcgplayer job (don’t worry about running this as cron command handles it)
+nohup bun run src/tcgp.ts > ~/logs/pokegraph-log.txt 2>&1 &
+
+ps aux | grep bun
+
+// to ssh into a docker container
+docker exec -it [docker container name] sh
+
+// Enter Postgres
+docker exec -it pokedb bash
+psql -U postgres -d pokedex
+
+// run the pokeGraph server
+nohup docker compose up > /var/log/docker-compose.log 2>&1 &
+or
+docker compose up -d && echo "Docker Compose is running in detached mode. Logs: docker compose logs -f"
+
+https://chatgpt.com/s/t_68af344461f081918d1261b61175c313 # Nginx setup
+https://chatgpt.com/s/t_68af45c497e88191aaeed088cbadfc2c # proper setup

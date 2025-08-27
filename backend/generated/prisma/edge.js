@@ -35,12 +35,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.7.0
- * Query Engine version: 3cff47a7f5d65c3ea74883f1d736e41d68ce91ed
+ * Prisma Client JS version: 6.11.1
+ * Query Engine version: f40f79ec31188888a2e33acda0ecc8fd10a853a9
  */
 Prisma.prismaVersion = {
-  client: "6.7.0",
-  engine: "3cff47a7f5d65c3ea74883f1d736e41d68ce91ed"
+  client: "6.11.1",
+  engine: "f40f79ec31188888a2e33acda0ecc8fd10a853a9"
 }
 
 Prisma.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
@@ -176,7 +176,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/daviddoria/Documents/temp/pokeGraph/backend/generated/prisma",
+      "value": "/home/ddoria/pokegraph/backend/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -185,12 +185,20 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "debian-openssl-3.0.x",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-1.1.x"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl"
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/daviddoria/Documents/temp/pokeGraph/backend/prisma/schema.prisma",
+    "sourceFilePath": "/home/ddoria/pokegraph/backend/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -198,22 +206,23 @@ const config = {
     "schemaEnvPath": "../../.env"
   },
   "relativePath": "../../prisma",
-  "clientVersion": "6.7.0",
-  "engineVersion": "3cff47a7f5d65c3ea74883f1d736e41d68ce91ed",
+  "clientVersion": "6.11.1",
+  "engineVersion": "f40f79ec31188888a2e33acda0ecc8fd10a853a9",
   "datasourceNames": [
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": "postgres://postgres:password@localhost:5432/pokedex"
+        "value": null
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Card {\n  id           String                   @id\n  data         Json\n  prices       PriceEntry[]\n  priceSummary CardPriceChangeSummary[]\n}\n\nmodel PriceEntry {\n  id       Int      @id @default(autoincrement())\n  cardId   String\n  price    Float\n  quantity Int?\n  date     DateTime @default(now())\n\n  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)\n\n  @@unique([cardId, date]) // only one price per day can be entered\n}\n\nmodel CardPriceChangeSummary {\n  id        Int      @id @default(autoincrement())\n  setId     String? // For grouping by set\n  series    String? // For grouping by series\n  timeframe String // '10d', '1m', '6m', '1y', 'all'\n  type      String // 'gainer' or 'loser'\n  cardId    String // reference to Card\n  changePct Float\n  createdAt DateTime @default(now())\n\n  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)\n}\n\nmodel Sealed {\n  id        String             @id @default(cuid())\n  product   String             @unique\n  prices    SealedPriceEntry[]\n  createdAt DateTime           @default(now())\n}\n\nmodel SealedPriceEntry {\n  id       String   @id @default(cuid())\n  sealedId String\n  price    Float\n  title    String\n  url      String\n  soldAt   DateTime\n  label    String? // \"keep\" | \"remove\"\n\n  sealed Sealed @relation(fields: [sealedId], references: [id])\n\n  @@unique([title, soldAt]) // composite unique key\n  @@index([sealedId])\n}\n",
-  "inlineSchemaHash": "f980d823e20728fb2b202412ceb708f2eb940329de302a837bccae5d563fcd08",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../generated/prisma\"\n  binaryTargets = [\"native\", \"debian-openssl-1.1.x\", \"linux-musl\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Card {\n  id           String                   @id\n  data         Json\n  prices       PriceEntry[]\n  priceSummary CardPriceChangeSummary[]\n}\n\nmodel PriceEntry {\n  id       Int      @id @default(autoincrement())\n  cardId   String\n  price    Float\n  quantity Int?\n  date     DateTime @default(now())\n\n  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)\n\n  @@unique([cardId, date]) // only one price per day can be entered\n}\n\nmodel CardPriceChangeSummary {\n  id        Int      @id @default(autoincrement())\n  setId     String? // For grouping by set\n  series    String? // For grouping by series\n  timeframe String // '10d', '1m', '6m', '1y', 'all'\n  type      String // 'gainer' or 'loser'\n  cardId    String // reference to Card\n  changePct Float\n  createdAt DateTime @default(now())\n\n  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)\n}\n\nmodel Sealed {\n  id        String             @id @default(cuid())\n  product   String             @unique\n  prices    SealedPriceEntry[]\n  createdAt DateTime           @default(now())\n}\n\nmodel SealedPriceEntry {\n  id       String   @id @default(cuid())\n  sealedId String\n  price    Float\n  title    String\n  url      String\n  soldAt   DateTime\n  label    String? // \"keep\" | \"remove\"\n\n  sealed Sealed @relation(fields: [sealedId], references: [id])\n\n  @@unique([title, soldAt]) // composite unique key\n  @@index([sealedId])\n}\n",
+  "inlineSchemaHash": "a1c16419d52b1ce1a33d0a63249e9e9295c0e949cda712ea305843ede1a4911e",
   "copyEngine": true
 }
 config.dirname = '/'
