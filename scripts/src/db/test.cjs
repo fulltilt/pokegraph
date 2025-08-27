@@ -3,8 +3,7 @@ const { Client } = require("pg");
 
 // Configure the database connection
 const client = new Client({
-  connectionString:
-    "postgres://default:t8fkzQ7rqAgE@ep-crimson-unit-a62twnxk-pooler.us-west-2.aws.neon.tech:5432/verceldb?sslmode=require", // Vercel sets the DATABASE_URL environment variable
+  connectionString: "", // Vercel sets the DATABASE_URL environment variable
   ssl: {
     rejectUnauthorized: false, // Only for development purposes, remove in production
   },

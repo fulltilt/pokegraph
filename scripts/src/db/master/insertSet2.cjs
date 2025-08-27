@@ -1,6 +1,6 @@
 const { Client } = require("pg");
 
-const DB_URL = "postgres://postgres:password@localhost:5432/pokedex";
+const DB_URL = "";
 
 // Configure the database connection
 const client = new Client({
@@ -21,7 +21,7 @@ let promise = new Promise((resolve, reject) => {
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
-          "X-Api-Key": "e5f992bc-7cb1-45ff-978c-8083c73a3fb8",
+          "X-Api-Key": "",
         },
       });
 
@@ -47,7 +47,7 @@ let promise = new Promise((resolve, reject) => {
 
 promise.then(
   async (res) => {
-    console.log('Total cards in set: ', res.length);
+    console.log("Total cards in set: ", res.length);
 
     try {
       // Connect to the database

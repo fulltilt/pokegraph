@@ -3,8 +3,7 @@ const fs = require("fs");
 
 // Configure the database connection
 const client = new Client({
-  connectionString:
-    "postgres://default:t8fkzQ7rqAgE@ep-crimson-unit-a62twnxk-pooler.us-west-2.aws.neon.tech:5432/verceldb?sslmode=require", // Vercel sets the DATABASE_URL environment variable
+  connectionString: "", // Vercel sets the DATABASE_URL environment variable
   ssl: {
     rejectUnauthorized: false, // Only for development purposes, remove in production
   },
@@ -21,7 +20,7 @@ let promise = new Promise((resolve, reject) => {
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
-          "X-Api-Key": "604db011-43f2-406f-bc0f-85332c0f950c",
+          "X-Api-Key": "",
         },
       });
 

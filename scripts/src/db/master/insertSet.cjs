@@ -1,6 +1,6 @@
 const { Client } = require("pg");
 
-const DB_URL = "postgres://postgres:password@localhost:5432/pokedex";
+const DB_URL = "";
 // const DB_URL =
 //   "postgres://default:t8fkzQ7rqAgE@ep-crimson-unit-a62twnxk-pooler.us-west-2.aws.neon.tech:5432/verceldb?sslmode=require"; // Vercel sets the DATABASE_URL environment variable
 // Configure the database connection
@@ -22,7 +22,7 @@ let promise = new Promise((resolve, reject) => {
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
-          "X-Api-Key": "e5f992bc-7cb1-45ff-978c-8083c73a3fb8",
+          "X-Api-Key": "",
         },
       });
 
