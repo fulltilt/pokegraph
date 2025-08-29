@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "outDir": "./dist",
+    // "rootDir": ".",
+    "rootDirs": ["backend/src", "mcp/src"],
+    "baseUrl": ".", // needed for path aliases
+    "paths": {
+      "@backend/*": ["backend/src/*"],
+      // "@prisma/*": ["backend/src/generated/prisma/*"],
+      "@mcp/*": ["mcp/src/*"],
+      "@shared/*": ["shared/*"]
+    }
+  },
+  "include": ["backend/src/**/*", "mcp/src/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
-import { PrismaClient } from "../generated/prisma/index.js";
+// import { PrismaClient } from "../generated/prisma/index.js";
+import { PrismaClient } from "@prisma/client";
 import { pipeline as hfPipeline, env } from "@xenova/transformers";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -15,7 +16,7 @@ const __dirname = path.dirname(__filename); // get the name of the directory
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors({ origin: '*' }))
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 let classifier: any;
@@ -145,12 +146,7 @@ app.get("/api/cards", async (req, res) => {
   card will be appended at the end of the numeric-only cards
   */
   try {
-    const cards = await prisma.$queryRawUnsafe<
-      {
-        id: string;
-        data: any;
-      }[]
-    >(
+    const cards = (await prisma.$queryRawUnsafe(
       `
     SELECT *
     FROM "Card"
@@ -169,11 +165,11 @@ app.get("/api/cards", async (req, res) => {
     LIMIT ${take}
     `,
       set
-    );
+    )) as any[];
     // ORDER BY (data->>'number')::int
 
     res.json(
-      cards.map((card) => {
+      cards.map((card: any) => {
         const data = card.data as unknown as CardData;
 
         return {
@@ -196,9 +192,7 @@ app.get("/api/card/history/:id", async (req, res) => {
 
   const fromDate = convertDate(timeframe as string);
 
-  const history = await prisma.$queryRawUnsafe<
-    { date: Date; price: number; quantity: number }[]
-  >(
+  const history = await prisma.$queryRawUnsafe(
     `
     SELECT 
       DATE("date") AS date,
@@ -561,7 +555,7 @@ app.get("/api/sealed/unlabeled", async (req, res) => {
       orderBy: { soldAt: "desc" },
     });
 
-    const result = entries.map((entry) => ({
+    const result = entries.map((entry: any) => ({
       id: entry.id,
       sealedId: entry.sealedId,
       title: entry.title,

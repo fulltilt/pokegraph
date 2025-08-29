@@ -1,0 +1,14 @@
+{
+  "name": "@pokemon/shared",
+  "version": "1.0.0",
+  "main": "database.js",
+  "types": "database.d.ts",
+  "dependencies": {
+    "@prisma/client": "^6.15.0",
+    "prisma": "^6.15.0"
+  },
+  "scripts": {
+    "generate": "prisma generate --schema=prisma/schema.prisma",
+    "build": "tsc"
+  }
+}

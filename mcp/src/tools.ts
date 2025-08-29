@@ -1,27 +1,146 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { z } from "zod";
+import { FastMCP } from "fastmcp";
+import { getCardPriceTrends, getQuantitySpikes } from "@pokemon/shared/db";
 
 const prisma = new PrismaClient();
+
+const mcp = new FastMCP({
+  name: "Github",
+  version: "1.0.0",
+});
+
+const toolDefinitions = [
+  {
+    name: "get_price_trends",
+    description: "Get price trends for a Pokemon card over time",
+    inputSchema: z.object({
+      card_name: z.string().describe("Name of the Pokemon card"),
+      set_name: z
+        .string()
+        .optional()
+        .describe("Optional set name to filter by"),
+      condition: z
+        .string()
+        .optional()
+        .describe("Card condition (mint, near_mint, etc.)"),
+      days_back: z
+        .number()
+        .default(30)
+        .describe("Number of days to look back for trends"),
+    }),
+    execute: async ({
+      cardId,
+      startDate,
+    }: {
+      cardId: string;
+      startDate: Date;
+    }) => {
+      try {
+        // Your database query logic here
+        const priceData = await getCardPriceTrends(cardId, startDate);
+
+        const trendData = priceData.map((item) => ({
+          date: item.date.toISOString().split("T")[0],
+          price: item.price,
+          prev_price: item.prev_price,
+          pct_change: item.pct_change,
+        }));
+
+        const firstPrice = trendData[0]?.price || 0;
+        const lastPrice = trendData[trendData.length - 1]?.price || 0;
+        const percentageChange =
+          firstPrice > 0 ? ((lastPrice - firstPrice) / firstPrice) * 100 : 0;
+        const averagePrice =
+          trendData.reduce((sum, item) => sum + item.price, 0) /
+          trendData.length;
+
+        return {
+          // card_name,
+          // set_name,
+          // condition,
+          // period_days: days_back,
+          trend_data: trendData,
+          trend_direction:
+            percentageChange > 0
+              ? "upward"
+              : percentageChange < 0
+              ? "downward"
+              : "stable",
+          percentage_change: percentageChange,
+          average_price: averagePrice,
+        };
+      } catch (error) {
+        throw new Error(
+          `Failed to get price trends: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      }
+    },
+  },
+  {
+    name: "detect_quantity_spikes",
+    description:
+      "Get cards whose quantities have spiked recently (last 3 days). Detect unusual quantity spikes that may indicate market events or opportunities",
+    inputSchema: z.object({
+      threshold: z
+        .number()
+        .describe("Z-score threshold for spike detection. Default is 1.5"),
+    }),
+    execute: async ({ threshold = 1.5 }: { threshold: number }) => {
+      try {
+        // Your database query logic here
+        const spikes = await getQuantitySpikes(threshold);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(spikes, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        throw new Error(
+          `Failed to get price price spikes: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      }
+    },
+  },
+];
 
 // Price Analysis Tools
 
 export const getPriceTrendssTool: Tool = {
   name: "get_price_trends",
-  description: "Get price trends for a specific card over a time period with percentage changes",
+  description:
+    "Get price trends for a specific card over a time period with percentage changes",
   inputSchema: {
     type: "object",
     properties: {
       cardId: { type: "string", description: "The card ID to analyze" },
-      startDate: { type: "string", format: "date", description: "Start date (YYYY-MM-DD)" },
-      endDate: { type: "string", format: "date", description: "End date (YYYY-MM-DD)" }
+      startDate: {
+        type: "string",
+        format: "date",
+        description: "Start date (YYYY-MM-DD)",
+      },
+      endDate: {
+        type: "string",
+        format: "date",
+        description: "End date (YYYY-MM-DD)",
+      },
     },
-    required: ["cardId", "startDate", "endDate"]
-  }
+    required: ["cardId", "startDate", "endDate"],
+  },
 };
 
 export async function handleGetPriceTrends(args: any) {
   const { cardId, startDate, endDate } = args;
-  
+
   const trends = await prisma.$queryRaw`
     SELECT 
       date,
@@ -36,29 +155,36 @@ export async function handleGetPriceTrends(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(trends, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(trends, null, 2),
+      },
+    ],
   };
 }
 
 export const calculatePriceVolatilityTool: Tool = {
   name: "calculate_price_volatility",
-  description: "Calculate price volatility (standard deviation of returns) for a card",
+  description:
+    "Calculate price volatility (standard deviation of returns) for a card",
   inputSchema: {
     type: "object",
     properties: {
       cardId: { type: "string", description: "The card ID to analyze" },
-      startDate: { type: "string", format: "date", description: "Start date for analysis period" }
+      startDate: {
+        type: "string",
+        format: "date",
+        description: "Start date for analysis period",
+      },
     },
-    required: ["cardId", "startDate"]
-  }
+    required: ["cardId", "startDate"],
+  },
 };
 
 export async function handleCalculatePriceVolatility(args: any) {
   const { cardId, startDate } = args;
-  
+
   const volatility = await prisma.$queryRaw`
     WITH daily_returns AS (
       SELECT 
@@ -81,10 +207,12 @@ export async function handleCalculatePriceVolatility(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(volatility, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(volatility, null, 2),
+      },
+    ],
   };
 }
 
@@ -94,15 +222,15 @@ export const findPricePeaksVallleysTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      cardId: { type: "string", description: "The card ID to analyze" }
+      cardId: { type: "string", description: "The card ID to analyze" },
     },
-    required: ["cardId"]
-  }
+    required: ["cardId"],
+  },
 };
 
 export async function handleFindPricePeaksValleys(args: any) {
   const { cardId } = args;
-  
+
   const peaksValleys = await prisma.$queryRaw`
     WITH price_changes AS (
       SELECT 
@@ -130,10 +258,12 @@ export async function handleFindPricePeaksValleys(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text", 
-      text: JSON.stringify(peaksValleys, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(peaksValleys, null, 2),
+      },
+    ],
   };
 }
 
@@ -144,23 +274,35 @@ export const getPriceGrowthRateTool: Tool = {
     type: "object",
     properties: {
       cardId: { type: "string", description: "The card ID to analyze" },
-      startDate: { type: "string", format: "date", description: "Period start date" },
-      endDate: { type: "string", format: "date", description: "Period end date" }
+      startDate: {
+        type: "string",
+        format: "date",
+        description: "Period start date",
+      },
+      endDate: {
+        type: "string",
+        format: "date",
+        description: "Period end date",
+      },
     },
-    required: ["cardId", "startDate", "endDate"]
-  }
+    required: ["cardId", "startDate", "endDate"],
+  },
 };
 
 export async function handleGetPriceGrowthRate(args: any) {
   const { cardId, startDate, endDate } = args;
-  
+
   const growthRate = await prisma.$queryRaw`
     WITH start_end_prices AS (
       SELECT 
         "cardId",
-        MIN(CASE WHEN date >= ${new Date(startDate)} THEN price END) as start_price,
+        MIN(CASE WHEN date >= ${new Date(
+          startDate
+        )} THEN price END) as start_price,
         MAX(CASE WHEN date <= ${new Date(endDate)} THEN price END) as end_price,
-        MIN(CASE WHEN date >= ${new Date(startDate)} THEN date END) as start_date,
+        MIN(CASE WHEN date >= ${new Date(
+          startDate
+        )} THEN date END) as start_date,
         MAX(CASE WHEN date <= ${new Date(endDate)} THEN date END) as end_date
       FROM "PriceEntry"
       WHERE "cardId" = ${cardId}
@@ -178,10 +320,12 @@ export async function handleGetPriceGrowthRate(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(growthRate, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(growthRate, null, 2),
+      },
+    ],
   };
 }
 
@@ -194,16 +338,20 @@ export const getFairValueEstimateTool: Tool = {
     type: "object",
     properties: {
       cardId: { type: "string", description: "The card ID to evaluate" },
-      historicalDays: { type: "number", description: "Number of days of historical data to use", default: 90 }
+      historicalDays: {
+        type: "number",
+        description: "Number of days of historical data to use",
+        default: 90,
+      },
     },
-    required: ["cardId"]
-  }
+    required: ["cardId"],
+  },
 };
 
 export async function handleGetFairValueEstimate(args: any) {
   const { cardId, historicalDays = 90 } = args;
   const startDate = new Date(Date.now() - historicalDays * 24 * 60 * 60 * 1000);
-  
+
   const fairValue = await prisma.$queryRaw`
     WITH price_metrics AS (
       SELECT 
@@ -261,10 +409,12 @@ export async function handleGetFairValueEstimate(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(fairValue, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(fairValue, null, 2),
+      },
+    ],
   };
 }
 
@@ -275,16 +425,20 @@ export const findBestBuyTimingTool: Tool = {
     type: "object",
     properties: {
       cardId: { type: "string", description: "The card ID to analyze" },
-      historicalDays: { type: "number", description: "Historical analysis period in days", default: 365 }
+      historicalDays: {
+        type: "number",
+        description: "Historical analysis period in days",
+        default: 365,
+      },
     },
-    required: ["cardId"]
-  }
+    required: ["cardId"],
+  },
 };
 
 export async function handleFindBestBuyTiming(args: any) {
   const { cardId, historicalDays = 365 } = args;
   const startDate = new Date(Date.now() - historicalDays * 24 * 60 * 60 * 1000);
-  
+
   const buyTiming = await prisma.$queryRaw`
     WITH daily_changes AS (
       SELECT 
@@ -334,24 +488,31 @@ export async function handleFindBestBuyTiming(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(buyTiming, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(buyTiming, null, 2),
+      },
+    ],
   };
 }
 
 export const calculateHoldingPeriodsTool: Tool = {
   name: "calculate_holding_periods",
-  description: "Analyze optimal holding periods based on historical return data",
+  description:
+    "Analyze optimal holding periods based on historical return data",
   inputSchema: {
     type: "object",
     properties: {
       cardId: { type: "string", description: "The card ID to analyze" },
-      historicalDays: { type: "number", description: "Historical analysis period in days", default: 730 }
+      historicalDays: {
+        type: "number",
+        description: "Historical analysis period in days",
+        default: 730,
+      },
     },
-    required: ["cardId"]
-  }
+    required: ["cardId"],
+  },
 };
 
 export async function handleCalculateHoldingPeriods(args: any) {
@@ -414,29 +575,42 @@ export async function handleCalculateHoldingPeriods(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(holdingAnalysis, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(holdingAnalysis, null, 2),
+      },
+    ],
   };
 }
 
 export const alertPriceThresholdsTool: Tool = {
-  name: "alert_price_thresholds", 
-  description: "Monitor cards for buy/sell threshold alerts based on statistical analysis",
+  name: "alert_price_thresholds",
+  description:
+    "Monitor cards for buy/sell threshold alerts based on statistical analysis",
   inputSchema: {
     type: "object",
     properties: {
-      cardIds: { type: "array", items: { type: "string" }, description: "Array of card IDs to monitor" },
-      historicalDays: { type: "number", description: "Historical period for threshold calculation", default: 180 }
+      cardIds: {
+        type: "array",
+        items: { type: "string" },
+        description: "Array of card IDs to monitor",
+      },
+      historicalDays: {
+        type: "number",
+        description: "Historical period for threshold calculation",
+        default: 180,
+      },
     },
-    required: ["cardIds"]
-  }
+    required: ["cardIds"],
+  },
 };
 
 export async function handleAlertPriceThresholds(args: any) {
   const { cardIds, historicalDays = 180 } = args;
-  const historicalDate = new Date(Date.now() - historicalDays * 24 * 60 * 60 * 1000);
+  const historicalDate = new Date(
+    Date.now() - historicalDays * 24 * 60 * 60 * 1000
+  );
 
   const alerts = await prisma.$queryRaw`
     WITH current_prices AS (
@@ -486,10 +660,12 @@ export async function handleAlertPriceThresholds(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(alerts, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(alerts, null, 2),
+      },
+    ],
   };
 }
 
@@ -497,22 +673,35 @@ export async function handleAlertPriceThresholds(args: any) {
 
 export const detectQuantitySpikesTool: Tool = {
   name: "detect_quantity_spikes",
-  description: "Detect unusual quantity spikes that may indicate market events or opportunities",
+  description:
+    "Detect unusual quantity spikes that may indicate market events or opportunities",
   inputSchema: {
-    type: "object", 
+    type: "object",
     properties: {
-      zScoreThreshold: { type: "number", description: "Z-score threshold for spike detection (recommend 1.5-2.0)", default: 2.0 },
-      analysisDays: { type: "number", description: "Number of days to analyze", default: 30 },
-      cardId: { type: "string", description: "Optional: analyze specific card only" }
+      zScoreThreshold: {
+        type: "number",
+        description:
+          "Z-score threshold for spike detection (recommend 1.5-2.0)",
+        default: 2.0,
+      },
+      analysisDays: {
+        type: "number",
+        description: "Number of days to analyze",
+        default: 30,
+      },
+      cardId: {
+        type: "string",
+        description: "Optional: analyze specific card only",
+      },
     },
-    required: []
-  }
+    required: [],
+  },
 };
 
 export async function handleDetectQuantitySpikes(args: any) {
   const { zScoreThreshold = 2.0, analysisDays = 30, cardId } = args;
   const startDate = new Date(Date.now() - analysisDays * 24 * 60 * 60 * 1000);
-  
+
   const spikes = await prisma.$queryRaw`
     WITH quantity_stats AS (
       SELECT 
@@ -532,7 +721,7 @@ export async function handleDetectQuantitySpikes(args: any) {
       FROM "PriceEntry"
       WHERE quantity IS NOT NULL
         AND date >= ${startDate}
-        ${cardId ? `AND "cardId" = ${cardId}` : ''}
+        ${cardId ? `AND "cardId" = ${cardId}` : ""}
     ),
     spike_detection AS (
       SELECT 
@@ -575,25 +764,39 @@ export async function handleDetectQuantitySpikes(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(spikes, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(spikes, null, 2),
+      },
+    ],
   };
 }
 
 export const quantityPriceCorrelationTool: Tool = {
   name: "quantity_price_correlation",
-  description: "Analyze correlation between quantity spikes and subsequent price movements",
+  description:
+    "Analyze correlation between quantity spikes and subsequent price movements",
   inputSchema: {
     type: "object",
     properties: {
-      zScoreThreshold: { type: "number", description: "Z-score threshold for spike detection", default: 2.0 },
-      analysisDays: { type: "number", description: "Number of days to analyze", default: 90 },
-      cardId: { type: "string", description: "Optional: analyze specific card only" }
+      zScoreThreshold: {
+        type: "number",
+        description: "Z-score threshold for spike detection",
+        default: 2.0,
+      },
+      analysisDays: {
+        type: "number",
+        description: "Number of days to analyze",
+        default: 90,
+      },
+      cardId: {
+        type: "string",
+        description: "Optional: analyze specific card only",
+      },
     },
-    required: []
-  }
+    required: [],
+  },
 };
 
 export async function handleQuantityPriceCorrelation(args: any) {
@@ -620,7 +823,7 @@ export async function handleQuantityPriceCorrelation(args: any) {
       FROM "PriceEntry" pe
       WHERE pe.quantity IS NOT NULL
         AND pe.date >= ${startDate}
-        ${cardId ? `AND pe."cardId" = ${cardId}` : ''}
+        ${cardId ? `AND pe."cardId" = ${cardId}` : ""}
     ),
     spike_events AS (
       SELECT *,
@@ -677,29 +880,40 @@ export async function handleQuantityPriceCorrelation(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(correlation, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(correlation, null, 2),
+      },
+    ],
   };
 }
 
 export const quantityAnomalyDashboardTool: Tool = {
   name: "quantity_anomaly_dashboard",
-  description: "Real-time dashboard of quantity anomalies and their activity levels",
+  description:
+    "Real-time dashboard of quantity anomalies and their activity levels",
   inputSchema: {
     type: "object",
     properties: {
-      minZScore: { type: "number", description: "Minimum Z-score to include", default: 1.5 },
-      daysPeriod: { type: "number", description: "Period to analyze for anomalies", default: 14 }
+      minZScore: {
+        type: "number",
+        description: "Minimum Z-score to include",
+        default: 1.5,
+      },
+      daysPeriod: {
+        type: "number",
+        description: "Period to analyze for anomalies",
+        default: 14,
+      },
     },
-    required: []
-  }
+    required: [],
+  },
 };
 
 export async function handleQuantityAnomalyDashboard(args: any) {
   const { minZScore = 1.5, daysPeriod = 14 } = args;
-  
+
   const dashboard = await prisma.$queryRaw`
     WITH recent_spikes AS (
       SELECT 
@@ -757,24 +971,35 @@ export async function handleQuantityAnomalyDashboard(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(dashboard, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(dashboard, null, 2),
+      },
+    ],
   };
 }
 
 export const realTimeQuantityAlertsTool: Tool = {
   name: "realtime_quantity_alerts",
-  description: "Real-time monitoring for quantity spikes happening right now or in the last few days",
+  description:
+    "Real-time monitoring for quantity spikes happening right now or in the last few days",
   inputSchema: {
     type: "object",
     properties: {
-      alertThreshold: { type: "number", description: "Z-score threshold for immediate alerts", default: 2.5 },
-      hoursBack: { type: "number", description: "Hours to look back for recent spikes", default: 72 }
+      alertThreshold: {
+        type: "number",
+        description: "Z-score threshold for immediate alerts",
+        default: 2.5,
+      },
+      hoursBack: {
+        type: "number",
+        description: "Hours to look back for recent spikes",
+        default: 72,
+      },
     },
-    required: []
-  }
+    required: [],
+  },
 };
 
 export async function handleRealTimeQuantityAlerts(args: any) {
@@ -835,26 +1060,33 @@ export async function handleRealTimeQuantityAlerts(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(alerts, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(alerts, null, 2),
+      },
+    ],
   };
 }
 
 // Advanced Quantity Analysis
 
 export const quantityTrendAnalysisTool: Tool = {
-  name: "quantity_trend_analysis", 
-  description: "Analyze quantity trends to distinguish between natural growth and artificial spikes",
+  name: "quantity_trend_analysis",
+  description:
+    "Analyze quantity trends to distinguish between natural growth and artificial spikes",
   inputSchema: {
     type: "object",
     properties: {
       cardId: { type: "string", description: "The card ID to analyze" },
-      analysisDays: { type: "number", description: "Number of days to analyze", default: 60 }
+      analysisDays: {
+        type: "number",
+        description: "Number of days to analyze",
+        default: 60,
+      },
     },
-    required: ["cardId"]
-  }
+    required: ["cardId"],
+  },
 };
 
 export async function handleQuantityTrendAnalysis(args: any) {
@@ -919,10 +1151,12 @@ export async function handleQuantityTrendAnalysis(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(trendAnalysis, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(trendAnalysis, null, 2),
+      },
+    ],
   };
 }
 
@@ -932,13 +1166,21 @@ export const marketQuantityOverviewTool: Tool = {
   name: "market_quantity_overview",
   description: "Get market-wide overview of quantity spikes across all cards",
   inputSchema: {
-    type: "object", 
+    type: "object",
     properties: {
-      zScoreThreshold: { type: "number", description: "Minimum Z-score for inclusion", default: 2.0 },
-      topN: { type: "number", description: "Number of top cards to return", default: 20 }
+      zScoreThreshold: {
+        type: "number",
+        description: "Minimum Z-score for inclusion",
+        default: 2.0,
+      },
+      topN: {
+        type: "number",
+        description: "Number of top cards to return",
+        default: 20,
+      },
     },
-    required: []
-  }
+    required: [],
+  },
 };
 
 export async function handleMarketQuantityOverview(args: any) {
@@ -1003,17 +1245,19 @@ export async function handleMarketQuantityOverview(args: any) {
   `;
 
   return {
-    content: [{
-      type: "text",
-      text: JSON.stringify(overview, null, 2)
-    }]
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(overview, null, 2),
+      },
+    ],
   };
 }
 
 // Tool registration array for easy MCP server setup
 export const allPokemonTools: Tool[] = [
   getPriceTrendssTool,
-  calculatePriceVolatilityTool, 
+  calculatePriceVolatilityTool,
   findPricePeaksVallleysTool,
   getPriceGrowthRateTool,
   getFairValueEstimateTool,
@@ -1025,25 +1269,25 @@ export const allPokemonTools: Tool[] = [
   quantityAnomalyDashboardTool,
   realTimeQuantityAlertsTool,
   quantityTrendAnalysisTool,
-  marketQuantityOverviewTool
+  marketQuantityOverviewTool,
 ];
 
 // Handler mapping for easy dispatch
 export const toolHandlers = {
-  'get_price_trends': handleGetPriceTrends,
-  'calculate_price_volatility': handleCalculatePriceVolatility,
-  'find_price_peaks_valleys': handleFindPricePeaksValleys,
-  'get_price_growth_rate': handleGetPriceGrowthRate,
-  'get_fair_value_estimate': handleGetFairValueEstimate,
-  'find_best_buy_timing': handleFindBestBuyTiming,
-  'calculate_holding_periods': handleCalculateHoldingPeriods,
-  'alert_price_thresholds': handleAlertPriceThresholds,
-  'detect_quantity_spikes': handleDetectQuantitySpikes,
-  'quantity_price_correlation': handleQuantityPriceCorrelation,
-  'quantity_anomaly_dashboard': handleQuantityAnomalyDashboard,
-  'realtime_quantity_alerts': handleRealTimeQuantityAlerts,
-  'quantity_trend_analysis': handleQuantityTrendAnalysis,
-  'market_quantity_overview': handleMarketQuantityOverview
+  get_price_trends: handleGetPriceTrends,
+  calculate_price_volatility: handleCalculatePriceVolatility,
+  find_price_peaks_valleys: handleFindPricePeaksValleys,
+  get_price_growth_rate: handleGetPriceGrowthRate,
+  get_fair_value_estimate: handleGetFairValueEstimate,
+  find_best_buy_timing: handleFindBestBuyTiming,
+  calculate_holding_periods: handleCalculateHoldingPeriods,
+  alert_price_thresholds: handleAlertPriceThresholds,
+  detect_quantity_spikes: handleDetectQuantitySpikes,
+  quantity_price_correlation: handleQuantityPriceCorrelation,
+  quantity_anomaly_dashboard: handleQuantityAnomalyDashboard,
+  realtime_quantity_alerts: handleRealTimeQuantityAlerts,
+  quantity_trend_analysis: handleQuantityTrendAnalysis,
+  market_quantity_overview: handleMarketQuantityOverview,
 };
 
 // Example MCP Server implementation
@@ -1055,7 +1299,7 @@ export class PokemonAnalyticsMCPServer {
     }
     return await handler(args);
   }
-  
+
   getTools(): Tool[] {
     return allPokemonTools;
   }
@@ -1073,4 +1317,51 @@ const result = await server.handleToolCall('detect_quantity_spikes', {
 
 // Get all available tools
 const tools = server.getTools();
-*/ 
+*/
+
+// Function to start stdio mode (your original functionality)
+async function startStdioServer() {
+  try {
+    await mcp.start({
+      transportType: "stdio",
+    });
+    // debugPrint("GitHub MCP Server started successfully (stdio)");
+  } catch (error) {
+    // debugPrint("Failed to start GitHub MCP Server:", error);
+    process.exit(1);
+  }
+}
+
+// Function to start HTTP mode with streamableHttp
+async function startHttpServer() {
+  try {
+    await mcp.start({
+      transportType: "httpStream",
+      httpStream: {
+        port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
+        host: process.env.HOST || "localhost",
+      },
+    });
+    const port = process.env.PORT || 3000;
+    // console.log(
+    //   `GitHub MCP Server started successfully (HTTP) on port ${port}`
+    // );
+  } catch (error) {
+    // debugPrint("Failed to start GitHub MCP Server (HTTP):", error);
+    process.exit(1);
+  }
+}
+
+// Start server based on command line argument or environment variable
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const serverType = process.argv[2] || process.env.SERVER_TYPE || "stdio";
+  console.log(serverType);
+  if (serverType === "http") {
+    startHttpServer();
+  } else {
+    startStdioServer();
+  }
+}
+
+// Export everything for use in other modules
+export { mcp, toolDefinitions, startStdioServer, startHttpServer };

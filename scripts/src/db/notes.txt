@@ -21,7 +21,7 @@ https://www.youtube.com/watch?v=XxGMuoje1g0 (react-syntax-highlighter)
   className="flex gap-4 flex-col my-12"
 >....</motion.div>
 
-pokemontcg.io api key: 604db011-43f2-406f-bc0f-85332c0f950c
+pokemontcg.io api key: 
 https://api.pokemontcg.io/v2/cards?q=id:sv6pt5
 
 // update new set

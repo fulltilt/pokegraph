@@ -1,22 +1,24 @@
 {
-  "name": "pokemon-card-analytics-mcp",
+  "name": "@pokemon/mcp",
   "version": "1.0.0",
   "description": "MCP server for Pokemon card price and quantity analytics",
-  "type": "module",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
-    "test": "jest"
+    "build": "bun build src/server.ts --outdir dist/src --target node",
+    "dev": "bun run --watch src/server.ts",
+    "start": "bun dist/src/server.js"
   },
   "dependencies": {
+    "@pokemon/shared": "*",
     "@modelcontextprotocol/sdk": "^1.17.4",
-    "@prisma/client": "^6.15.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "fastmcp": "^3.15.1",
-    "prisma": "^6.15.0"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/node": "^24.3.0",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
