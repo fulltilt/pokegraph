@@ -1,17 +1,16 @@
 // src/server.ts
 import express from "express";
 import cors from "cors";
-import { toolDefinitions } from "./tools";
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const PORT = process.env.MCP_PORT ? parseInt(process.env.MCP_PORT) : 3000;
 
 // Initialize tools from the imported definitions
 const registeredTools = new Map();
 
 // Register all tools from github-mcp.ts
-toolDefinitions.forEach((tool) => {
-  registeredTools.set(tool.name, tool);
-});
+// toolDefinitions.forEach((tool) => {
+//   registeredTools.set(tool.name, tool);
+// });
 
 // MCP Protocol Handler Functions
 function handleInitialize(id: any) {
@@ -214,18 +213,18 @@ app.post("/mcp", async (req, res) => {
 // Start server function
 function startServer() {
   app.listen(PORT, () => {
-    console.log(
-      `GitHub MCP Server (Express) running on http://localhost:${PORT}`
-    );
-    console.log(`Health check: http://localhost:${PORT}/health`);
-    console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
+    // console.log(
+    //   `GitHub MCP Server (Express) running on http://localhost:${PORT}`
+    // );
+    // console.log(`Health check: http://localhost:${PORT}/health`);
+    // console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
   });
 }
 
 // Graceful shutdown
 process.on("SIGINT", () => {
   // debugPrint("\nShutting down Express server...");
-  console.log("\nShutting down Express server...");
+  // console.log("\nShutting down Express server...");
   process.exit(0);
 });
 

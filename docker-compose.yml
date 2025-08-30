@@ -27,7 +27,7 @@ services:
       - .:/app # Mount entire project
       - /app/node_modules # Prevent overwriting node_modules
     working_dir: /app
-    command: ["bun", "dist/backend/index.js"] # Adjust if using ts-node or another start command
+    command: ["bun", "dist/backend/src/index.js"] # Adjust if using ts-node or another start command
 
   mcp:
     build:

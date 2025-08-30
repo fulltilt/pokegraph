@@ -768,8 +768,9 @@ export const priceAlerts = async (cardIds: string[], date: Date) => {
 // 2.0-2.5: Major spikes (investigate)
 // 3.0+: Extreme spikes (immediate action needed)
 export const getQuantitySpikes = async (threshold: number = 1.5) => {
-  return await prisma.$queryRawUnsafe(
-    `
+  try {
+    const res = await prisma.$queryRawUnsafe(
+      `
       WITH quantity_stats AS (
         SELECT 
           "cardId",
@@ -833,7 +834,7 @@ export const getQuantitySpikes = async (threshold: number = 1.5) => {
         ROUND(sd.rolling_avg_30d, 1) as normal_avg_quantity,
         ROUND(sd.z_score_30d, 2) as z_score_30d,
         ROUND(sd.z_score_7d, 2) as z_score_7d,
-        ROUND(sd.pct_above_normal, 1) as pct_above_normal,
+        ROUND(sd.pct_above_avg_30d, 1) as pct_above_normal,
         -- Get corresponding price to see if quantity spike affects price
         pe.price as spike_day_price,
         LAG(pe.price) OVER (PARTITION BY sd."cardId" ORDER BY sd.date) as prev_day_price,
@@ -850,8 +851,14 @@ export const getQuantitySpikes = async (threshold: number = 1.5) => {
         AND sd.date >= CURRENT_DATE - INTERVAL '3 days'  -- Only show spikes from last 3 days
       ORDER BY sd.z_score_30d DESC, sd.date DESC;
     `,
-    threshold
-  );
+      threshold
+    );
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching quantity spikes:", error);
+    throw error;
+  }
 };
 
 export const getQuantitySpikesWithPriceImpact = async (
