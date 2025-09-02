@@ -96,6 +96,7 @@ mcp.addTool({
     }
   },
 });
+
 mcp.addTool({
   name: "detect_quantity_spikes",
   description:
@@ -126,55 +127,6 @@ mcp.addTool({
 });
 
 // Price Analysis Tools
-
-// export const getPriceTrendssTool: Tool = {
-//   name: "get_price_trends",
-//   description:
-//     "Get price trends for a specific card over a time period with percentage changes",
-//   inputSchema: {
-//     type: "object",
-//     properties: {
-//       cardId: { type: "string", description: "The card ID to analyze" },
-//       startDate: {
-//         type: "string",
-//         format: "date",
-//         description: "Start date (YYYY-MM-DD)",
-//       },
-//       endDate: {
-//         type: "string",
-//         format: "date",
-//         description: "End date (YYYY-MM-DD)",
-//       },
-//     },
-//     required: ["cardId", "startDate", "endDate"],
-//   },
-// };
-
-// export async function handleGetPriceTrends(args: any) {
-//   const { cardId, startDate, endDate } = args;
-
-//   const trends = await prisma.$queryRaw`
-//     SELECT
-//       date,
-//       price,
-//       LAG(price) OVER (ORDER BY date) as prev_price,
-//       (price - LAG(price) OVER (ORDER BY date)) / NULLIF(LAG(price) OVER (ORDER BY date), 0) * 100 as pct_change
-//     FROM "PriceEntry"
-//     WHERE "cardId" = ${cardId}
-//       AND date >= ${new Date(startDate)}
-//       AND date <= ${new Date(endDate)}
-//     ORDER BY date;
-//   `;
-
-//   return {
-//     content: [
-//       {
-//         type: "text",
-//         text: JSON.stringify(trends, null, 2),
-//       },
-//     ],
-//   };
-// }
 
 // export const calculatePriceVolatilityTool: Tool = {
 //   name: "calculate_price_volatility",

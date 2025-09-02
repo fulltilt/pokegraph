@@ -54,7 +54,7 @@ function convertDate(timeframe: string) {
   return fromDate;
 }
 
-type TimeframeKey = "10d" | "1m" | "3m" | "6m" | "1y";
+export type TimeframeKey = "10d" | "1m" | "3m" | "6m" | "1y";
 
 const timeframeMap: Record<TimeframeKey, string> = {
   "10d": "10 days",
@@ -366,6 +366,7 @@ app.get("/api/top-mover-per-set-price/:order", async (req, res) => {
           SELECT *
           FROM "PriceEntry"
           WHERE date >= NOW() - $1::interval
+            AND price > 0
         ),
 
         -- Step 2: Precompute price boundaries per card
@@ -396,7 +397,12 @@ app.get("/api/top-mover-per-set-price/:order", async (req, res) => {
             pb.image,
             pb.release_date,
             MAX(CASE WHEN p.date = pb.earliest_date THEN p.price END) AS early_price,
-            MAX(CASE WHEN p.date = pb.latest_date THEN p.price END) AS recent_price
+            COALESCE(
+              MAX(CASE WHEN p.date = pb.latest_date THEN p.price END),
+              (SELECT price FROM recent_prices rp
+              WHERE rp."cardId" = pb.card_id AND rp.price > 0
+              ORDER BY rp.date DESC LIMIT 1)
+            ) AS recent_price
           FROM price_bounds pb
           JOIN recent_prices p ON p."cardId" = pb.card_id
           GROUP BY pb.set_id, pb.set_name, pb.card_id, pb.card_name, pb.image, pb.release_date
