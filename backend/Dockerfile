@@ -43,4 +43,4 @@ RUN bun run db:generate
 # Skip building - run from TypeScript source in development
 EXPOSE 3457
 
-CMD ["bun", "run", "dev:backend"]
+# CMD ["bun", "run", "dev:backend"]

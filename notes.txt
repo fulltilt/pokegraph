@@ -129,3 +129,4 @@ docker compose up -d && echo "Docker Compose is running in detached mode. Logs: 
 
 https://chatgpt.com/s/t_68af344461f081918d1261b61175c313 # Nginx setup
 https://chatgpt.com/s/t_68af45c497e88191aaeed088cbadfc2c # proper setup
+https://chatgpt.com/s/t_68baf20ce0348191b8ac6ca590a4bedb # load balancing in Nginx (docker compose scale to get multiple nodes running)
