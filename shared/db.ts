@@ -848,7 +848,7 @@ export const getQuantitySpikes = async (threshold: number = 1.5) => {
       JOIN "Card" c ON sd."cardId" = c.id
       JOIN "PriceEntry" pe ON sd."cardId" = pe."cardId" AND sd.date = pe.date
       WHERE sd.z_score_30d >= $1  -- threshold for moderate+ spikes
-        AND sd.date >= CURRENT_DATE - INTERVAL '13 days'  -- Only show spikes from last 3 days
+        AND sd.date >= CURRENT_DATE - INTERVAL '3 days'  -- Only show spikes from last 3 days
       ORDER BY sd.z_score_30d DESC, sd.date DESC;
     `,
       threshold
