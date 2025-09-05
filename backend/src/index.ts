@@ -6,6 +6,7 @@ import { pipeline as hfPipeline, env } from "@xenova/transformers";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import { getQuantitySpikes } from "@pokemon/shared/db";
 
 // Let the library know to use local files
 env.localModelPath = true;
@@ -547,6 +548,16 @@ app.get(
     }
   }
 );
+
+app.get("/api/quantity-spikes", async (req, res) => {
+  try {
+    const quantitySpikes = await getQuantitySpikes();
+    res.json(quantitySpikes);
+  } catch (error) {
+    console.error("Error fetching quantity spikes:", error);
+    res.status(500).send("Error fetching quantity spikes");
+  }
+});
 
 app.get("/api/sealed/unlabeled", async (req, res) => {
   try {

@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { TopMoversChart } from "@/components/TopMoversChart";
 import CardSearchInput from "@/components/CardSearchInput";
+import QuantitySpikesTable from "@/components/QuantitySpikesTable";
 
 const TopGainers = memo(({ timeframe }: { timeframe: string }) => (
   <TopMoversChart
@@ -44,12 +45,13 @@ export default function Main() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="max-w-5xl mx-auto p-4">
       <div className="flex gap-2 mb-6 flex-wrap">
         {/* <CardSearchInput /> */}
       </div>
 
       <div className="space-y-4 col-span-4">
+        <h1 className="text-xl font-bold mb-4">Top Gainers/Losers</h1>
         <div className="flex gap-2">
           {(["10d", "1m", "3m", "6m", "1y"] as const).map((tf) => (
             <button
@@ -71,6 +73,10 @@ export default function Main() {
           <TopGainersByPrice timeframe={timeframe} />
           <TopLosersByPrice timeframe={timeframe} />
         </div>
+      </div>
+
+      <div className="space-y-4 col-span-4">
+        <QuantitySpikesTable />
       </div>
     </div>
   );

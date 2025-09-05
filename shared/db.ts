@@ -769,7 +769,7 @@ export const priceAlerts = async (cardIds: string[], date: Date) => {
 // 3.0+: Extreme spikes (immediate action needed)
 export const getQuantitySpikes = async (threshold: number = 1.5) => {
   try {
-    const res = await prisma.$queryRawUnsafe(
+    return await prisma.$queryRawUnsafe(
       `
       WITH quantity_stats AS (
         SELECT 
@@ -848,13 +848,11 @@ export const getQuantitySpikes = async (threshold: number = 1.5) => {
       JOIN "Card" c ON sd."cardId" = c.id
       JOIN "PriceEntry" pe ON sd."cardId" = pe."cardId" AND sd.date = pe.date
       WHERE sd.z_score_30d >= $1  -- threshold for moderate+ spikes
-        AND sd.date >= CURRENT_DATE - INTERVAL '3 days'  -- Only show spikes from last 3 days
+        AND sd.date >= CURRENT_DATE - INTERVAL '13 days'  -- Only show spikes from last 3 days
       ORDER BY sd.z_score_30d DESC, sd.date DESC;
     `,
       threshold
     );
-
-    return res;
   } catch (error) {
     console.error("Error fetching quantity spikes:", error);
     throw error;
