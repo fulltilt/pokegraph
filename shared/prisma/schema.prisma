@@ -22,6 +22,9 @@ model Card {
   data      Json
   prices    PriceEntry[]
   priceSummary CardPriceChangeSummary[]
+
+  imageUrl       String?
+  embedding     Unsupported("vector(512)")? // CLIP embeddings are 512-dim
 }
 
 model PriceEntry {

@@ -8,6 +8,7 @@ import Card from "./ui/Card";
 import Sealed from "./ui/Sealed";
 import Labeler from "./ui/Labeler";
 import Predictions from "./ui/Predictions";
+import CardMatch from "./ui/CardMatch";
 
 export function AppRoutes() {
   return (
@@ -20,6 +21,7 @@ export function AppRoutes() {
         <Route path="sealed" element={<Sealed />} />
         <Route path="label" element={<Labeler />} />
         <Route path="predictions" element={<Predictions />} />
+        <Route path="search" element={<CardMatch />} />
       </Route>
     </Routes>
   );

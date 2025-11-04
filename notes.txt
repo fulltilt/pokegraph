@@ -1,3 +1,5 @@
+# after cloning project, just run 'docker compose up'
+
 # Get all distinct series and order by release_date ascending
 SELECT DISTINCT
   (data->'set'->>'series') AS series,
@@ -130,3 +132,7 @@ docker compose up -d && echo "Docker Compose is running in detached mode. Logs: 
 https://chatgpt.com/s/t_68af344461f081918d1261b61175c313 # Nginx setup
 https://chatgpt.com/s/t_68af45c497e88191aaeed088cbadfc2c # proper setup
 https://chatgpt.com/s/t_68baf20ce0348191b8ac6ca590a4bedb # load balancing in Nginx (docker compose scale to get multiple nodes running)
+https://chatgpt.com/s/t_6908bb7325a48191951ae6db02c36968 # explain: docker exec -it pokedb psql -U postgres -d pokedex -c "CREATE EXTENSION IF NOT EXISTS vector;"
+docker exec -it pokedb psql -U postgres -d pokedex -c "ALTER DATABASE pokedex REFRESH COLLATION VERSION;"
+docker exec -it pokedb psql -U postgres -d template1 -c "ALTER DATABASE template1 REFRESH COLLATION VERSION;"
+docker compose run --rm backend bunx prisma migrate dev --schema=/app/shared/prisma/schema.prisma --name add_pgvector

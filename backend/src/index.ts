@@ -6,6 +6,8 @@ import { pipeline as hfPipeline, env } from "@xenova/transformers";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import multer, { Multer } from "multer";
+import { pipeline } from "@xenova/transformers";
 import { getQuantitySpikes } from "@pokemon/shared/db";
 
 // Let the library know to use local files
@@ -16,6 +18,9 @@ const __dirname = path.dirname(__filename); // get the name of the directory
 
 const app = express();
 const prisma = new PrismaClient();
+
+const uploadDir = path.join(__dirname, "../uploads");
+const upload: Multer = multer({ dest: uploadDir });
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
@@ -685,6 +690,107 @@ app.post("/api/sealed/auto-label", async (req, res) => {
     res.status(500).json({ error: "Failed to auto-label entries." });
   }
 });
+
+interface UploadRequest extends Request {
+  body: {
+    name: string;
+  };
+  file?: Express.Multer.File;
+}
+
+interface MatchRequest extends Request {
+  file?: Express.Multer.File;
+}
+
+// A CardMatchResult represents one record from the pgvector similarity query
+interface CardMatchResult {
+  id: number;
+  name: string;
+  imageUrl: string;
+  distance: number;
+}
+
+// --- Load CLIP model once (runs fully locally) ---
+const extractor = await pipeline(
+  "feature-extraction",
+  "Xenova/clip-vit-base-patch32"
+);
+
+async function getEmbedding(imagePath: string): Promise<number[]> {
+  const output = await extractor(imagePath, {
+    pooling: "mean",
+    normalize: true,
+  });
+  return Array.from(output.data);
+}
+
+// --- Upload known card ---
+app.post(
+  "/api/upload",
+  upload.single("image"),
+  async (req: UploadRequest, res: Response) => {
+    const { name } = req.body;
+    const imagePath = req.file?.path;
+
+    if (!imagePath || !req.file) {
+      return res.status(400).json({ error: "No image uploaded" });
+    }
+
+    try {
+      const embedding: number[] = await getEmbedding(imagePath);
+
+      await prisma.card.create({
+        data: {
+          name,
+          imageUrl: `/uploads/${req.file.filename}`,
+          embedding,
+        },
+      });
+
+      res.json({ success: true, message: "Card stored successfully" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Failed to process image" });
+    } finally {
+      fs.unlinkSync(imagePath);
+    }
+  }
+);
+
+// --- Match card ---
+app.post(
+  "/api/match",
+  upload.single("image"),
+  async (req: MatchRequest, res: Response) => {
+    const imagePath = req.file?.path;
+
+    if (!imagePath) {
+      return res.status(400).json({ error: "No image uploaded" });
+    }
+
+    try {
+      const embedding: number[] = await getEmbedding(imagePath);
+
+      // Use pgvector similarity via Prisma raw query
+      const result = (await prisma.$queryRawUnsafe(
+        `
+          SELECT id, name, "imageUrl", embedding <-> $1::vector AS distance
+          FROM "Card"
+          ORDER BY distance ASC
+          LIMIT 3;
+        `,
+        embedding
+      )) as CardMatchResult[];
+
+      res.json({ matches: result });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Failed to match image" });
+    } finally {
+      fs.unlinkSync(imagePath);
+    }
+  }
+);
 
 // Start the server
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3457;

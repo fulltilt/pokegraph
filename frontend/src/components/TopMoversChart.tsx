@@ -125,7 +125,7 @@ export function TopMoversChart({
             }
             fill={order === "DESC" ? "#22c55e" : "#ef4444"}
           >
-            {data.map((entry, index) => (
+            {data.map((_, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={order === "DESC" ? "#22c55e" : "#ef4444"}
