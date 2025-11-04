@@ -9,12 +9,13 @@ generator client {
   provider = "prisma-client-js"
   output   = "../../node_modules/.prisma/client"
   binaryTargets = ["native", "debian-openssl-1.1.x", "linux-musl", "linux-arm64-openssl-1.1.x"]
-
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model Card {
