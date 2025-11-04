@@ -1317,15 +1317,16 @@ async function startHttpServer() {
 }
 
 // Start server based on command line argument or environment variable
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const serverType = process.argv[2] || process.env.SERVER_TYPE || "stdio";
-  // console.log(serverType);
-  if (serverType === "http") {
-    startHttpServer();
-  } else {
-    startStdioServer();
-  }
-}
+// if (import.meta.url === `file://${process.argv[1]}`) {
+//   const serverType = process.argv[2] || process.env.SERVER_TYPE || "stdio";
+//   // console.log(serverType);
+//   if (serverType === "http") {
+//     startHttpServer();
+//   } else {
+//     startStdioServer();
+//   }
+// }
+startStdioServer();
 
 // Export everything for use in other modules
 export { mcp, startStdioServer, startHttpServer };

@@ -767,7 +767,7 @@ export const priceAlerts = async (cardIds: string[], date: Date) => {
 // 1.5-2.0: Moderate spikes (worth monitoring)
 // 2.0-2.5: Major spikes (investigate)
 // 3.0+: Extreme spikes (immediate action needed)
-export const getQuantitySpikes = async (threshold: number = 1.5) => {
+export const getQuantitySpikes = async (threshold: number = 5) => {
   try {
     return await prisma.$queryRawUnsafe(
       `
