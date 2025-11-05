@@ -23,22 +23,50 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
-# Copy workspace configuration files first
-COPY package*.json ./
+# Install OpenSSL AND npm for Prisma
+# RUN apt-get update && \
+#     apt-get install -y openssl npm && \
+#     rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y \
+        openssl npm \
+        libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy root package.json but we'll handle workspaces manually
+COPY package*.json bun.lockb* ./
+
+# Copy only the workspaces that exist in this build context
 COPY backend/package*.json ./backend/
 COPY mcp/package*.json ./mcp/
 COPY shared/package*.json ./shared/
+COPY scripts/package*.json ./scripts/
+# Don't copy frontend - it's not in this context
 
-# Copy all workspace source code needed for dependencies
-COPY backend/ ./backend/
-COPY mcp/ ./mcp/
-COPY shared/ ./shared/
+COPY shared/prisma ./shared/prisma
 
-# Install all workspace dependencies
+# Temporarily remove frontend from workspaces for Docker build
+RUN sed -i 's/"frontend",//g' package.json || true
+
+# Install all workspace dependencies from root
 RUN bun install
 
 # Generate Prisma client
 RUN bun run db:generate
+
+# # Copy all workspace source code
+# COPY backend/ ./backend/
+# COPY mcp/ ./mcp/
+# COPY shared/ ./shared/
+# COPY scripts/ ./scripts/
+
+# Copy only source code (not node_modules)
+COPY backend/src ./backend/src
+COPY backend/tsconfig.json ./backend/
+COPY mcp/src ./mcp/src
+COPY mcp/tsconfig.json ./mcp/
+COPY shared/types.ts ./shared/
+COPY scripts/src ./scripts/src
 
 # Skip building - run from TypeScript source in development
 EXPOSE 3457

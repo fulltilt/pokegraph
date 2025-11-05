@@ -25,7 +25,8 @@ services:
       DATABASE_URL: postgres://postgres:password@db:5432/pokedex
     volumes:
       - .:/app # Mount entire project
-      - /app/node_modules # Prevent overwriting node_modules
+      - /app/node_modules           # Prevent overwriting
+      - /app/shared/node_modules    # Prevent overwriting shared node_modules too
     # working_dir: /app
     # command: ["bun", "dist/backend/src/index.js"] # Adjust if using ts-node or another start command
     working_dir: /app/backend
@@ -59,6 +60,9 @@ services:
       - ./shared:/app/shared # Mount shared folder if frontend needs it
     working_dir: /app/frontend
     command: ["bun", "run", "dev"]
+    # 🟢 Important: Prevent overwriting node_modules
+    tmpfs:
+      - /app/frontend/node_modules
 
 volumes:
   pgdata:

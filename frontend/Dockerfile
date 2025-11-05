@@ -2,13 +2,16 @@
 FROM oven/bun:1
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /app/frontend
 
 # Copy frontend package.json (not root package.json)
 COPY frontend/package*.json ./
 
 # Install dependencies
 RUN bun install
+
+# Remove potential conflicts before copying app files
+RUN rm -rf node_modules
 
 # Copy the rest of the frontend app
 COPY frontend/ .

@@ -136,3 +136,5 @@ https://chatgpt.com/s/t_6908bb7325a48191951ae6db02c36968 # explain: docker exec 
 docker exec -it pokedb psql -U postgres -d pokedex -c "ALTER DATABASE pokedex REFRESH COLLATION VERSION;"
 docker exec -it pokedb psql -U postgres -d template1 -c "ALTER DATABASE template1 REFRESH COLLATION VERSION;"
 docker compose run --rm backend bunx prisma migrate dev --schema=/app/shared/prisma/schema.prisma --name add_pgvector
+
+docker compose run --rm backend bun run prisma generate --schema=../shared/prisma/schema.prisma
