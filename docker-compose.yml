@@ -21,8 +21,10 @@ services:
       - "3457:3457"
     depends_on:
       - db
+      - embedding-service
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/pokedex
+      EMBEDDING_SERVICE_URL: http://embedding-service:8000  # Use the service name
     volumes:
       - .:/app # Mount entire project
       - /app/node_modules           # Prevent overwriting
@@ -32,7 +34,6 @@ services:
     # command: ["bun", "dist/backend/src/index.js"] # Adjust if using ts-node or another start command
     working_dir: /app/backend
     # command: ["bun", "run", "dev"]
-    # command: sh -c "cd /app/shared && bun install && bunx prisma generate --schema=prisma/schema.prisma && cd /app/backend && bun run dev"
     command: sh -c "cd /app && bun install && bunx prisma generate --schema=shared/prisma/schema.prisma && cd backend && bun run dev"
 
   # mcp:
@@ -65,5 +66,18 @@ services:
     working_dir: /app/frontend
     command: ["bun", "run", "dev"]
 
+  embedding-service:
+    build:
+      context: ./scripts/python/embedding_service
+      dockerfile: Dockerfile
+    container_name: pokemon-embedding
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_CACHE=/models
+    volumes:
+      - model-cache:/models
+
 volumes:
   pgdata:
+  model-cache:

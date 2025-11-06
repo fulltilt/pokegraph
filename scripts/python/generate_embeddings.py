@@ -1,5 +1,5 @@
 # docker compose up -d
-# python3 -m venv .ven
+# python3 -m venv .venv
 # source .venv/bin/activate
 # pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 # python generate_embeddings.py

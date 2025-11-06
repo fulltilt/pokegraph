@@ -1,13 +1,12 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
-// import { PrismaClient } from "../generated/prisma/index.js";
 import { PrismaClient } from "@prisma/client";
-// import { pipeline as hfPipeline, env } from "@xenova/transformers";
-import path from "path";
+import { pipeline as hfPipeline } from "@xenova/transformers";
 import { fileURLToPath } from "url";
-// import fs from "fs";
-import multer, { Multer } from "multer";
-// import { pipeline } from "@xenova/transformers";
+import multer from "multer";
+import FormData from "form-data";
+import path from "path";
+import fs from "fs";
 import { getQuantitySpikes } from "@pokemon/shared/db";
 
 // Let the library know to use local files
@@ -19,28 +18,42 @@ const __dirname = path.dirname(__filename); // get the name of the directory
 const app = express();
 const prisma = new PrismaClient();
 
+// Python embedding service URL
+const EMBEDDING_SERVICE_URL = process.env.EMBEDDING_SERVICE_URL || "http://localhost:8000";
+
 const uploadDir = path.join(__dirname, "../uploads");
-const upload: Multer = multer({ dest: uploadDir });
+// Configure multer for image uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+});
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 let classifier: any;
-// async function loadModel() {
-//   if (!classifier) {
-//     // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
-//     const modelDir = `file://${path.resolve(__dirname, "../../trainer/model")}`;
-//     console.log("Loading model from:", modelDir);
-//     console.log(
-//       "Files:",
-//       fs.readdirSync(path.resolve(__dirname, "../../trainer/model"))
-//     );
+async function loadModel() {
+  if (!classifier) {
+    // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
+    const modelDir = `file://${path.resolve(__dirname, "../../trainer/model")}`;
+    console.log("Loading model from:", modelDir);
+    console.log(
+      "Files:",
+      fs.readdirSync(path.resolve(__dirname, "../../trainer/model"))
+    );
 
-//     classifier = await hfPipeline("text-classification", modelDir, {
-//       local_files_only: true, // ⬅️ Tells Xenova to load from local dir
-//     });
-//   }
-// }
+    classifier = await hfPipeline("text-classification", modelDir, {
+      local_files_only: true, // ⬅️ Tells Xenova to load from local dir
+    });
+  }
+}
 
 function convertDate(timeframe: string) {
   let fromDate = new Date();
@@ -128,7 +141,7 @@ interface CardData {
   };
 }
 
-app.get("/api/cards", async (req, res) => {
+app.get("/api/cards", async (req: Request, res: Response) => {
   const { set, q = "", filter = "", page = "1", pageSize = "20" } = req.query;
 
   const take = parseInt(pageSize as string);
@@ -192,7 +205,7 @@ app.get("/api/cards", async (req, res) => {
   }
 });
 
-app.get("/api/card/history/:id", async (req, res) => {
+app.get("/api/card/history/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   const { timeframe = "1m" } = req.query;
 
@@ -216,7 +229,7 @@ app.get("/api/card/history/:id", async (req, res) => {
   res.json(history);
 });
 
-app.get("/api/cards-search", async (req, res) => {
+app.get("/api/cards-search", async (req: Request, res: Response) => {
   const name = req.query.name as string;
 
   if (!name) {
@@ -243,7 +256,7 @@ app.get("/api/cards-search", async (req, res) => {
   }
 });
 
-app.get("/api/cards/:id", async (req, res) => {
+app.get("/api/cards/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const card = await prisma.card.findUnique({
@@ -260,7 +273,7 @@ app.get("/api/cards/:id", async (req, res) => {
   res.json(card);
 });
 
-app.get("/api/top-mover-per-set/:order", async (req, res) => {
+app.get("/api/top-mover-per-set/:order", async (req: Request, res: Response) => {
   const { order } = req.params;
   const timeframe = req.query.timeframe || "10d";
 
@@ -351,7 +364,7 @@ app.get("/api/top-mover-per-set/:order", async (req, res) => {
   }
 });
 
-app.get("/api/top-mover-per-set-price/:order", async (req, res) => {
+app.get("/api/top-mover-per-set-price/:order", async (req: Request, res: Response) => {
   const { order } = req.params;
   const timeframe = req.query.timeframe || "10d";
 
@@ -447,7 +460,7 @@ app.get("/api/top-mover-per-set-price/:order", async (req, res) => {
   }
 });
 
-app.get("/api/sets-by-series", async (req, res) => {
+app.get("/api/sets-by-series", async (req: Request, res: Response) => {
   const series = req.query.series as string;
 
   if (!series) {
@@ -554,7 +567,7 @@ app.get(
   }
 );
 
-app.get("/api/quantity-spikes", async (req, res) => {
+app.get("/api/quantity-spikes", async (req: Request, res: Response) => {
   try {
     const quantitySpikes = await getQuantitySpikes();
     res.json(quantitySpikes);
@@ -564,7 +577,7 @@ app.get("/api/quantity-spikes", async (req, res) => {
   }
 });
 
-app.get("/api/sealed/unlabeled", async (req, res) => {
+app.get("/api/sealed/unlabeled", async (req: Request, res: Response) => {
   try {
     const entries = await prisma.sealedPriceEntry.findMany({
       where: { label: null },
@@ -595,7 +608,7 @@ app.get("/api/sealed/unlabeled", async (req, res) => {
   }
 });
 
-app.post("/api/sealed/label", async (req, res) => {
+app.post("/api/sealed/label", async (req: Request, res: Response) => {
   const { id, label } = req.body;
 
   if (!id || (label !== "keep" && label !== "remove")) {
@@ -616,7 +629,7 @@ app.post("/api/sealed/label", async (req, res) => {
   }
 });
 
-app.get("/api/sealed/predictions", async (req, res) => {
+app.get("/api/sealed/predictions", async (req: Request, res: Response) => {
   const { label, search, page = 1, perPage = 20 } = req.query;
   const where: any = {};
 
@@ -640,7 +653,7 @@ app.get("/api/sealed/predictions", async (req, res) => {
   res.json({ items, total });
 });
 
-app.post("/api/sealed/auto-label", async (req, res) => {
+app.post("/api/sealed/auto-label", async (req: Request, res: Response) => {
   try {
     await loadModel();
 
@@ -710,87 +723,121 @@ interface CardMatchResult {
   distance: number;
 }
 
-// --- Load CLIP model once (runs fully locally) ---
-// const extractor = await pipeline(
-//   "feature-extraction",
-//   "Xenova/clip-vit-base-patch32"
-// );
+// Find similar cards using cosine similarity
+async function findSimilarCards(
+  embedding: number[],
+  topK: number = 5,
+  threshold: number = 0.75
+) {
+  try {
+    const embeddingStr = `[${embedding.join(",")}]`;
+    
+    const results = await prisma.$queryRaw`
+      SELECT 
+        id,
+        data,
+        1 - (embedding <=> ${embeddingStr}::vector) as similarity
+      FROM "Card"
+      WHERE embedding IS NOT NULL
+        AND 1 - (embedding <=> ${embeddingStr}::vector) > ${threshold}
+      ORDER BY embedding <=> ${embeddingStr}::vector
+      LIMIT ${topK}
+    `;
 
-// async function getEmbedding(imagePath: string): Promise<number[]> {
-//   const output = await extractor(imagePath, {
-//     pooling: "mean",
-//     normalize: true,
-//   });
-//   return Array.from(output.data);
-// }
+    return results;
+  } catch (error) {
+    console.error("Database query error:", error);
+    return [];
+  }
+}
 
-// --- Upload known card ---
-// app.post(
-//   "/api/upload",
-//   upload.single("image"),
-//   async (req: UploadRequest, res: Response) => {
-//     const { name } = req.body;
-//     const imagePath = req.file?.path;
+// API endpoint for single card recognition
+app.post(
+  "/recognize-card",
+  upload.single("image"),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
 
-//     if (!imagePath || !req.file) {
-//       return res.status(400).json({ error: "No image uploaded" });
-//     }
+      const topK = parseInt(req.query.topK as string) || 5;
+      const threshold = parseFloat(req.query.threshold as string) || 0.75;
 
-//     try {
-//       const embedding: number[] = await getEmbedding(imagePath);
+      console.log("📤 Sending image to Python embedding service...");
 
-//       await prisma.card.create({
-//         data: {
-//           name,
-//           imageUrl: `/uploads/${req.file.filename}`,
-//           embedding,
-//         },
-//       });
+      // Send image to Python service for embedding generation
+      const formData = new FormData();
+      formData.append("file", req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype,
+      });
 
-//       res.json({ success: true, message: "Card stored successfully" });
-//     } catch (err) {
-//       console.error(err);
-//       res.status(500).json({ error: "Failed to process image" });
-//     } finally {
-//       fs.unlinkSync(imagePath);
-//     }
-//   }
-// );
+      const embeddingResponse = await fetch(`${EMBEDDING_SERVICE_URL}/embed`, {
+        method: "POST",
+        body: formData as any,
+      });
 
-// // --- Match card ---
-// app.post(
-//   "/api/match",
-//   upload.single("image"),
-//   async (req: MatchRequest, res: Response) => {
-//     const imagePath = req.file?.path;
+      if (!embeddingResponse.ok) {
+        throw new Error(`Embedding service error: ${embeddingResponse.statusText}`);
+      }
 
-//     if (!imagePath) {
-//       return res.status(400).json({ error: "No image uploaded" });
-//     }
+      const { embedding } = await embeddingResponse.json() as { embedding: number[] };
+      console.log(`✅ Received embedding of length ${embedding.length}`);
 
-//     try {
-//       const embedding: number[] = await getEmbedding(imagePath);
+      // Find similar cards in database
+      console.log("🔍 Searching for similar cards...");
+      const matches = await findSimilarCards(embedding, topK, threshold);
+      
+      console.log(`✅ Found ${matches.length} matching cards`);
 
-//       // Use pgvector similarity via Prisma raw query
-//       const result = (await prisma.$queryRawUnsafe(
-//         `
-//           SELECT id, name, "imageUrl", embedding <-> $1::vector AS distance
-//           FROM "Card"
-//           ORDER BY distance ASC
-//           LIMIT 3;
-//         `,
-//         embedding
-//       )) as CardMatchResult[];
+      res.json({
+        success: true,
+        matches: matches.map((match: any) => ({
+          id: match.id,
+          similarity: parseFloat(match.similarity.toFixed(4)),
+          name: match.data.name,
+          setName: match.data.set?.name,
+          setId: match.data.set?.id,
+          number: match.data.number,
+          rarity: match.data.rarity,
+          images: match.data.images,
+          prices: match.data.tcgplayer?.prices,
+        })),
+      });
+    } catch (error) {
+      console.error("❌ Error processing image:", error);
+      res.status(500).json({
+        error: "Failed to process image",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+);
 
-//       res.json({ matches: result });
-//     } catch (err) {
-//       console.error(err);
-//       res.status(500).json({ error: "Failed to match image" });
-//     } finally {
-//       fs.unlinkSync(imagePath);
-//     }
-//   }
-// );
+// Health check endpoint
+app.get("/health", async (req: Request, res: Response) => {
+  try {
+    // Check if Python service is running
+    const embeddingServiceHealth = await fetch(`${EMBEDDING_SERVICE_URL}/health`, {
+      method: "GET",
+    }).then(r => r.ok).catch(() => false);
+
+    // Check database connection
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.json({
+      status: "ok",
+      embeddingService: embeddingServiceHealth ? "connected" : "disconnected",
+      database: "connected",
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
 
 // Start the server
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3457;
