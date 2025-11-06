@@ -271,11 +271,16 @@ curl -H "X-Api-Key: e5f992bc-7cb1-45ff-978c-8083c73a3fb8" "https://api.pokemontc
 
 # PROCESS WHEN NEW SET COMES OUT
 1. # Get all sets (use to get set id for new sets by looking at the id of the last entry(ies) returned)
+NOTE: call takes awhile to return
 curl -H "X-Api-Key: e5f992bc-7cb1-45ff-978c-8083c73a3fb8" "https://api.pokemontcg.io/v2/sets"
 
 2. bun run scripts/src/db/master/insertSet2.cjs
+NOTE: since I haven't setup .env, for now temporarily enter the following values in the script and make sure not to commit to git
+NOTE2: setup .env. Remove once confirmed that script works for me2
+DB_URL="postgres://postgres:password@localhost:5432/pokedex"
+"X-Api-Key": "e5f992bc-7cb1-45ff-978c-8083c73a3fb8",
 
-3. Pull id data from TCGPlayer from new sets: 
+3. Pull id data from TCGPlayer from new sets (Google: [set name] price guide): 
 (() => {
   // Select all <a> elements with class 'pdp-url'
   const links = document.querySelectorAll('a.pdp-url')
@@ -292,4 +297,4 @@ curl -H "X-Api-Key: e5f992bc-7cb1-45ff-978c-8083c73a3fb8" "https://api.pokemontc
   return ids
 })()
 
-4. Make new entry in scripts/src/data/sets.ts (if too many entries, overflow into scripts/src/data/sets2.ts)
+4. Make new entry in scripts/src/data/sets.ts (if too many entries in the set where you may get rate limited, overflow into scripts/src/data/sets2.ts)

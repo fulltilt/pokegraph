@@ -1,6 +1,15 @@
-const { Client } = require("pg");
+// const { Client } = require("pg");
+import { Client } from "pg";
 
-const DB_URL = "";
+import 'dotenv/config'; 
+
+const DB_URL = process.env.DATABASE_URL;
+const POKEMON_API_KEY = process.env.POKEMON_API_KEY;
+
+if (!DB_URL || !POKEMON_API_KEY) {
+    console.error("CRITICAL ERROR: DATABASE_URL and POKEMON_API_KEY must be set in the .env file.");
+    process.exit(1);
+}
 
 // Configure the database connection
 const client = new Client({
@@ -13,7 +22,6 @@ const client = new Client({
 let out = [];
 
 let promise = new Promise((resolve, reject) => {
-  let count = 0;
   // Function to fetch data from API and save to a file
   async function fetchAndSaveData(apiUrl) {
     try {
@@ -21,11 +29,12 @@ let promise = new Promise((resolve, reject) => {
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
-          "X-Api-Key": "",
+          "X-Api-Key": POKEMON_API_KEY,
         },
       });
 
       const data = await response.json();
+      console.log(data)
       out = out.concat(data.data);
 
       resolve(out);
@@ -36,14 +45,12 @@ let promise = new Promise((resolve, reject) => {
   }
 
   // API URL to fetch data from
-  const set = "rsv10pt5";
+  const set = "me2";
   let apiUrl = `https://api.pokemontcg.io/v2/cards?q=set.id:${set}`;
 
   // Call function to fetch data and save to file
   fetchAndSaveData(apiUrl);
 });
-
-// const outputFile = "data_output2.json";
 
 promise.then(
   async (res) => {
