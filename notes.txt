@@ -105,7 +105,6 @@ cat pokedex-data.sql | docker exec -i pokedb psql -U postgres -d pokedex
 -- test
 
 
-
 docker exec -t pokedb pg_dump -U postgres -d postgres > backup.sql
 
 
@@ -129,6 +128,13 @@ nohup docker compose up > /var/log/docker-compose.log 2>&1 &
 or
 docker compose up -d && echo "Docker Compose is running in detached mode. Logs: docker compose logs -f"
 
+-nginx file location: /etc/nginx/sites-available/poke-trades
+
+-Docker usage
+docker system df
+docker volume prune # remove unattached volumes (before running this, make sure docker compose is up and that db is running else it will get deleted)
+docker system prune -a # remove stopped containers and images not associated to at least one container
+
 https://chatgpt.com/s/t_68af344461f081918d1261b61175c313 # Nginx setup
 https://chatgpt.com/s/t_68af45c497e88191aaeed088cbadfc2c # proper setup
 https://chatgpt.com/s/t_68baf20ce0348191b8ac6ca590a4bedb # load balancing in Nginx (docker compose scale to get multiple nodes running)
@@ -138,3 +144,4 @@ docker exec -it pokedb psql -U postgres -d template1 -c "ALTER DATABASE template
 docker compose run --rm backend bunx prisma migrate dev --schema=/app/shared/prisma/schema.prisma --name add_pgvector
 
 docker compose run --rm backend bun run prisma generate --schema=../shared/prisma/schema.prisma
+

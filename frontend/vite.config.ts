@@ -15,5 +15,14 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: ['poke-trades.com', 'www.poke-trades.com'], // allow this domain
     port: 5173,
+    proxy: {
+      // Intercept any request that starts with /api
+      '/api': {
+        // Use the Docker service name 'backend' and the Express internal port '3457'
+        target: 'http://backend:3457', 
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });

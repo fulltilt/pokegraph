@@ -10,9 +10,6 @@ COPY frontend/package*.json ./
 # Install dependencies
 RUN bun install
 
-# Remove potential conflicts before copying app files
-RUN rm -rf node_modules
-
 # Copy the rest of the frontend app
 COPY frontend/ .
 

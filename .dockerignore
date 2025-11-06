@@ -2,3 +2,13 @@ node_modules
 dist
 *.log
 .env
+
+**/node_modules
+**/dist
+**/build
+**/package-lock.json
+**/yarn.lock
+**/bun.lockb
+.git
+.gitignore
+.DS_Store

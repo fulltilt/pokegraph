@@ -26,27 +26,29 @@ services:
     volumes:
       - .:/app # Mount entire project
       - /app/node_modules           # Prevent overwriting
-      - /app/shared/node_modules    # Prevent overwriting shared node_modules too
+      # - /app/shared/node_modules    # Prevent overwriting shared node_modules too
+      - /app/backend/node_modules  # Prevent overwriting backend node_modules
     # working_dir: /app
     # command: ["bun", "dist/backend/src/index.js"] # Adjust if using ts-node or another start command
     working_dir: /app/backend
-    command: ["bun", "run", "dev"]
+    # command: ["bun", "run", "dev"]
+    command: sh -c "cd /app/shared && bun install && bunx prisma generate --schema=prisma/schema.prisma && cd /app/backend && bun run dev"
 
-  mcp:
-    build:
-      context: . # Build from root to access shared folder
-      dockerfile: mcp/Dockerfile
-    container_name: pokemon-mcp
-    ports:
-      - "3458:3458" # Different port for MCP
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/pokedex
-    volumes:
-      - .:/app # Mount entire project
-    working_dir: /app
-    command: ["bun", "dist/mcp/src/server.js"]
+  # mcp:
+  #   build:
+  #     context: . # Build from root to access shared folder
+  #     dockerfile: mcp/Dockerfile
+  #   container_name: pokemon-mcp
+  #   ports:
+  #     - "3458:3458" # Different port for MCP
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URL: postgres://postgres:password@db:5432/pokedex
+  #   volumes:
+  #     - .:/app # Mount entire project
+  #   working_dir: /app
+  #   command: ["bun", "dist/mcp/src/server.js"]
 
   frontend:
     build:
@@ -58,11 +60,9 @@ services:
     volumes:
       - ./frontend:/app/frontend
       - ./shared:/app/shared # Mount shared folder if frontend needs it
+      - /app/frontend/node_modules # Prevent overwriting
     working_dir: /app/frontend
     command: ["bun", "run", "dev"]
-    # 🟢 Important: Prevent overwriting node_modules
-    tmpfs:
-      - /app/frontend/node_modules
 
 volumes:
   pgdata:
