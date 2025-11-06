@@ -32,7 +32,8 @@ services:
     # command: ["bun", "dist/backend/src/index.js"] # Adjust if using ts-node or another start command
     working_dir: /app/backend
     # command: ["bun", "run", "dev"]
-    command: sh -c "cd /app/shared && bun install && bunx prisma generate --schema=prisma/schema.prisma && cd /app/backend && bun run dev"
+    # command: sh -c "cd /app/shared && bun install && bunx prisma generate --schema=prisma/schema.prisma && cd /app/backend && bun run dev"
+    command: sh -c "cd /app && bun install && bunx prisma generate --schema=shared/prisma/schema.prisma && cd backend && bun run dev"
 
   # mcp:
   #   build:

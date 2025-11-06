@@ -2,16 +2,16 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 // import { PrismaClient } from "../generated/prisma/index.js";
 import { PrismaClient } from "@prisma/client";
-import { pipeline as hfPipeline, env } from "@xenova/transformers";
+// import { pipeline as hfPipeline, env } from "@xenova/transformers";
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
+// import fs from "fs";
 import multer, { Multer } from "multer";
-import { pipeline } from "@xenova/transformers";
+// import { pipeline } from "@xenova/transformers";
 import { getQuantitySpikes } from "@pokemon/shared/db";
 
 // Let the library know to use local files
-env.localModelPath = true;
+// env.localModelPath = true;
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -26,21 +26,21 @@ app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 let classifier: any;
-async function loadModel() {
-  if (!classifier) {
-    // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
-    const modelDir = `file://${path.resolve(__dirname, "../../trainer/model")}`;
-    console.log("Loading model from:", modelDir);
-    console.log(
-      "Files:",
-      fs.readdirSync(path.resolve(__dirname, "../../trainer/model"))
-    );
+// async function loadModel() {
+//   if (!classifier) {
+//     // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
+//     const modelDir = `file://${path.resolve(__dirname, "../../trainer/model")}`;
+//     console.log("Loading model from:", modelDir);
+//     console.log(
+//       "Files:",
+//       fs.readdirSync(path.resolve(__dirname, "../../trainer/model"))
+//     );
 
-    classifier = await hfPipeline("text-classification", modelDir, {
-      local_files_only: true, // ⬅️ Tells Xenova to load from local dir
-    });
-  }
-}
+//     classifier = await hfPipeline("text-classification", modelDir, {
+//       local_files_only: true, // ⬅️ Tells Xenova to load from local dir
+//     });
+//   }
+// }
 
 function convertDate(timeframe: string) {
   let fromDate = new Date();
@@ -691,16 +691,16 @@ app.post("/api/sealed/auto-label", async (req, res) => {
   }
 });
 
-interface UploadRequest extends Request {
-  body: {
-    name: string;
-  };
-  file?: Express.Multer.File;
-}
+// interface UploadRequest extends Request {
+//   body: {
+//     name: string;
+//   };
+//   file?: Express.Multer.File;
+// }
 
-interface MatchRequest extends Request {
-  file?: Express.Multer.File;
-}
+// interface MatchRequest extends Request {
+//   file?: Express.Multer.File;
+// }
 
 // A CardMatchResult represents one record from the pgvector similarity query
 interface CardMatchResult {
@@ -711,89 +711,89 @@ interface CardMatchResult {
 }
 
 // --- Load CLIP model once (runs fully locally) ---
-const extractor = await pipeline(
-  "feature-extraction",
-  "Xenova/clip-vit-base-patch32"
-);
+// const extractor = await pipeline(
+//   "feature-extraction",
+//   "Xenova/clip-vit-base-patch32"
+// );
 
-async function getEmbedding(imagePath: string): Promise<number[]> {
-  const output = await extractor(imagePath, {
-    pooling: "mean",
-    normalize: true,
-  });
-  return Array.from(output.data);
-}
+// async function getEmbedding(imagePath: string): Promise<number[]> {
+//   const output = await extractor(imagePath, {
+//     pooling: "mean",
+//     normalize: true,
+//   });
+//   return Array.from(output.data);
+// }
 
 // --- Upload known card ---
-app.post(
-  "/api/upload",
-  upload.single("image"),
-  async (req: UploadRequest, res: Response) => {
-    const { name } = req.body;
-    const imagePath = req.file?.path;
+// app.post(
+//   "/api/upload",
+//   upload.single("image"),
+//   async (req: UploadRequest, res: Response) => {
+//     const { name } = req.body;
+//     const imagePath = req.file?.path;
 
-    if (!imagePath || !req.file) {
-      return res.status(400).json({ error: "No image uploaded" });
-    }
+//     if (!imagePath || !req.file) {
+//       return res.status(400).json({ error: "No image uploaded" });
+//     }
 
-    try {
-      const embedding: number[] = await getEmbedding(imagePath);
+//     try {
+//       const embedding: number[] = await getEmbedding(imagePath);
 
-      await prisma.card.create({
-        data: {
-          name,
-          imageUrl: `/uploads/${req.file.filename}`,
-          embedding,
-        },
-      });
+//       await prisma.card.create({
+//         data: {
+//           name,
+//           imageUrl: `/uploads/${req.file.filename}`,
+//           embedding,
+//         },
+//       });
 
-      res.json({ success: true, message: "Card stored successfully" });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Failed to process image" });
-    } finally {
-      fs.unlinkSync(imagePath);
-    }
-  }
-);
+//       res.json({ success: true, message: "Card stored successfully" });
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ error: "Failed to process image" });
+//     } finally {
+//       fs.unlinkSync(imagePath);
+//     }
+//   }
+// );
 
-// --- Match card ---
-app.post(
-  "/api/match",
-  upload.single("image"),
-  async (req: MatchRequest, res: Response) => {
-    const imagePath = req.file?.path;
+// // --- Match card ---
+// app.post(
+//   "/api/match",
+//   upload.single("image"),
+//   async (req: MatchRequest, res: Response) => {
+//     const imagePath = req.file?.path;
 
-    if (!imagePath) {
-      return res.status(400).json({ error: "No image uploaded" });
-    }
+//     if (!imagePath) {
+//       return res.status(400).json({ error: "No image uploaded" });
+//     }
 
-    try {
-      const embedding: number[] = await getEmbedding(imagePath);
+//     try {
+//       const embedding: number[] = await getEmbedding(imagePath);
 
-      // Use pgvector similarity via Prisma raw query
-      const result = (await prisma.$queryRawUnsafe(
-        `
-          SELECT id, name, "imageUrl", embedding <-> $1::vector AS distance
-          FROM "Card"
-          ORDER BY distance ASC
-          LIMIT 3;
-        `,
-        embedding
-      )) as CardMatchResult[];
+//       // Use pgvector similarity via Prisma raw query
+//       const result = (await prisma.$queryRawUnsafe(
+//         `
+//           SELECT id, name, "imageUrl", embedding <-> $1::vector AS distance
+//           FROM "Card"
+//           ORDER BY distance ASC
+//           LIMIT 3;
+//         `,
+//         embedding
+//       )) as CardMatchResult[];
 
-      res.json({ matches: result });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Failed to match image" });
-    } finally {
-      fs.unlinkSync(imagePath);
-    }
-  }
-);
+//       res.json({ matches: result });
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ error: "Failed to match image" });
+//     } finally {
+//       fs.unlinkSync(imagePath);
+//     }
+//   }
+// );
 
 // Start the server
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3457;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

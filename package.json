@@ -23,16 +23,14 @@
     "clean": "rm -rf dist node_modules backend/node_modules mcp/node_modules shared/node_modules"
   },
   "dependencies": {
-    "@prisma/client": "^6.18.0",
+    "@prisma/client": "6.19.0",
     "@xenova/transformers": "^2.17.2",
-    "canvas": "^3.2.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
     "p-limit": "^7.2.0",
-    "prisma": "^6.15.0",
-    "sharp": "^0.34.4"
+    "prisma": "6.19.0"
   },
   "devDependencies": {
     "typescript": "^5.9.2",

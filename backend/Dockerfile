@@ -16,12 +16,15 @@ COPY shared/ ./shared/
 # Install all workspace dependencies
 RUN bun install
 
-# Generate Prisma client in shared workspace
-WORKDIR /app/shared
-RUN bunx prisma generate --schema=prisma/schema.prisma
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# Return to app root
-WORKDIR /app
+# Generate Prisma client (run from backend, but using shared schema)
+WORKDIR /app/backend
+RUN bunx prisma generate --schema=../shared/prisma/schema.prisma
+
+# Return to backend
+WORKDIR /app/backend
 
 # Skip building - run from TypeScript source in development
 EXPOSE 3457
