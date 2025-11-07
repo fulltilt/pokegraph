@@ -40,17 +40,25 @@ app.add_middleware(
 @app.post("/embed")
 async def create_embedding(file: UploadFile = File(...)):
     """Generate CLIP embedding for an uploaded image"""
+    print(f"🎯 /embed endpoint hit")
+    print(f"📁 File received: {file.filename}, content_type: {file.content_type}")
+
     try:
         contents = await file.read()
+        print(f"📊 File size: {len(contents)} bytes")
+        
         image = Image.open(io.BytesIO(contents)).convert("RGB")
-
+        print(f'✅ Image loaded successfully: {image.size}')
+        
         inputs = processor(images=image, return_tensors="pt")
+        print("🔄 Processing embeddings...")
 
         with torch.no_grad():
             emb = model.get_image_features(**inputs)
             emb = emb / emb.norm(p=2, dim=-1, keepdim=True)
 
         embedding_list = emb[0].tolist()
+        print(f"✅ Embedding generated: {len(embedding_list)} dimensions")
 
         return {
             "embedding": embedding_list,
@@ -59,11 +67,13 @@ async def create_embedding(file: UploadFile = File(...)):
         }
 
     except Exception as e:
+        print(f"❌ Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate embedding: {str(e)}")
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    print('here')
     return {
         "status": "ok",
         "model_loaded": model is not None,

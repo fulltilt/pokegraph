@@ -98,6 +98,8 @@ docker exec -t pokedb pg_dump -U postgres --data-only pokedex > pokedex-data.sql
 
 -- reset db (I was forced to do this)
 npx prisma migrate reset
+-- another time I had to do this as reset removed the tables
+bunx prisma db push (in same directory where schema.prisma is)
 
 -- restore from backup
 cat pokedex-data.sql | docker exec -i pokedb psql -U postgres -d pokedex
@@ -145,3 +147,7 @@ docker compose run --rm backend bunx prisma migrate dev --schema=/app/shared/pri
 
 docker compose run --rm backend bun run prisma generate --schema=../shared/prisma/schema.prisma
 
+-test python /embed endpoint
+curl -X POST http://localhost:8000/embed \
+  -F "file=@/Users/fulltilt/Downloads/IMG_8179.jpg" \
+  -v

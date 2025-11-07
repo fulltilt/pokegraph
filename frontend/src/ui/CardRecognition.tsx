@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Camera, Upload, X, Search, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import {
+  Camera,
+  Upload,
+  X,
+  Search,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
-const API_BASE_URL = import.meta.env.VITE_ENDPOINT_URL || '';
+const API_BASE_URL = import.meta.env.VITE_ENDPOINT_URL || "";
 
 // Types
 interface HealthCheckResponse {
@@ -57,36 +71,45 @@ export default function CardRecognition() {
   const [topK, setTopK] = useState<number>(5);
 
   // Health check query
-  const { data: healthData, isLoading: healthLoading } = useQuery<HealthCheckResponse>({
-    queryKey: ['health'],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}/api/health`);
-      if (!res.ok) throw new Error('Health check failed');
-      return res.json();
-    },
-    refetchInterval: 30000,
-  });
+  const { data: healthData, isLoading: healthLoading } =
+    useQuery<HealthCheckResponse>({
+      queryKey: ["health"],
+      queryFn: async () => {
+        const res = await fetch(`${API_BASE_URL}/api/health`);
+        if (!res.ok) throw new Error("Health check failed");
+        return res.json();
+      },
+      refetchInterval: 30000,
+    });
 
   // Card recognition mutation
   const recognitionMutation = useMutation<RecognitionResponse, Error, File>({
     mutationFn: async (file: File) => {
+      console.log("🚀 Starting recognition...");
       const formData = new FormData();
-      formData.append('image', file);
-      
+      formData.append("image", file);
+
+      console.log("📤 Sending to:", `${API_BASE_URL}/api/recognize-card`);
+
       const res = await fetch(
         `${API_BASE_URL}/api/recognize-card?topK=${topK}&threshold=${threshold}`,
         {
-          method: 'POST',
+          method: "POST",
           body: formData,
         }
       );
-      
+
+      console.log("📥 Response:", res.status, res.ok);
+
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Recognition failed');
+        console.error("❌ Error:", error);
+        throw new Error(error.message || "Recognition failed");
       }
-      
-      return res.json();
+
+      const data = await res.json();
+      console.log("✅ Success:", data);
+      return data;
     },
   });
 
@@ -94,8 +117,8 @@ export default function CardRecognition() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
       return;
     }
 
@@ -120,8 +143,8 @@ export default function CardRecognition() {
     recognitionMutation.reset();
   };
 
-  const isServiceHealthy = healthData?.status === 'ok' && 
-                          healthData?.embeddingService === 'connected';
+  const isServiceHealthy =
+    healthData?.status === "ok" && healthData?.embeddingService === "connected";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8">
@@ -137,7 +160,13 @@ export default function CardRecognition() {
         </div>
 
         {/* Health Status */}
-        <Alert className={isServiceHealthy ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}>
+        <Alert
+          className={
+            isServiceHealthy
+              ? "bg-green-50 border-green-200"
+              : "bg-yellow-50 border-yellow-200"
+          }
+        >
           <div className="flex items-center gap-2">
             {healthLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -147,9 +176,11 @@ export default function CardRecognition() {
               <AlertCircle className="h-4 w-4 text-yellow-600" />
             )}
             <AlertDescription className="text-sm">
-              {healthLoading ? 'Checking service status...' : 
-               isServiceHealthy ? 'All systems operational' : 
-               'Service partially unavailable'}
+              {healthLoading
+                ? "Checking service status..."
+                : isServiceHealthy
+                ? "All systems operational"
+                : "Service partially unavailable"}
             </AlertDescription>
           </div>
         </Alert>
@@ -188,9 +219,12 @@ export default function CardRecognition() {
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Camera className="h-12 w-12 text-gray-400 mb-3" />
                   <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
+                    <span className="font-semibold">Click to upload</span> or
+                    drag and drop
                   </p>
-                  <p className="text-xs text-gray-500">PNG, JPG, WEBP (MAX. 10MB)</p>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG, WEBP (MAX. 10MB)
+                  </p>
                 </div>
                 <input
                   type="file"
@@ -236,7 +270,11 @@ export default function CardRecognition() {
             {/* Action Button */}
             <Button
               onClick={handleRecognize}
-              disabled={!selectedImage || recognitionMutation.isPending || !isServiceHealthy}
+              disabled={
+                !selectedImage ||
+                recognitionMutation.isPending ||
+                !isServiceHealthy
+              }
               className="w-full"
               size="lg"
             >
@@ -260,7 +298,7 @@ export default function CardRecognition() {
           <Alert className="bg-red-50 border-red-200">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              {recognitionMutation.error?.message || 'Failed to recognize card'}
+              {recognitionMutation.error?.message || "Failed to recognize card"}
             </AlertDescription>
           </Alert>
         )}
@@ -271,10 +309,13 @@ export default function CardRecognition() {
             <h2 className="text-2xl font-bold text-gray-900">
               Found {recognitionMutation.data.matches.length} Matches
             </h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {recognitionMutation.data.matches.map((match) => (
-                <Card key={match.id} className="overflow-hidden hover:shadow-xl transition-shadow">
+                <Card
+                  key={match.id}
+                  className="overflow-hidden hover:shadow-xl transition-shadow"
+                >
                   <div className="aspect-[5/7] bg-gray-100 relative">
                     <img
                       src={match.images?.large || match.images?.small}
@@ -301,10 +342,7 @@ export default function CardRecognition() {
                         </p>
                       )}
                     </div>
-                    <Progress 
-                      value={match.similarity * 100} 
-                      className="h-2"
-                    />
+                    <Progress value={match.similarity * 100} className="h-2" />
                   </CardContent>
                 </Card>
               ))}
@@ -313,14 +351,16 @@ export default function CardRecognition() {
         )}
 
         {/* Empty State */}
-        {recognitionMutation.isSuccess && recognitionMutation.data?.matches?.length === 0 && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              No matching cards found. Try adjusting the threshold or uploading a clearer image.
-            </AlertDescription>
-          </Alert>
-        )}
+        {recognitionMutation.isSuccess &&
+          recognitionMutation.data?.matches?.length === 0 && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No matching cards found. Try adjusting the threshold or
+                uploading a clearer image.
+              </AlertDescription>
+            </Alert>
+          )}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import multer from "multer";
 import FormData from "form-data";
 import path from "path";
 import fs from "fs";
+import fetch from "node-fetch";
 import { getQuantitySpikes } from "@pokemon/shared/db";
 
 // Let the library know to use local files
@@ -19,9 +20,9 @@ const app = express();
 const prisma = new PrismaClient();
 
 // Python embedding service URL
-const EMBEDDING_SERVICE_URL = process.env.EMBEDDING_SERVICE_URL || "http://localhost:8000";
+const EMBEDDING_SERVICE_URL =
+  process.env.EMBEDDING_SERVICE_URL || "http://localhost:8000";
 
-const uploadDir = path.join(__dirname, "../uploads");
 // Configure multer for image uploads
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -273,23 +274,25 @@ app.get("/api/cards/:id", async (req: Request, res: Response) => {
   res.json(card);
 });
 
-app.get("/api/top-mover-per-set/:order", async (req: Request, res: Response) => {
-  const { order } = req.params;
-  const timeframe = req.query.timeframe || "10d";
+app.get(
+  "/api/top-mover-per-set/:order",
+  async (req: Request, res: Response) => {
+    const { order } = req.params;
+    const timeframe = req.query.timeframe || "10d";
 
-  const intervalMap: Record<string, string> = {
-    "10d": "10 days",
-    "1m": "1 month",
-    "3m": "3 months",
-    "6m": "6 months",
-    "1y": "1 year",
-  };
+    const intervalMap: Record<string, string> = {
+      "10d": "10 days",
+      "1m": "1 month",
+      "3m": "3 months",
+      "6m": "6 months",
+      "1y": "1 year",
+    };
 
-  const sqlInterval = intervalMap[timeframe as string] || "10 days";
+    const sqlInterval = intervalMap[timeframe as string] || "10 days";
 
-  try {
-    const result = await prisma.$queryRawUnsafe(
-      `
+    try {
+      const result = await prisma.$queryRawUnsafe(
+        `
       -- Step 1: Pre-filter relevant PriceEntries
       WITH recent_prices AS (
         SELECT *
@@ -354,33 +357,36 @@ app.get("/api/top-mover-per-set/:order", async (req: Request, res: Response) => 
       WHERE early_price IS NOT NULL AND recent_price IS NOT NULL AND early_price != 0
       ORDER BY set_id, percent_change ${order};  -- ${order} = DESC or ASC
     `,
-      sqlInterval
-    );
+        sqlInterval
+      );
 
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to fetch top movers." });
+      res.json(result);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to fetch top movers." });
+    }
   }
-});
+);
 
-app.get("/api/top-mover-per-set-price/:order", async (req: Request, res: Response) => {
-  const { order } = req.params;
-  const timeframe = req.query.timeframe || "10d";
+app.get(
+  "/api/top-mover-per-set-price/:order",
+  async (req: Request, res: Response) => {
+    const { order } = req.params;
+    const timeframe = req.query.timeframe || "10d";
 
-  const intervalMap: Record<string, string> = {
-    "10d": "10 days",
-    "1m": "1 month",
-    "3m": "3 months",
-    "6m": "6 months",
-    "1y": "1 year",
-  };
+    const intervalMap: Record<string, string> = {
+      "10d": "10 days",
+      "1m": "1 month",
+      "3m": "3 months",
+      "6m": "6 months",
+      "1y": "1 year",
+    };
 
-  const sqlInterval = intervalMap[timeframe as string] || "10 days";
+    const sqlInterval = intervalMap[timeframe as string] || "10 days";
 
-  try {
-    const result = await prisma.$queryRawUnsafe(
-      `-- Step 1: Pre-filter relevant PriceEntries
+    try {
+      const result = await prisma.$queryRawUnsafe(
+        `-- Step 1: Pre-filter relevant PriceEntries
         WITH recent_prices AS (
           SELECT *
           FROM "PriceEntry"
@@ -450,15 +456,16 @@ app.get("/api/top-mover-per-set-price/:order", async (req: Request, res: Respons
         WHERE early_price IS NOT NULL AND recent_price IS NOT NULL AND early_price != 0
         ORDER BY set_id, absolute_change ${order};  -- ${order} = DESC (gainers) or ASC (losers)
         `,
-      sqlInterval
-    );
+        sqlInterval
+      );
 
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to fetch top movers." });
+      res.json(result);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to fetch top movers." });
+    }
   }
-});
+);
 
 app.get("/api/sets-by-series", async (req: Request, res: Response) => {
   const series = req.query.series as string;
@@ -731,7 +738,7 @@ async function findSimilarCards(
 ) {
   try {
     const embeddingStr = `[${embedding.join(",")}]`;
-    
+
     const results = await prisma.$queryRaw`
       SELECT 
         id,
@@ -753,13 +760,15 @@ async function findSimilarCards(
 
 // API endpoint for single card recognition
 app.post(
-  "/recognize-card",
+  "/api/recognize-card",
   upload.single("image"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.file) {
+      if (!req.file || !req.file.buffer) {
         return res.status(400).json({ error: "No image file provided" });
       }
+
+      console.log(`File buffer size detected: ${req.file.buffer.length} bytes`);
 
       const topK = parseInt(req.query.topK as string) || 5;
       const threshold = parseFloat(req.query.threshold as string) || 0.75;
@@ -773,24 +782,44 @@ app.post(
         contentType: req.file.mimetype,
       });
 
+      // Explicitly get the buffer and headers (including Content-Length)
+      // This often resolves streaming/boundary issues when fetch() struggles with the FormData stream.
+      const headers = formData.getHeaders();
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        // Calculate the final length of the form data
+        formData.getLength((err, length) => {
+          if (err) return reject(err);
+          // Must include Content-Length for reliable server-to-server streaming
+          headers["content-length"] = String(length);
+
+          // Resolve with the fully constructed buffer (no longer a stream)
+          resolve(formData.getBuffer());
+        });
+      });
+
       const embeddingResponse = await fetch(`${EMBEDDING_SERVICE_URL}/embed`, {
         method: "POST",
-        body: formData as any,
+        body: buffer,
+        headers: headers,
       });
 
       if (!embeddingResponse.ok) {
-        throw new Error(`Embedding service error: ${embeddingResponse.statusText}`);
+        throw new Error(
+          `Embedding service error: ${embeddingResponse.statusText}`
+        );
       }
 
-      const { embedding } = await embeddingResponse.json() as { embedding: number[] };
+      const { embedding } = (await embeddingResponse.json()) as {
+        embedding: number[];
+      };
       console.log(`✅ Received embedding of length ${embedding.length}`);
 
       // Find similar cards in database
       console.log("🔍 Searching for similar cards...");
       const matches = await findSimilarCards(embedding, topK, threshold);
-      
-      console.log(`✅ Found ${matches.length} matching cards`);
 
+      console.log(`✅ Found ${matches.length} matching cards`);
+      console.log(matches);
       res.json({
         success: true,
         matches: matches.map((match: any) => ({
@@ -816,12 +845,17 @@ app.post(
 );
 
 // Health check endpoint
-app.get("/health", async (req: Request, res: Response) => {
+app.get("/api/health", async (req: Request, res: Response) => {
   try {
     // Check if Python service is running
-    const embeddingServiceHealth = await fetch(`${EMBEDDING_SERVICE_URL}/health`, {
-      method: "GET",
-    }).then(r => r.ok).catch(() => false);
+    const embeddingServiceHealth = await fetch(
+      `${EMBEDDING_SERVICE_URL}/health`,
+      {
+        method: "GET",
+      }
+    )
+      .then((r) => r.ok)
+      .catch(() => false);
 
     // Check database connection
     await prisma.$queryRaw`SELECT 1`;

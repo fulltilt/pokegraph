@@ -171,6 +171,7 @@ async function main() {
     console.log(`Finished processing set ${key}. Sleeping for 4 minutes...`);
     await sleep(240); // 4 minutes
   }
+  console.log("All sets processed.");
 }
 
 // async function main() {
