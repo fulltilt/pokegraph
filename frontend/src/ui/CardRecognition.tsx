@@ -59,9 +59,18 @@ interface CardMatch {
   prices?: CardPrices;
 }
 
+interface CardResult {
+  cardIndex: number;
+  cardSize: { width: number; height: number };
+  matchesFound: number;
+  matches: CardMatch[];
+}
+
 interface RecognitionResponse {
   success: boolean;
-  matches: CardMatch[];
+  cardsDetected?: number;
+  results?: CardResult[];
+  matches?: CardMatch[]; // Legacy single card support
 }
 
 export default function CardRecognition() {
@@ -89,10 +98,10 @@ export default function CardRecognition() {
       const formData = new FormData();
       formData.append("image", file);
 
-      console.log("📤 Sending to:", `${API_BASE_URL}/api/recognize-card`);
+      console.log("📤 Sending to:", `${API_BASE_URL}/api/recognize-cards`);
 
       const res = await fetch(
-        `${API_BASE_URL}/api/recognize-card?topK=${topK}&threshold=${threshold}`,
+        `${API_BASE_URL}/api/recognize-cards?topK=${topK}&threshold=${threshold}`,
         {
           method: "POST",
           body: formData,

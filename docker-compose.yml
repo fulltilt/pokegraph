@@ -24,12 +24,12 @@ services:
       - embedding-service
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/pokedex
-      EMBEDDING_SERVICE_URL: http://embedding-service:8000  # Use the service name
+      EMBEDDING_SERVICE_URL: http://embedding-service:8000 # Use the service name
     volumes:
       - .:/app # Mount entire project
-      - /app/node_modules           # Prevent overwriting
+      - /app/node_modules # Prevent overwriting
       # - /app/shared/node_modules    # Prevent overwriting shared node_modules too
-      - /app/backend/node_modules  # Prevent overwriting backend node_modules
+      - /app/backend/node_modules # Prevent overwriting backend node_modules
     # working_dir: /app
     # command: ["bun", "dist/backend/src/index.js"] # Adjust if using ts-node or another start command
     working_dir: /app/backend

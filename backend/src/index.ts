@@ -804,6 +804,8 @@ app.post(
       });
 
       if (!embeddingResponse.ok) {
+        const errorText = await embeddingResponse.text();
+        console.error("Embedding service error:", errorText);
         throw new Error(
           `Embedding service error: ${embeddingResponse.statusText}`
         );
@@ -833,6 +835,116 @@ app.post(
           images: match.data.images,
           prices: match.data.tcgplayer?.prices,
         })),
+      });
+    } catch (error) {
+      console.error("❌ Error processing image:", error);
+      res.status(500).json({
+        error: "Failed to process image",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+);
+
+app.post(
+  "/api/recognize-cards",
+  upload.single("image"),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+
+      const topK = parseInt(req.query.topK as string) || 5;
+      const threshold = parseFloat(req.query.threshold as string) || 0.75;
+
+      console.log("📤 Sending image for card detection and embedding...");
+
+      // Create form data
+      const formData = new FormData();
+      formData.append("file", req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype,
+      });
+
+      // Explicitly get the buffer and headers (including Content-Length)
+      // This often resolves streaming/boundary issues when fetch() struggles with the FormData stream.
+      const headers = formData.getHeaders();
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        // Calculate the final length of the form data
+        formData.getLength((err, length) => {
+          if (err) return reject(err);
+          // Must include Content-Length for reliable server-to-server streaming
+          headers["content-length"] = String(length);
+
+          // Resolve with the fully constructed buffer (no longer a stream)
+          resolve(formData.getBuffer());
+        });
+      });
+
+      const embeddingResponse = await fetch(
+        `${EMBEDDING_SERVICE_URL}/detect-and-embed`,
+        {
+          method: "POST",
+          body: buffer,
+          headers: headers,
+        }
+      );
+      console.log(embeddingResponse);
+      if (!embeddingResponse.ok) {
+        const errorText = await embeddingResponse.text();
+        console.error("Embedding service error:", errorText);
+        throw new Error(
+          `Embedding service error: ${embeddingResponse.statusText}`
+        );
+      }
+
+      const { cards_detected, cards } = (await embeddingResponse.json()) as {
+        cards_detected: number;
+        cards: Array<{
+          card_index: number;
+          embedding: number[];
+          card_size: any;
+        }>;
+      };
+
+      console.log(`✅ Detected ${cards_detected} card(s)`);
+
+      // Process each detected card
+      const results = [];
+      for (const card of cards) {
+        console.log(
+          `🔍 Searching for matches for card ${
+            card.card_index + 1
+          }/${cards_detected}...`
+        );
+
+        const matches = await findSimilarCards(card.embedding, topK, threshold);
+
+        results.push({
+          cardIndex: card.card_index,
+          cardSize: card.card_size,
+          matchesFound: matches.length,
+          matches: matches.map((match: any) => ({
+            id: match.id,
+            similarity: parseFloat(match.similarity.toFixed(4)),
+            name: match.data.name,
+            setName: match.data.set?.name,
+            setId: match.data.set?.id,
+            number: match.data.number,
+            rarity: match.data.rarity,
+            images: match.data.images,
+            prices: match.data.tcgplayer?.prices,
+          })),
+        });
+      }
+
+      console.log(`✅ Processed all ${cards_detected} card(s)`);
+
+      res.json({
+        success: true,
+        cardsDetected: cards_detected,
+        results,
       });
     } catch (error) {
       console.error("❌ Error processing image:", error);

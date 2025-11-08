@@ -1,7 +1,17 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-transformers==4.35.2
-torch==2.2.0
-pillow==10.1.0
-python-multipart==0.0.6
-numpy<2
+# requirements.txt - For embedding service with YOLOv8
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+transformers==4.46.2
+torch==2.5.1
+pillow==10.4.0
+python-multipart==0.0.9
+numpy==1.26.4
+
+# YOLOv8 for card detection
+ultralytics==8.3.0
+opencv-python==4.10.0.84
+
+# For embedding generation script (optional - same versions)
+psycopg2-binary==2.9.9
+requests==2.31.0
+tqdm==4.66.5

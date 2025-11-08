@@ -1,7 +1,7 @@
 # docker compose up -d
 # python3 -m venv .venv
 # source .venv/bin/activate
-# pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+# pip install --upgrade -r requirements.txt
 # python generate_embeddings.py
 
 import io
@@ -19,13 +19,27 @@ DATABASE_URL = "postgresql://postgres:password@localhost:5432/pokedex"
 SET_ID = "sv8pt5"
 
 # -----------------------------
+# Device selection
+# -----------------------------
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"🖥️ Using device: {device}")
+
+# -----------------------------
 # Load model and processor
 # -----------------------------
-print("🔹 Loading CLIP model (CPU only)...")
+print("🔹 Loading CLIP model...")
 model_id = "openai/clip-vit-base-patch16"
 model = CLIPModel.from_pretrained(model_id)
+model = model.to(device)  # Move to GPU/CPU
 processor = CLIPProcessor.from_pretrained(model_id)
 model.eval()
+
+# Disable gradients for inference
+for param in model.parameters():
+    param.requires_grad = False
+
+print(f"✅ Model loaded: {model_id}")
+print(f"📊 Embedding dimension: 512")
 
 # -----------------------------
 # Connect to database
@@ -47,7 +61,7 @@ cards = cur.fetchall()
 print(f"Found {len(cards)} cards.")
 
 # -----------------------------
-# Embedding function
+# Embedding function (MUST match embedding_service.py exactly)
 # -----------------------------
 def get_embedding(image_url: str):
     try:
@@ -55,11 +69,15 @@ def get_embedding(image_url: str):
         resp.raise_for_status()
         image = Image.open(io.BytesIO(resp.content)).convert("RGB")
 
+        # Process image
         inputs = processor(images=image, return_tensors="pt")
+        
         with torch.no_grad():
             emb = model.get_image_features(**inputs)
             emb = emb / emb.norm(p=2, dim=-1, keepdim=True)
-        return emb[0].tolist()
+        
+        # Move back to CPU for database storage
+        return emb[0].cpu().tolist()
     except Exception as e:
         print(f"❌ Failed to process {image_url}: {e}")
         return None
@@ -76,6 +94,12 @@ for i, (card_id, data) in enumerate(tqdm(cards)):
 
     embedding = get_embedding(image_url)
     if embedding:
+        # Verify embedding dimension
+        if len(embedding) != 512:
+            print(f"⚠️ Warning: Unexpected embedding dimension {len(embedding)} for {card_id}")
+            fail += 1
+            continue
+            
         cur.execute(
             'UPDATE "Card" SET embedding = %s::vector WHERE id = %s',
             (f"[{','.join(map(str, embedding))}]", card_id),
@@ -89,3 +113,4 @@ cur.close()
 conn.close()
 
 print(f"\n✅ Done! Updated {success} cards, failed {fail}.")
+print(f"📊 Success rate: {success/(success+fail)*100:.1f}%")

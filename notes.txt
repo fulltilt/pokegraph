@@ -151,3 +151,12 @@ docker compose run --rm backend bun run prisma generate --schema=../shared/prism
 curl -X POST http://localhost:8000/embed \
   -F "file=@/Users/fulltilt/Downloads/IMG_8179.jpg" \
   -v
+
+pip3 install -r requirements.txt
+
+FLOW TO TRAIN YOLOv to detect cards in an image
+#1 Annotate images to be used for fine-tuning (https://labelstud.io/guide/install#Install-using-pip)
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install label-studio
+
