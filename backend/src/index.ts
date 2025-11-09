@@ -16,6 +16,29 @@ interface DatabaseCardMatch {
   similarity: number;
 }
 
+interface BoundingBox {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  confidence: number;
+}
+
+interface CardDetection {
+  card_index: number;
+  embedding: number[];
+  dimension: number;
+  card_size: { width: number; height: number };
+  bounding_box?: BoundingBox;
+}
+
+interface EmbeddingServiceResponse {
+  cards_detected: number;
+  cards: CardDetection[];
+  image_size?: { width: number; height: number };
+  model: string;
+}
+
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
 
@@ -805,7 +828,7 @@ app.post(
       const matches = await findSimilarCards(embedding, topK, threshold);
 
       console.log(`✅ Found ${matches.length} matching cards`);
-      console.log(matches);
+
       res.json({
         success: true,
         matches: matches.map((match: any) => ({
@@ -882,37 +905,31 @@ app.post(
         );
       }
 
-      const { cards_detected, cards } = (await embeddingResponse.json()) as {
-        cards_detected: number;
-        cards: Array<{
-          card_index: number;
-          embedding: number[];
-          card_size: any;
-        }>;
-      };
+      const responseData =
+        (await embeddingResponse.json()) as EmbeddingServiceResponse;
 
-      console.log(`✅ Detected ${cards_detected} card(s)`);
+      console.log(`✅ Detected ${responseData.cards_detected} card(s)`);
 
       // Process each detected card
       const results = [];
-      for (const card of cards) {
+      for (const card of responseData.cards) {
         console.log(
-          `🔍 Searching for matches for card ${
-            card.card_index + 1
-          }/${cards_detected}...`
+          `🔍 Searching for matches for card ${card.card_index + 1}/${
+            responseData.cards_detected
+          }...`
         );
 
         const matches = await findSimilarCards(card.embedding, topK, threshold);
 
         results.push({
           cardIndex: card.card_index,
-          detectedCardNumber: card.card_index + 1, // Add this for clarity (1-indexed)
+          detectedCardNumber: card.card_index + 1,
           cardSize: card.card_size,
+          boundingBox: card.bounding_box,
           matchesFound: matches.length,
           topMatch:
             matches.length > 0
               ? {
-                  // Add best match info
                   name: matches[0].data.name,
                   similarity: parseFloat(matches[0].similarity.toFixed(4)),
                   setName: matches[0].data.set?.name,
@@ -932,11 +949,12 @@ app.post(
         });
       }
 
-      console.log(`✅ Processed all ${cards_detected} card(s)`);
+      console.log(`✅ Processed all ${responseData.cards_detected} card(s)`);
 
       res.json({
         success: true,
-        cardsDetected: cards_detected,
+        cardsDetected: responseData.cards_detected,
+        imageSize: responseData.image_size,
         results,
         summary: results.map((r) => ({
           // Add summary for quick reference
@@ -945,6 +963,7 @@ app.post(
           confidence: r.topMatch?.similarity
             ? `${(r.topMatch.similarity * 100).toFixed(1)}%`
             : "N/A",
+          boundingBox: r.boundingBox,
         })),
       });
     } catch (error) {

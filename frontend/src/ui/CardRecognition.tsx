@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Camera,
@@ -27,6 +27,14 @@ interface HealthCheckResponse {
   status: string;
   embeddingService: string;
   database: string;
+}
+
+interface BoundingBox {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  confidence: number;
 }
 
 interface CardImage {
@@ -63,6 +71,7 @@ interface CardResult {
   cardIndex: number;
   detectedCardNumber: number;
   cardSize: { width: number; height: number };
+  boundingBox?: BoundingBox;
   matchesFound: number;
   topMatch: {
     name: string;
@@ -75,11 +84,13 @@ interface CardResult {
 interface RecognitionResponse {
   success: boolean;
   cardsDetected?: number;
+  imageSize?: { width: number; height: number };
   results?: CardResult[];
   summary?: Array<{
     cardNumber: number;
     bestMatch: string;
     confidence: string;
+    boundingBox?: BoundingBox;
   }>;
   matches?: CardMatch[]; // Legacy single card support
 }
@@ -89,6 +100,9 @@ export default function CardRecognition() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [threshold, setThreshold] = useState<number>(0.75);
   const [topK, setTopK] = useState<number>(5);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const cardSectionRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   // Health check query
   const { data: healthData, isLoading: healthLoading } =
@@ -125,6 +139,85 @@ export default function CardRecognition() {
       return res.json();
     },
   });
+
+  // Scroll to card section
+  const scrollToCard = (cardNumber: number) => {
+    const section = cardSectionRefs.current[cardNumber];
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // Draw bounding boxes on the uploaded image
+  const drawBoundingBoxes = (imageUrl: string, results: CardResult[]) => {
+    const img = new Image();
+    img.onload = () => {
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0);
+
+        // Draw boxes
+        results.forEach((result) => {
+          if (!result.boundingBox) return;
+
+          const { x1, y1, x2, y2 } = result.boundingBox;
+
+          // Draw rectangle
+          ctx.strokeStyle = "#22c55e";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+          // Draw label background
+          ctx.fillStyle = "#22c55e";
+          ctx.fillRect(x1, y1 - 30, 120, 30);
+
+          // Draw label text
+          ctx.fillStyle = "white";
+          ctx.font = "bold 16px sans-serif";
+          ctx.fillText(`Card ${result.detectedCardNumber}`, x1 + 5, y1 - 8);
+        });
+      }
+    };
+    img.src = imageUrl;
+  };
+
+  // Handle canvas click to scroll to card
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current || !recognitionMutation.data?.results) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    // Check which bounding box was clicked
+    for (const result of recognitionMutation.data.results) {
+      if (!result.boundingBox) continue;
+
+      const { x1, y1, x2, y2 } = result.boundingBox;
+
+      if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+        scrollToCard(result.detectedCardNumber);
+        break;
+      }
+    }
+  };
+
+  // Update when results come back
+  useEffect(() => {
+    if (recognitionMutation.data?.results && previewUrl) {
+      drawBoundingBoxes(previewUrl, recognitionMutation.data.results);
+    }
+  }, [recognitionMutation.data, previewUrl]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -210,14 +303,27 @@ export default function CardRecognition() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Image Preview */}
+            {/* Image Preview with Bounding Boxes */}
             {previewUrl ? (
               <div className="relative">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full max-h-96 object-contain rounded-lg border-2 border-gray-200"
-                />
+                <div className="relative w-full max-h-96 flex items-center justify-center bg-gray-100 rounded-lg">
+                  <img
+                    ref={imageRef}
+                    src={previewUrl}
+                    alt="Preview"
+                    className={`max-h-96 object-contain ${
+                      recognitionMutation.data ? "hidden" : "block"
+                    }`}
+                  />
+                  <canvas
+                    ref={canvasRef}
+                    onClick={handleCanvasClick}
+                    className={`max-w-full max-h-96 cursor-pointer ${
+                      recognitionMutation.data ? "block" : "hidden"
+                    }`}
+                    title="Click on a card to see its matches"
+                  />
+                </div>
                 <Button
                   variant="destructive"
                   size="icon"
@@ -323,27 +429,75 @@ export default function CardRecognition() {
             <Alert className="bg-blue-50 border-blue-200">
               <CheckCircle2 className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800">
-                {recognitionMutation.data.cardsDetected
-                  ? `Detected ${recognitionMutation.data.cardsDetected} card(s) in the image`
-                  : `Found ${
-                      recognitionMutation.data.matches?.length || 0
-                    } matches`}
+                {recognitionMutation.data.cardsDetected ? (
+                  <div className="space-y-1">
+                    <p className="font-semibold">
+                      Detected {recognitionMutation.data.cardsDetected} card(s)
+                      in the image
+                    </p>
+                    {recognitionMutation.data.summary && (
+                      <div className="text-sm mt-2 space-y-1">
+                        {recognitionMutation.data.summary.map((s) => (
+                          <div
+                            key={s.cardNumber}
+                            className="flex justify-between"
+                          >
+                            <span>Card {s.cardNumber}:</span>
+                            <span className="font-medium">
+                              {s.bestMatch} ({s.confidence})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  `Found ${
+                    recognitionMutation.data.matches?.length || 0
+                  } matches`
+                )}
               </AlertDescription>
             </Alert>
 
             {/* Multi-card results */}
-            {recognitionMutation.data.results?.map((cardResult, idx) => (
-              <div key={idx} className="space-y-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Card {cardResult.cardIndex + 1} - {cardResult.matchesFound}{" "}
-                  Matches
-                </h2>
+            {recognitionMutation.data.results?.map((cardResult) => (
+              <div
+                key={cardResult.cardIndex}
+                ref={(el) => {
+                  cardSectionRefs.current[cardResult.detectedCardNumber] = el;
+                }}
+                className="space-y-4 scroll-mt-6"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Detected Card #{cardResult.detectedCardNumber}
+                  </h2>
+                  {cardResult.topMatch && (
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Best Match</p>
+                      <p className="font-semibold text-lg">
+                        {cardResult.topMatch.name}
+                      </p>
+                      <p className="text-green-600 font-bold">
+                        {(cardResult.topMatch.similarity * 100).toFixed(1)}%
+                        confidence
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-gray-600">
+                  {cardResult.matchesFound} possible{" "}
+                  {cardResult.matchesFound === 1 ? "match" : "matches"} found
+                </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {cardResult.matches.map((match) => (
+                  {cardResult.matches.map((match, matchIdx) => (
                     <Card
                       key={match.id}
-                      className="overflow-hidden hover:shadow-xl transition-shadow"
+                      className={`overflow-hidden hover:shadow-xl transition-shadow ${
+                        matchIdx === 0 ? "ring-2 ring-green-500" : ""
+                      }`}
                     >
                       <div className="aspect-[5/7] bg-gray-100 relative">
                         <img
@@ -352,10 +506,24 @@ export default function CardRecognition() {
                           className="w-full h-full object-contain"
                         />
                         <div className="absolute top-2 right-2">
-                          <div className="bg-black/75 text-white px-2 py-1 rounded-full text-xs font-bold">
+                          <div
+                            className={`px-2 py-1 rounded-full text-xs font-bold ${
+                              matchIdx === 0
+                                ? "bg-green-600 text-white"
+                                : "bg-black/75 text-white"
+                            }`}
+                          >
+                            {matchIdx === 0 && "⭐ "}
                             {(match.similarity * 100).toFixed(1)}%
                           </div>
                         </div>
+                        {matchIdx === 0 && (
+                          <div className="absolute top-2 left-2">
+                            <div className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold">
+                              Best Match
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <CardContent className="p-4 space-y-2">
                         <h3 className="font-bold text-lg truncate">

@@ -108,7 +108,7 @@ app.add_middleware(
 
 def detect_cards(image: Image.Image, conf_threshold: float = 0.25) -> List[Image.Image]:
     """
-    Detect individual cards in an image using YOLO.
+    Detect cards and return bounding boxes
     
     Args:
         image: Input PIL Image
@@ -119,7 +119,7 @@ def detect_cards(image: Image.Image, conf_threshold: float = 0.25) -> List[Image
     """
     if detector is None:
         print("⚠️ YOLO not available, using full image")
-        return [image]
+        return [image], []
     
     # Convert PIL to numpy array
     img_array = np.array(image)
@@ -128,13 +128,14 @@ def detect_cards(image: Image.Image, conf_threshold: float = 0.25) -> List[Image
     results = detector(img_array, verbose=False, conf=conf_threshold)
     
     detected_cards = []
+    bounding_boxes = []
     
     for result in results:
         boxes = result.boxes
         
         if len(boxes) == 0:
             print("⚠️ No cards detected, using full image")
-            return [image]
+            return [image], []
         
         # Sort by confidence (highest first)
         confidences = boxes.conf.cpu().numpy()
@@ -150,6 +151,15 @@ def detect_cards(image: Image.Image, conf_threshold: float = 0.25) -> List[Image
             # Get bounding box
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+            # Store bounding box info
+            bounding_boxes.append({
+                "x1": x1,
+                "y1": y1,
+                "x2": x2,
+                "y2": y2,
+                "confidence": confidence
+            })
             
             # Add 5% padding
             padding = 0.05
@@ -167,7 +177,7 @@ def detect_cards(image: Image.Image, conf_threshold: float = 0.25) -> List[Image
             
             print(f"✂️ Card detected: ({x1},{y1})->({x2},{y2}) conf={confidence:.2%}")
     
-    return detected_cards if detected_cards else [image]
+    return detected_cards if detected_cards else [image], bounding_boxes
 
 def generate_embedding(image: Image.Image) -> List[float]:
     """Generate CLIP embedding for a single card image"""
@@ -197,7 +207,7 @@ async def detect_and_embed(
         print(f"📸 Image: {image.size[0]}x{image.size[1]}px")
         
         # Detect cards
-        cards = detect_cards(image, conf_threshold=conf_threshold)
+        cards, bounding_boxes = detect_cards(image, conf_threshold=conf_threshold)
         print(f"🎴 Detected {len(cards)} card(s)")
         
         # Generate embeddings
@@ -211,14 +221,16 @@ async def detect_and_embed(
                 "card_size": {
                     "width": card_img.width,
                     "height": card_img.height
-                }
+                },
+                "bounding_box": bounding_boxes[i] if i < len(bounding_boxes) else None
             })
         
         return {
             "cards_detected": len(cards),
             "cards": results,
             "model": "openai/clip-vit-base-patch16",
-            "detector": "custom" if "card_detector" in str(detector.ckpt_path) else "pretrained"
+            "detector": "custom" if "card_detector" in str(detector.ckpt_path) else "pretrained",
+            "image_size": {"width": image.width, "height": image.height}
         }
     
     except Exception as e:
