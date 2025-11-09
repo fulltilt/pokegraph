@@ -61,8 +61,14 @@ interface CardMatch {
 
 interface CardResult {
   cardIndex: number;
+  detectedCardNumber: number;
   cardSize: { width: number; height: number };
   matchesFound: number;
+  topMatch: {
+    name: string;
+    similarity: number;
+    setName: string;
+  } | null;
   matches: CardMatch[];
 }
 
@@ -70,6 +76,11 @@ interface RecognitionResponse {
   success: boolean;
   cardsDetected?: number;
   results?: CardResult[];
+  summary?: Array<{
+    cardNumber: number;
+    bestMatch: string;
+    confidence: string;
+  }>;
   matches?: CardMatch[]; // Legacy single card support
 }
 
@@ -91,15 +102,13 @@ export default function CardRecognition() {
       refetchInterval: 30000,
     });
 
-  // Card recognition mutation
+  // Card recognition mutation - now supports multiple cards
   const recognitionMutation = useMutation<RecognitionResponse, Error, File>({
     mutationFn: async (file: File) => {
-      console.log("🚀 Starting recognition...");
       const formData = new FormData();
       formData.append("image", file);
 
-      console.log("📤 Sending to:", `${API_BASE_URL}/api/recognize-cards`);
-
+      // Use the new multi-card endpoint
       const res = await fetch(
         `${API_BASE_URL}/api/recognize-cards?topK=${topK}&threshold=${threshold}`,
         {
@@ -108,17 +117,12 @@ export default function CardRecognition() {
         }
       );
 
-      console.log("📥 Response:", res.status, res.ok);
-
       if (!res.ok) {
         const error = await res.json();
-        console.error("❌ Error:", error);
         throw new Error(error.message || "Recognition failed");
       }
 
-      const data = await res.json();
-      console.log("✅ Success:", data);
-      return data;
+      return res.json();
     },
   });
 
@@ -313,55 +317,134 @@ export default function CardRecognition() {
         )}
 
         {/* Results */}
-        {recognitionMutation.data?.matches && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Found {recognitionMutation.data.matches.length} Matches
-            </h2>
+        {recognitionMutation.data && (
+          <div className="space-y-6">
+            {/* Summary */}
+            <Alert className="bg-blue-50 border-blue-200">
+              <CheckCircle2 className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                {recognitionMutation.data.cardsDetected
+                  ? `Detected ${recognitionMutation.data.cardsDetected} card(s) in the image`
+                  : `Found ${
+                      recognitionMutation.data.matches?.length || 0
+                    } matches`}
+              </AlertDescription>
+            </Alert>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recognitionMutation.data.matches.map((match) => (
-                <Card
-                  key={match.id}
-                  className="overflow-hidden hover:shadow-xl transition-shadow"
-                >
-                  <div className="aspect-[5/7] bg-gray-100 relative">
-                    <img
-                      src={match.images?.large || match.images?.small}
-                      alt={match.name}
-                      className="w-full h-full object-contain"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <div className="bg-black/75 text-white px-2 py-1 rounded-full text-xs font-bold">
-                        {(match.similarity * 100).toFixed(1)}%
+            {/* Multi-card results */}
+            {recognitionMutation.data.results?.map((cardResult, idx) => (
+              <div key={idx} className="space-y-4">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Card {cardResult.cardIndex + 1} - {cardResult.matchesFound}{" "}
+                  Matches
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {cardResult.matches.map((match) => (
+                    <Card
+                      key={match.id}
+                      className="overflow-hidden hover:shadow-xl transition-shadow"
+                    >
+                      <div className="aspect-[5/7] bg-gray-100 relative">
+                        <img
+                          src={match.images?.large || match.images?.small}
+                          alt={match.name}
+                          className="w-full h-full object-contain"
+                        />
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-black/75 text-white px-2 py-1 rounded-full text-xs font-bold">
+                            {(match.similarity * 100).toFixed(1)}%
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                      <CardContent className="p-4 space-y-2">
+                        <h3 className="font-bold text-lg truncate">
+                          {match.name}
+                        </h3>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <p>{match.setName}</p>
+                          <p className="flex justify-between">
+                            <span>#{match.number}</span>
+                            <span className="font-medium">{match.rarity}</span>
+                          </p>
+                          {match.prices?.holofoil?.market && (
+                            <p className="text-green-600 font-bold">
+                              ${match.prices.holofoil.market.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                        <Progress
+                          value={match.similarity * 100}
+                          className="h-2"
+                        />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Legacy single card results */}
+            {recognitionMutation.data.matches &&
+              !recognitionMutation.data.results && (
+                <div className="space-y-4">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Found {recognitionMutation.data.matches.length} Matches
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {recognitionMutation.data.matches.map((match) => (
+                      <Card
+                        key={match.id}
+                        className="overflow-hidden hover:shadow-xl transition-shadow"
+                      >
+                        <div className="aspect-[5/7] bg-gray-100 relative">
+                          <img
+                            src={match.images?.large || match.images?.small}
+                            alt={match.name}
+                            className="w-full h-full object-contain"
+                          />
+                          <div className="absolute top-2 right-2">
+                            <div className="bg-black/75 text-white px-2 py-1 rounded-full text-xs font-bold">
+                              {(match.similarity * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                        <CardContent className="p-4 space-y-2">
+                          <h3 className="font-bold text-lg truncate">
+                            {match.name}
+                          </h3>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p>{match.setName}</p>
+                            <p className="flex justify-between">
+                              <span>#{match.number}</span>
+                              <span className="font-medium">
+                                {match.rarity}
+                              </span>
+                            </p>
+                            {match.prices?.holofoil?.market && (
+                              <p className="text-green-600 font-bold">
+                                ${match.prices.holofoil.market.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                          <Progress
+                            value={match.similarity * 100}
+                            className="h-2"
+                          />
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  <CardContent className="p-4 space-y-2">
-                    <h3 className="font-bold text-lg truncate">{match.name}</h3>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <p>{match.setName}</p>
-                      <p className="flex justify-between">
-                        <span>#{match.number}</span>
-                        <span className="font-medium">{match.rarity}</span>
-                      </p>
-                      {match.prices?.holofoil?.market && (
-                        <p className="text-green-600 font-bold">
-                          ${match.prices.holofoil.market.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                    <Progress value={match.similarity * 100} className="h-2" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                </div>
+              )}
           </div>
         )}
 
         {/* Empty State */}
         {recognitionMutation.isSuccess &&
-          recognitionMutation.data?.matches?.length === 0 && (
+          !recognitionMutation.data?.matches?.length &&
+          !recognitionMutation.data?.results?.length && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>

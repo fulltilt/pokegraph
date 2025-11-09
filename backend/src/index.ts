@@ -10,8 +10,11 @@ import fs from "fs";
 import fetch from "node-fetch";
 import { getQuantitySpikes } from "@pokemon/shared/db";
 
-// Let the library know to use local files
-// env.localModelPath = true;
+interface DatabaseCardMatch {
+  id: string;
+  data: any; // or create a proper Card type
+  similarity: number;
+}
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -711,35 +714,16 @@ app.post("/api/sealed/auto-label", async (req: Request, res: Response) => {
   }
 });
 
-// interface UploadRequest extends Request {
-//   body: {
-//     name: string;
-//   };
-//   file?: Express.Multer.File;
-// }
-
-// interface MatchRequest extends Request {
-//   file?: Express.Multer.File;
-// }
-
-// A CardMatchResult represents one record from the pgvector similarity query
-interface CardMatchResult {
-  id: number;
-  name: string;
-  imageUrl: string;
-  distance: number;
-}
-
 // Find similar cards using cosine similarity
 async function findSimilarCards(
   embedding: number[],
   topK: number = 5,
   threshold: number = 0.75
-) {
+): Promise<DatabaseCardMatch[]> {
   try {
     const embeddingStr = `[${embedding.join(",")}]`;
 
-    const results = await prisma.$queryRaw`
+    const results = await prisma.$queryRaw<DatabaseCardMatch[]>`
       SELECT 
         id,
         data,
@@ -851,7 +835,7 @@ app.post(
   upload.single("image"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.file || !req.file.buffer) {
+      if (!req.file) {
         return res.status(400).json({ error: "No image file provided" });
       }
 
@@ -860,7 +844,6 @@ app.post(
 
       console.log("📤 Sending image for card detection and embedding...");
 
-      // Create form data
       const formData = new FormData();
       formData.append("file", req.file.buffer, {
         filename: req.file.originalname,
@@ -890,7 +873,7 @@ app.post(
           headers: headers,
         }
       );
-      console.log(embeddingResponse);
+
       if (!embeddingResponse.ok) {
         const errorText = await embeddingResponse.text();
         console.error("Embedding service error:", errorText);
@@ -923,8 +906,18 @@ app.post(
 
         results.push({
           cardIndex: card.card_index,
+          detectedCardNumber: card.card_index + 1, // Add this for clarity (1-indexed)
           cardSize: card.card_size,
           matchesFound: matches.length,
+          topMatch:
+            matches.length > 0
+              ? {
+                  // Add best match info
+                  name: matches[0].data.name,
+                  similarity: parseFloat(matches[0].similarity.toFixed(4)),
+                  setName: matches[0].data.set?.name,
+                }
+              : null,
           matches: matches.map((match: any) => ({
             id: match.id,
             similarity: parseFloat(match.similarity.toFixed(4)),
@@ -945,6 +938,14 @@ app.post(
         success: true,
         cardsDetected: cards_detected,
         results,
+        summary: results.map((r) => ({
+          // Add summary for quick reference
+          cardNumber: r.detectedCardNumber,
+          bestMatch: r.topMatch?.name || "No match",
+          confidence: r.topMatch?.similarity
+            ? `${(r.topMatch.similarity * 100).toFixed(1)}%`
+            : "N/A",
+        })),
       });
     } catch (error) {
       console.error("❌ Error processing image:", error);
