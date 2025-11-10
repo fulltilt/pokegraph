@@ -100,6 +100,16 @@ export default function CardRecognition() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [threshold, setThreshold] = useState<number>(0.75);
   const [topK, setTopK] = useState<number>(5);
+  const [hoveredCard, setHoveredCard] = useState<CardResult | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [selectedCards, setSelectedCards] = useState<
+    Array<{
+      name: string;
+      price: number | null;
+      setName: string;
+      number: string;
+    }>
+  >([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const cardSectionRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -187,8 +197,8 @@ export default function CardRecognition() {
     img.src = imageUrl;
   };
 
-  // Handle canvas click to scroll to card
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Handle canvas hover to show card preview
+  const handleCanvasHover = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current || !recognitionMutation.data?.results) return;
 
     const canvas = canvasRef.current;
@@ -199,18 +209,97 @@ export default function CardRecognition() {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
-    // Check which bounding box was clicked
+    // Update mouse position for tooltip
+    setMousePosition({ x: e.clientX, y: e.clientY });
+
+    // Check which bounding box is hovered
+    let found = false;
     for (const result of recognitionMutation.data.results) {
       if (!result.boundingBox) continue;
 
       const { x1, y1, x2, y2 } = result.boundingBox;
 
       if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
-        scrollToCard(result.detectedCardNumber);
+        setHoveredCard(result);
+        found = true;
         break;
       }
     }
+
+    if (!found) {
+      setHoveredCard(null);
+    }
   };
+
+  const handleCanvasLeave = () => {
+    setHoveredCard(null);
+  };
+
+  // Add card to selection list
+  const addCardToList = (cardResult: CardResult) => {
+    if (!cardResult.topMatch) return;
+
+    const topMatchFull = cardResult.matches[0];
+    const price =
+      topMatchFull?.prices?.holofoil?.market ||
+      topMatchFull?.prices?.normal?.market ||
+      null;
+
+    const newCard = {
+      name: cardResult.topMatch.name,
+      price: price,
+      setName: cardResult.topMatch.setName,
+      number: topMatchFull.number,
+    };
+
+    // Check if already added
+    const isDuplicate = selectedCards.some(
+      (card) => card.name === newCard.name && card.setName === newCard.setName
+    );
+
+    if (!isDuplicate) {
+      setSelectedCards([...selectedCards, newCard]);
+    }
+  };
+
+  // Remove card from list
+  const removeCardFromList = (index: number) => {
+    setSelectedCards(selectedCards.filter((_, i) => i !== index));
+  };
+
+  // Export to CSV
+  const exportToCSV = () => {
+    if (selectedCards.length === 0) return;
+
+    const headers = ["Card Name", "Set", "Number", "Market Price"];
+    const rows = selectedCards.map((card) => [
+      card.name,
+      card.setName,
+      card.number,
+      card.price ? `${card.price.toFixed(2)}` : "N/A",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `card-list-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Calculate total value
+  const totalValue = selectedCards.reduce(
+    (sum, card) => sum + (card.price || 0),
+    0
+  );
 
   // Update when results come back
   useEffect(() => {
@@ -246,6 +335,7 @@ export default function CardRecognition() {
   const handleClear = () => {
     setSelectedImage(null);
     setPreviewUrl(null);
+    setHoveredCard(null);
     recognitionMutation.reset();
   };
 
@@ -317,11 +407,35 @@ export default function CardRecognition() {
                   />
                   <canvas
                     ref={canvasRef}
-                    onClick={handleCanvasClick}
+                    onClick={(e) => {
+                      // Find clicked card and add to list
+                      if (
+                        !canvasRef.current ||
+                        !recognitionMutation.data?.results
+                      )
+                        return;
+                      const canvas = canvasRef.current;
+                      const rect = canvas.getBoundingClientRect();
+                      const scaleX = canvas.width / rect.width;
+                      const scaleY = canvas.height / rect.height;
+                      const x = (e.clientX - rect.left) * scaleX;
+                      const y = (e.clientY - rect.top) * scaleY;
+
+                      for (const result of recognitionMutation.data.results) {
+                        if (!result.boundingBox) continue;
+                        const { x1, y1, x2, y2 } = result.boundingBox;
+                        if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+                          addCardToList(result);
+                          break;
+                        }
+                      }
+                    }}
+                    onMouseMove={handleCanvasHover}
+                    onMouseLeave={handleCanvasLeave}
                     className={`max-w-full max-h-96 cursor-pointer ${
                       recognitionMutation.data ? "block" : "hidden"
                     }`}
-                    title="Click on a card to see its matches"
+                    title="Click on a card to add it to your list"
                   />
                 </div>
                 <Button
@@ -411,6 +525,94 @@ export default function CardRecognition() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Card Hover Tooltip */}
+        {hoveredCard && hoveredCard.topMatch && (
+          <div
+            className="fixed z-50 pointer-events-none"
+            style={{
+              left: mousePosition.x + 20,
+              top: mousePosition.y - 100,
+            }}
+          >
+            <Card className="shadow-2xl border-2 border-green-500 w-48">
+              <img
+                src={hoveredCard.matches[0]?.images?.small}
+                alt={hoveredCard.topMatch.name}
+                className="w-full rounded-t-lg"
+              />
+              <CardContent className="p-2 text-center">
+                <p className="font-bold text-sm truncate">
+                  {hoveredCard.topMatch.name}
+                </p>
+                <p className="text-xs text-gray-600">
+                  {hoveredCard.topMatch.setName}
+                </p>
+                <p className="text-green-600 font-bold text-sm">
+                  {(hoveredCard.topMatch.similarity * 100).toFixed(1)}%
+                </p>
+                {hoveredCard.matches[0]?.prices?.holofoil?.market && (
+                  <p className="text-blue-600 font-bold">
+                    ${hoveredCard.matches[0].prices.holofoil.market.toFixed(2)}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Click to add to list
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Selected Cards List */}
+        {selectedCards.length > 0 && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Selected Cards ({selectedCards.length})</CardTitle>
+                  <CardDescription>
+                    Total Value: ${totalValue.toFixed(2)}
+                  </CardDescription>
+                </div>
+                <Button onClick={exportToCSV} className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {selectedCards.map((card, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
+                  >
+                    <div className="flex-1">
+                      <p className="font-semibold">{card.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {card.setName} #{card.number}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-bold text-green-600">
+                        {card.price ? `${card.price.toFixed(2)}` : "N/A"}
+                      </p>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => removeCardFromList(index)}
+                        className="h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Error Alert */}
         {recognitionMutation.isError && (

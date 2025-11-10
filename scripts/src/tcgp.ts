@@ -129,10 +129,16 @@ const normalizeCardNumber = (set: string, idx: number) => {
 };
 
 async function main() {
+  const CALL_LIMIT = 60; // how many calls before sleeping
+  const SLEEP_MS = 4 * 60 * 1000; // 4 minutes
+
+  let callCount = 0;
+
   for (const key of Object.keys(sets)) {
     const typedKey = key as keyof typeof sets; // key will always be a valid key of ids
     const { startIdx, ids } = sets[typedKey];
 
+    console.log(`Initiating processing set ${key}...`);
     for (let idx = 0; idx < ids.length; idx++) {
       const id = ids[idx];
       try {
@@ -141,36 +147,22 @@ async function main() {
           buckets,
           `${key}-${normalizeCardNumber(key, startIdx + idx)}`
         );
+
+        ++callCount;
+        // If we've hit the limit, sleep and reset
+        if (callCount % CALL_LIMIT === 0) {
+          console.log(`⏸️ Hit ${CALL_LIMIT} calls. Sleeping for 5 minutes...`);
+          await sleep(0);
+          console.log("✅ Resuming...");
+        }
       } catch (err) {
         console.error(`Failed on card ${id}:`, err);
       }
     }
 
-    console.log(`Finished processing set ${key}. Sleeping for 4 minutes...`);
-    await sleep(240); // 4 minutes
+    console.log(`Finished processing set ${key}.`);
   }
 
-  // definitely a better way of doing this without the repetitive logic
-  for (const key of Object.keys(sets2)) {
-    const typedKey = key as keyof typeof sets2; // key will always be a valid key of ids
-    const { startIdx, ids } = sets2[typedKey];
-
-    for (let idx = 0; idx < ids.length; idx++) {
-      const id = ids[idx];
-      try {
-        const buckets = await fetchPage(id);
-        await updateCard(
-          buckets,
-          `${key}-${normalizeCardNumber(key, startIdx + idx)}`
-        );
-      } catch (err) {
-        console.error(`Failed on card ${id}:`, err);
-      }
-    }
-
-    console.log(`Finished processing set ${key}. Sleeping for 4 minutes...`);
-    await sleep(240); // 4 minutes
-  }
   console.log("All sets processed.");
 }
 
