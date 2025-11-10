@@ -152,7 +152,7 @@ async function main() {
         // If we've hit the limit, sleep and reset
         if (callCount % CALL_LIMIT === 0) {
           console.log(`⏸️ Hit ${CALL_LIMIT} calls. Sleeping for 5 minutes...`);
-          await sleep(0);
+          await sleep(SLEEP_MS);
           console.log("✅ Resuming...");
         }
       } catch (err) {
@@ -165,22 +165,5 @@ async function main() {
 
   console.log("All sets processed.");
 }
-
-// async function main() {
-//   const set = "sv2";
-//   const { startIdx, ids } = sets[set];
-//   ids.forEach(async (id, idx) => {
-//     try {
-//       const buckets = await fetchPage(id);
-//       await updateCard(
-//         buckets,
-//         `${set}-${normalizeCardNumber(set, startIdx + idx)}`
-//       );
-//       await sleep(2);
-//     } catch (err) {
-//       console.error(`Failed on card ${id}:`, err);
-//     }
-//   });
-// }
 
 main();
