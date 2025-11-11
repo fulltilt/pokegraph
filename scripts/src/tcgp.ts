@@ -15,7 +15,6 @@
 import { PrismaClient } from "../generated/prisma";
 const prisma = new PrismaClient();
 import { sets } from "./data/sets";
-import { sets2 } from "./data/sets2";
 
 type CardData = {
   skuId: string;
@@ -42,7 +41,7 @@ type Bucket = {
 };
 
 async function sleep(time: number) {
-  return new Promise((resolve) => setTimeout(resolve, time * 1000));
+  return new Promise((resolve) => setTimeout(resolve, time));
 }
 
 async function fetchPage(id: string) {
