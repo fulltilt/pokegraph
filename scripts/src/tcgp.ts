@@ -95,11 +95,11 @@ async function updateCard(buckets: Bucket[], cardId: string) {
           date,
         },
       });
-      console.log(`Updated ${cardId}`);
     } catch (error) {
       console.error(`Error inserting cardId ${cardId}:`, error);
     }
   }
+  console.log(`Updated ${cardId}`);
 }
 
 const normalizeCardNumber = (set: string, idx: number) => {
