@@ -32,11 +32,12 @@ export function TopMoversChart({
   const [data, setData] = useState<Movers[]>([]);
   const [min, setMin] = useState(-Infinity);
   const [max, setMax] = useState(Infinity);
-
+  console.log(subtitle, data);
   useEffect(() => {
     fetch(`${url}/${order}?timeframe=${range}`)
       .then((res) => res.json())
       .then(async (cards: Movers[]) => {
+        console.log(subtitle);
         let dataMin;
         let dataMax;
         if (cards[0].percent_change) {
