@@ -1,3 +1,23 @@
+export interface RawCardRecord {
+  id: string;
+  data: object; // Use 'object' or 'any' for the JSON column if you don't want to use CardData here
+}
+
+export type Sealed = {
+  id: string;
+  product: string;
+  createdAt: Date;
+  prices: {
+    title: string;
+    id: string;
+    label: string | null;
+    soldAt: Date;
+    sealedId: string;
+    price: number;
+    url: string;
+  }[];
+};
+
 export interface DatabaseCardMatch {
   id: string;
   data: CardData;

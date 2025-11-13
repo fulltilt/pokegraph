@@ -1,5 +1,40 @@
-import { DatabaseCardMatch } from "../types";
+import { DatabaseCardMatch, RawCardRecord } from "../types";
 import { prisma } from "@pokemon/shared";
+
+export async function getCardsFromSet(
+  set: string,
+  skip: number,
+  take: number
+): Promise<any[]> {
+  try {
+    const cards = await prisma.$queryRawUnsafe<any[]>(
+      `
+      SELECT *
+      FROM "Card"
+      WHERE data->'set'->>'name' = $1
+      ORDER BY
+        CASE
+          WHEN data->>'number' ~ '^[0-9]+$' THEN (data->>'number')::int
+          ELSE NULL
+        END NULLS LAST,
+        CASE
+          WHEN data->>'number' ~ '^[0-9]+$' THEN NULL
+          ELSE SUBSTRING(data->>'number', '^[0-9]+')::int
+        END NULLS LAST,
+        data->>'number'
+      OFFSET ${skip}
+      LIMIT ${take}
+      `,
+      set
+    );
+    // ORDER BY (data->>'number')::int
+
+    return cards;
+  } catch (error) {
+    console.error("Database query error in getCards:", error);
+    return [];
+  }
+}
 
 /**
  * Finds similar cards based on a provided embedding vector using pgvector's
@@ -81,7 +116,7 @@ export async function getCardsBySet(
   setName: string,
   skip: number,
   take: number
-) {
+): Promise<RawCardRecord[]> {
   // Note: The skip/limit are injected directly into the query string for raw queries
   return await prisma.$queryRawUnsafe(
     `

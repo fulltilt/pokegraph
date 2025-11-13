@@ -10,6 +10,50 @@ import { CardData } from "../types";
 
 const router = Router();
 
+router.get("/api/cards", async (req: Request, res: Response) => {
+  const { set, q = "", filter = "", page = "1", pageSize = "20" } = req.query;
+
+  const take = parseInt(pageSize as string);
+  const skip = (parseInt(page as string) - 1) * take;
+
+  if (!set || isNaN(skip) || isNaN(take)) {
+    res.status(400).json({ message: "Invalid query params" });
+    return;
+  }
+
+  /*
+  This solution uses a multi-part sorting approach to handle your mixed numeric and alphanumeric values:
+
+  First, it sorts pure numeric values (like 17, 18, 19, 20) by their integer value
+  Next, it handles alphanumeric values (like '19a') by extracting and sorting by the numeric prefix
+  Finally, it sorts by the full string value to handle any remaining ties
+
+  This approach will give you the sorting you want: 17, 18, 19, 19a, 20.
+
+  NOTE: the query doesn't work as intended but I'm okay with the result. If the card is '101a', that
+  card will be appended at the end of the numeric-only cards
+  */
+  try {
+    const cards = await getCardsBySet(set as string, skip, take);
+
+    res.json(
+      cards.map((card: any) => {
+        const data = card.data as unknown as CardData;
+
+        return {
+          id: card.id,
+          name: data.name,
+          image: data.images?.small,
+          set: data.set?.name,
+        };
+      })
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch cards" });
+  }
+});
+
 // Search cards by name
 router.get("/cards-search", async (req: Request, res: Response) => {
   const name = req.query.name as string;
