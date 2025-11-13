@@ -52,7 +52,7 @@ export async function getTopMoversPerSetByPercentage(
           MAX(p.date) AS latest_date
         FROM "Card" c
         JOIN recent_prices p ON p."cardId" = c.id
-        WHERE (c.data->'set'->>'series') IN ('Sun & Moon', 'Sword & Shield', 'Scarlet & Violet')
+        WHERE (c.data->'set'->>'series') IN ('Sun & Moon', 'Sword & Shield', 'Scarlet & Violet', 'Mega Evolution')
           AND (c.data->'set'->>'id') NOT IN ('smp', 'swshp', 'svp')
         GROUP BY c.id, set_id, set_name, card_name, image, release_date
       ),
@@ -133,7 +133,7 @@ export async function getTopMoverPerSetByPrice(
             MAX(p.date) AS latest_date
           FROM "Card" c
           JOIN recent_prices p ON p."cardId" = c.id
-          WHERE (c.data->'set'->>'series') IN ('Sun & Moon', 'Sword & Shield', 'Scarlet & Violet')
+          WHERE (c.data->'set'->>'series') IN ('Sun & Moon', 'Sword & Shield', 'Scarlet & Violet', 'Mega Evolution')
             AND (c.data->'set'->>'id') NOT IN ('smp', 'swshp', 'svp')
           GROUP BY c.id, set_id, set_name, card_name, image, release_date
         ),
