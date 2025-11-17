@@ -10,7 +10,7 @@ import { CardData } from "../types";
 
 const router = Router();
 
-router.get("/api/cards", async (req: Request, res: Response) => {
+router.get("/cards", async (req: Request, res: Response) => {
   const { set, q = "", filter = "", page = "1", pageSize = "20" } = req.query;
 
   const take = parseInt(pageSize as string);
@@ -49,7 +49,7 @@ router.get("/api/cards", async (req: Request, res: Response) => {
       })
     );
   } catch (err) {
-    console.error(err);
+    console.error("Error getting cards by set", err);
     res.status(500).json({ message: "Failed to fetch cards" });
   }
 });

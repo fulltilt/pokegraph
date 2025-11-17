@@ -1307,11 +1307,11 @@ async function startHttpServer() {
       },
     });
     const port = process.env.PORT || 3000;
-    // console.log(
-    //   `GitHub MCP Server started successfully (HTTP) on port ${port}`
-    // );
+    console.log(
+      `GitHub MCP Server started successfully (HTTP) on port ${port}`
+    );
   } catch (error) {
-    // debugPrint("Failed to start GitHub MCP Server (HTTP):", error);
+    console.error("Failed to start GitHub MCP Server (HTTP):", error);
     process.exit(1);
   }
 }

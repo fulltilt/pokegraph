@@ -62,7 +62,7 @@ async function insertCards(cards: any[]) {
         });
       }
 
-      //   console.log(`Inserted ${card.id}`);
+      console.log(`Inserted ${card.id}`);
     } catch (error) {
       console.error(`Error inserting card ${card.id}:`, error);
     }

@@ -52,11 +52,11 @@ export default function Predictions() {
       label: "keep" | "remove" | null;
     }) => {
       const res = await fetch(
-        `${import.meta.env.VITE_ENDPOINT_URL}/api/sealed/${id}/label`,
+        `${import.meta.env.VITE_ENDPOINT_URL}/api/sealed/label`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ label }),
+          body: JSON.stringify({ id, label }),
         }
       );
       return res.json();

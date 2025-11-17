@@ -33,6 +33,7 @@ import { config } from "./config";
 import cardRecognitionRouter from "./routes/cardRecognition";
 import cardsRouter from "./routes/cards";
 import setsRouter from "./routes/sets";
+import sealedRouter from "./routes/sealed";
 import { getQuantitySpikes } from "@pokemon/shared/db";
 
 const app = express();
@@ -44,6 +45,7 @@ app.use(express.json());
 app.use("/api", cardRecognitionRouter);
 app.use("/api", cardsRouter);
 app.use("/api", setsRouter);
+app.use("/api", sealedRouter);
 // Mount other routes...
 
 app.get("/api/quantity-spikes", async (req: Request, res: Response) => {

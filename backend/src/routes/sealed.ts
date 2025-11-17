@@ -26,7 +26,7 @@ router.get("/sealed", async (_req: Request, res: Response) => {
 });
 
 // Get price history for a specific product by title
-router.get("/api/sealed/:title/prices", async (req: Request, res: Response) => {
+router.get("/sealed/:title/prices", async (req: Request, res: Response) => {
   const { title } = req.params;
 
   try {
@@ -44,7 +44,7 @@ router.get("/api/sealed/:title/prices", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/api/sealed/unlabeled", async (_req: Request, res: Response) => {
+router.get("/sealed/unlabeled", async (_req: Request, res: Response) => {
   try {
     const entries = await getUnlabledSealedProduct();
 
@@ -66,7 +66,7 @@ router.get("/api/sealed/unlabeled", async (_req: Request, res: Response) => {
   }
 });
 
-router.post("/api/sealed/label", async (req: Request, res: Response) => {
+router.post("/sealed/label", async (req: Request, res: Response) => {
   const { id, label } = req.body;
 
   if (!id || (label !== "keep" && label !== "remove")) {
@@ -83,7 +83,7 @@ router.post("/api/sealed/label", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/api/sealed/predictions", async (req: Request, res: Response) => {
+router.get("/sealed/predictions", async (req: Request, res: Response) => {
   const { label, search, page = 1, perPage = 20 } = req.query;
   const where: Prisma.SealedPriceEntryWhereInput = {};
 
@@ -99,7 +99,7 @@ router.get("/api/sealed/predictions", async (req: Request, res: Response) => {
   } catch (error) {}
 });
 
-router.post("/api/sealed/auto-label", async (req: Request, res: Response) => {
+router.post("/sealed/auto-label", async (req: Request, res: Response) => {
   try {
     await loadModel();
 
@@ -136,3 +136,5 @@ router.post("/api/sealed/auto-label", async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed to auto-label entries." });
   }
 });
+
+export default router;

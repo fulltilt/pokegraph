@@ -120,7 +120,9 @@ export async function getCardsBySet(
   // Note: The skip/limit are injected directly into the query string for raw queries
   return await prisma.$queryRawUnsafe(
     `
-    SELECT *
+    SELECT
+      id,
+      data -- Exclude the 'embedding' column here as Prisma client doesn't know how to translate PostgreSQL vector type into usable JS object
     FROM "Card"
     WHERE data->'set'->>'name' = $1
     ORDER BY 

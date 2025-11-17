@@ -19,7 +19,7 @@ router.get("/sets-by-series", async (req: Request, res: Response) => {
 
   try {
     const sets = await getSetsBySeries(series);
-    return sets;
+    res.json(sets);
   } catch (error) {
     console.error("Error fetching sets by series:", error);
     res.status(500).json({ error: "Error fetching sets by serie" });
@@ -84,7 +84,7 @@ router.get(
 
     try {
       const topGainers = await getTopMoversBySet(setName, order, interval);
-      return topGainers;
+      res.json(topGainers);
     } catch (error) {
       console.error("Error fetching top movers by set:", error);
       res.status(500).send("Error fetching top movers by set");
