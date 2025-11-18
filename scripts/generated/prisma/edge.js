@@ -177,7 +177,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/home/ddoria/pokegraph/scripts/generated/prisma",
+      "value": "/Users/fulltilt/Documents/pokegraph/scripts/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -186,17 +186,16 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "debian-openssl-3.0.x",
+        "value": "darwin-arm64",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/home/ddoria/pokegraph/scripts/prisma/schema.prisma",
+    "sourceFilePath": "/Users/fulltilt/Documents/pokegraph/scripts/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../prisma",
   "clientVersion": "6.19.0",

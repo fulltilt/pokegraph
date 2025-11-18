@@ -1,5 +1,7 @@
-// run script every day at 8am
-// 0 8 * * * /usr/bin/node /path/to/your/ebayFetcher.js >> /tmp/ebay.log 2>&1
+import dotenv from "dotenv";
+import { resolve } from "path";
+
+dotenv.config({ path: resolve(__dirname, "../../.env") });
 
 import { PrismaClient } from "../generated/prisma";
 import * as cheerio from "cheerio";
@@ -32,19 +34,28 @@ function isListingClean(title: string): boolean {
   return !EXCLUDE_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
-async function getLastSolds(query: string): Promise<SoldItem[]> {
+async function getLastSolds(
+  query: string,
+  product: string
+): Promise<SoldItem[]> {
   const formatted = query.replace(/\s+/g, "+");
   const url = `https://www.ebay.com/sch/i.html?_nkw=${formatted}&LH_Sold=1&LH_Complete=1`;
-
+  console.log(url);
   const res = await fetch(url, {
     headers: {
       "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9",
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      Referer: "https://www.ebay.com/",
     },
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch eBay results: ${res.status}`);
+    throw new Error(
+      `Failed to fetch eBay results for ${product}: ${res.status}`
+    );
   }
 
   const html = await res.text();
@@ -55,52 +66,53 @@ async function getLastSolds(query: string): Promise<SoldItem[]> {
   const now = new Date();
   const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  $(".s-item").each((_, el) => {
-    const title = $(el).find(".s-item__title").text().trim();
-    const url = $(el).find(".s-item__link").attr("href") || "";
-    const priceText = $(el).find(".s-item__price").first().text();
-
-    if (
-      title === "Shop on eBay" ||
-      !title ||
-      !priceText ||
-      !url ||
-      !priceText ||
-      !isListingClean(title)
-    )
-      return;
-
-    const cleanedPrice = priceText.replace(/[^\d.]/g, "");
-    const price = parseFloat(cleanedPrice);
-
-    const soldDateText = $(el)
-      .find(".s-item__caption--signal.POSITIVE")
+  // $(".s-item").each((_, el) => {
+  $("ul.srp-results li[data-listingid]").each((_, li) => {
+    console.log("here");
+    // Title
+    const title = $(li)
+      .find(".s-card__title .su-styled-text.primary")
       .text()
       .trim();
 
-    const dateString = soldDateText.replace(/^Sold\s+/, "").trim();
-    const soldAt = new Date(dateString);
+    // Price
+    const priceText = $(li).find(".s-card__price").text().trim();
+
+    // Delivery fee (find row containing "delivery")
+    const deliveryText = $(li)
+      .find(".s-card__attribute-row .su-styled-text.secondary.large")
+      .filter((i, el) => $(el).text().includes("delivery"))
+      .text()
+      .trim();
+
+    // Sold date
+    const soldAt = new Date($(li).find(".s-card__caption span").text().trim());
 
     // make sure date is valid and if so that it's within the last 24 hours
     if (isNaN(soldAt.getTime()) || soldAt < cutoff) return;
 
-    if (title && !isNaN(price)) {
-      items.push({
-        title,
-        price,
-        url,
-        soldAt,
-      });
-    }
+    // URL (use the main image link)
+    const url = $(li).find("a.s-card__link.image-treatment").attr("href") || "";
+
+    // Parse numbers
+    const price = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
+    const delivery = parseFloat(deliveryText.replace(/[^0-9.]/g, "")) || 0;
+
+    items.push({
+      title,
+      price: price + delivery,
+      url,
+      soldAt,
+    });
   });
 
   return items;
 }
 
 async function saveItems(product: string) {
-  const query = `${product} -japanese -korean -half -case`;
-  const items = await getLastSolds(query);
-
+  const query = `${product} -japanese -korean -half -case -set -codes -psa -case`;
+  const items = await getLastSolds(query, product);
+  console.log(`Processing ${product}: ${items.length} listings found`);
   for (const item of items) {
     try {
       const sealed = await prisma.sealed.upsert({

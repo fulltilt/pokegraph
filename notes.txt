@@ -112,6 +112,7 @@ docker exec -t pokedb pg_dump -U postgres -d postgres > backup.sql
 
 // everyday at 4 run script (nohup ensures it doesn't terminate when you log out, also make sure you run ‘date’ to see what the time is on the server)
 0 16 \* \* \* /usr/bin/nohup /home/ddoria/.bun/bin/bun run /home/ddoria/pokegraph/scripts/src/tcgp.ts > /home/ddoria/logs/pokegraph-log.txt 2>&1 &
+0 16 \* \* \* /usr/bin/nohup /home/ddoria/.bun/bin/bun run /home/ddoria/pokegraph/scripts/src/sealed.ts > /home/ddoria/logs/sealed-log.txt 2>&1 &
 
 // If you want to manually trigger tcgplayer job (don’t worry about running this as cron command handles it)
 nohup bun run src/tcgp.ts > ~/logs/pokegraph-log.txt 2>&1 &
