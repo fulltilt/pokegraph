@@ -1,3 +1,8 @@
+SEALED
+
+#0 Get training data
+bun run scripts/sealed.ts (in root directory)
+
 #1 Train the model
 python train.py
 

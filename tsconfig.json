@@ -14,16 +14,19 @@
     "isolatedModules": true,
     "noEmit": false,
     "outDir": "./dist",
-    // "rootDir": ".",
-    "rootDirs": ["backend/src", "mcp/src"],
+    "rootDirs": ["backend/src", "mcp/src", "scripts/src"],
     "baseUrl": ".", // needed for path aliases
     "paths": {
       "@backend/*": ["backend/src/*"],
-      // "@prisma/*": ["backend/src/generated/prisma/*"],
       "@mcp/*": ["mcp/src/*"],
       "@shared/*": ["shared/*"]
     }
   },
-  "include": ["backend/src/**/*", "mcp/src/**/*", "shared/**/*"],
+  "include": [
+    "backend/src/**/*",
+    "mcp/src/**/*",
+    "shared/**/*",
+    "scripts/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }
