@@ -40,7 +40,7 @@ async function getLastSolds(
 ): Promise<SoldItem[]> {
   const formatted = query.replace(/\s+/g, "+");
   const url = `https://www.ebay.com/sch/i.html?_nkw=${formatted}&LH_Sold=1&LH_Complete=1`;
-  console.log(url);
+
   const res = await fetch(url, {
     headers: {
       "User-Agent":
@@ -66,9 +66,7 @@ async function getLastSolds(
   const now = new Date();
   const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  // $(".s-item").each((_, el) => {
   $("ul.srp-results li[data-listingid]").each((_, li) => {
-    console.log("here");
     // Title
     const title = $(li)
       .find(".s-card__title .su-styled-text.primary")
@@ -97,6 +95,16 @@ async function getLastSolds(
     // Parse numbers
     const price = parseFloat(priceText.replace(/[^0-9.]/g, "")) || 0;
     const delivery = parseFloat(deliveryText.replace(/[^0-9.]/g, "")) || 0;
+
+    if (
+      title === "Shop on eBay" ||
+      !title ||
+      !priceText ||
+      !url ||
+      !priceText ||
+      !isListingClean(title)
+    )
+      return;
 
     items.push({
       title,
@@ -147,10 +155,10 @@ async function saveItems(product: string) {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let i = 0;
-sealedProductNames.forEach((item) => {
+sealedProductNames.forEach(async (item) => {
   saveItems(item)
     .then(() => console.log(`Saved ${item}`))
     .catch(console.error);
   ++i;
-  if (i % 40 === 0) sleep(1000);
+  if (i % 40 === 0) await sleep(1000);
 });

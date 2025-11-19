@@ -90,6 +90,11 @@ export type SealedPriceEntryWithSealed = Prisma.SealedPriceEntryGetPayload<{
 
 export type SealedPredictionResult = {
   items: SealedPriceEntryWithSealed[];
+  stats: {
+    keep: number;
+    remove: number;
+    unlabeled: number;
+  };
   total: number;
 };
 
@@ -114,6 +119,22 @@ export async function getPredictionsForSealedProducts(
       where: finalWhere,
       include: { sealed: true },
       orderBy: { soldAt: "desc" },
+    });
+
+    const stats = items.reduce(
+      (acc, curr) => {
+        if (curr.label === "keep") acc.keep += 1;
+        else if (curr.label === "remove") acc.remove += 1;
+        else acc.unlabeled += 1;
+        return acc;
+      },
+      { keep: 0, remove: 0, unlabeled: 0 }
+    );
+
+    const pageItems = await prisma.sealedPriceEntry.findMany({
+      where: finalWhere,
+      include: { sealed: true },
+      orderBy: { soldAt: "desc" },
       skip: (+page - 1) * +perPage,
       take: +perPage,
     });
@@ -121,7 +142,8 @@ export async function getPredictionsForSealedProducts(
     const total = await prisma.sealedPriceEntry.count({ where: finalWhere });
 
     return {
-      items: items as SealedPriceEntryWithSealed[],
+      items: pageItems as SealedPriceEntryWithSealed[],
+      stats,
       total,
     };
   } catch (error) {

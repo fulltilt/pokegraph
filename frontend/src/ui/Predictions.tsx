@@ -1,4 +1,3 @@
-// src/pages/Predictions.tsx
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,8 +60,45 @@ export default function Predictions() {
       );
       return res.json();
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["predictions"] }),
+    onMutate: async ({ id, label }) => {
+      await queryClient.cancelQueries({ queryKey: ["predictions"] });
+
+      const prev = queryClient.getQueryData([
+        "predictions",
+        search,
+        labelFilter,
+        page,
+      ]);
+
+      // Update in-place
+      queryClient.setQueryData(
+        ["predictions", search, labelFilter, page],
+        (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items.map((item: any) =>
+              item.id === id ? { ...item, label } : item
+            ),
+          };
+        }
+      );
+
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(
+          ["predictions", search, labelFilter, page],
+          ctx.prev
+        );
+      }
+    },
+
+    onSettled: () => {
+      // Optional: only refetch if you need fresh totals
+      // queryClient.invalidateQueries({ queryKey: ["predictions"] });
+    },
   });
 
   const autoLabelMutation = useMutation({
@@ -103,7 +139,7 @@ export default function Predictions() {
 
       {data?.stats && (
         <div className="flex gap-6 text-sm text-muted-foreground">
-          <span>Total: {data.stats.total}</span>
+          <span>Total: {data.total}</span>
           <span>Keep: {data.stats.keep}</span>
           <span>Remove: {data.stats.remove}</span>
           <span>Unlabeled: {data.stats.unlabeled}</span>

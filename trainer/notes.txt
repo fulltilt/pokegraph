@@ -1,7 +1,10 @@
 SEALED
 
-#0 Get training data
-bun run scripts/sealed.ts (in root directory)
+#0-1 Get training data
+bun run scripts/src/sealed.ts (in root directory)
+
+#0-2 Label data
+https://poke-trades.com/predictions
 
 #1 Train the model
 python train.py
