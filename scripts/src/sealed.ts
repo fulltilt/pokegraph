@@ -3,7 +3,7 @@ import { resolve } from "path";
 
 dotenv.config({ path: resolve(__dirname, "../../.env") });
 
-import { PrismaClient } from "../generated/prisma";
+import { PrismaClient } from "@prisma/client";
 import * as cheerio from "cheerio";
 import { sealedProductNames } from "@pokemon/shared/src/constants";
 interface SoldItem {
@@ -40,7 +40,7 @@ async function getLastSolds(
 ): Promise<SoldItem[]> {
   const formatted = query.replace(/\s+/g, "+");
   const url = `https://www.ebay.com/sch/i.html?_nkw=${formatted}&LH_Sold=1&LH_Complete=1`;
-
+  console.log(url);
   const res = await fetch(url, {
     headers: {
       "User-Agent":

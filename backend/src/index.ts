@@ -34,8 +34,8 @@ import cardRecognitionRouter from "./routes/cardRecognition";
 import cardsRouter from "./routes/cards";
 import setsRouter from "./routes/sets";
 import sealedRouter from "./routes/sealed";
-import { getQuantitySpikes } from "@pokemon/shared/db";
-
+// import { getQuantitySpikes } from "@pokemon/shared/db";
+import { getQuantitySpikes } from "../../shared/src/db";
 const app = express();
 
 app.use(cors({ origin: "*" }));

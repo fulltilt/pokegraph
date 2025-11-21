@@ -3,7 +3,7 @@ import { Sealed } from "../types";
 import { Prisma } from "@prisma/client";
 import path from "path";
 import fs from "fs";
-import { pipeline as hfPipeline } from "@xenova/transformers";
+import { env, pipeline as hfPipeline } from "@xenova/transformers";
 
 export async function getAllSealedProducts(): Promise<any[]> {
   try {
@@ -176,34 +176,31 @@ export async function updateLabeledEntries(
   await prisma.$transaction(tx);
 }
 
-export async function classifyText(text: string) {
-  const [result] = await classifierFn(text);
+// export async function classifyText(text: string) {
+//   const [result] = await classifier(text);
 
-  return {
-    prediction: result.label.toLowerCase(), // "keep" or "remove"
-    confidence: result.score,
-  };
-}
+//   return {
+//     prediction: result.label.toLowerCase(), // "keep" or "remove"
+//     confidence: result.score,
+//   };
+// }
 
-let classifierFn: any;
-export async function loadModel() {
-  if (!classifierFn) {
-    // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
-    const modelDir = `file://${path.resolve(
-      __dirname,
-      "../../../trainer/model"
-    )}`;
-    console.log("Loading model from:", modelDir);
-    console.log(
-      "Files:",
-      fs.readdirSync(path.resolve(__dirname, "../../../trainer/model"))
-    );
+// let classifier: any;
+// export async function loadModel() {
+//   if (!classifier) {
+//     // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
+//     const modelDir = `file://${path.resolve(__dirname, "../../trainer/model")}`;
+//     console.log("Loading model from:", modelDir);
+//     console.log(
+//       "Files:",
+//       fs.readdirSync(path.resolve(__dirname, "../../trainer/model"))
+//     );
 
-    classifierFn = await hfPipeline("text-classification", modelDir, {
-      local_files_only: true, // ⬅️ Tells Xenova to load from local dir
-    });
-  }
-}
+//     classifier = await hfPipeline("text-classification", modelDir, {
+//       local_files_only: true, // ⬅️ Tells Xenova to load from local dir
+//     });
+//   }
+// }
 
 // let modelLoaded = false;
 // let classifierFn: any;

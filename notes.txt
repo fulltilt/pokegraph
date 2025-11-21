@@ -167,3 +167,8 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install label-studio
 
+Docker compose notes:
+https://chatgpt.com/s/t_691e7f62fbb081918573b62a43a9e64c
+https://gemini.google.com/share/e7821c15f3ba
+-Dockerfile installs dependencies BEFORE you mount the docker compose volumes
+-Never mount a directory that contains node_modules when using Bun, because you'll break the symlinks. Mount only the specific subdirectories you need for development.

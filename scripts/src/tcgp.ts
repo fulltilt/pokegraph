@@ -12,7 +12,13 @@
 
 // https://infinite-api.tcgplayer.com/price/history/{id}/detailed?range=[month|quarter|semi-annual|annual]
 
-import { PrismaClient } from "../generated/prisma";
+import dotenv from "dotenv";
+import { resolve } from "path";
+
+dotenv.config({ path: resolve(__dirname, "../../.env") });
+
+import { PrismaClient } from "@prisma/client";
+
 const prisma = new PrismaClient();
 import { sets } from "./data/sets";
 

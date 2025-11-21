@@ -2,12 +2,13 @@
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, BertTokenizerFast, BertForSequenceClassification
 import torch
 from PIL import Image
 import io
 import numpy as np
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 from typing import List
 import os
 
@@ -19,9 +20,17 @@ detector = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global model, processor, device, detector
-    
+    global model, processor, device, detector, text_model, text_tokenizer
+
     print("🔹 Loading models...")
+    print("🔹 Loading text classifier...")
+
+    text_model = BertForSequenceClassification.from_pretrained("/app/text_model")
+    text_tokenizer = BertTokenizerFast.from_pretrained("/app/text_model")
+    text_model.eval()
+    text_model.to(device)
+
+    print("✅ Text classifier loaded")
     
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -1,14 +1,19 @@
 {
   "name": "@pokemon/shared",
   "version": "1.0.0",
-  "main": "database.js",
-  "types": "database.d.ts",
-  "dependencies": {
-    "@prisma/client": "6.19.0",
-    "prisma": "6.19.0"
+  "main": "src/index.ts",
+  "type": "module",
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   },
   "scripts": {
-    "generate": "prisma generate --schema=prisma/schema.prisma",
+    "generate": "bunx prisma generate --schema=prisma/schema.prisma",
     "build": "tsc"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.0"
+  },
+  "devDependencies": {
+    "prisma": "6.19.0"
   }
 }

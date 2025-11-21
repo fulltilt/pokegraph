@@ -109,8 +109,8 @@ export default function Predictions() {
       );
       return res.json();
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["predictions"] }),
+    // onSuccess: () =>
+    //   queryClient.invalidateQueries({ queryKey: ["predictions"] }),
   });
 
   return (

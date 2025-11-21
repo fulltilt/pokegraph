@@ -1,0 +1,9 @@
+python/generate_embeddings - run to generate embeddings for cards in the db
+  - TODO: modify script to only generate embeddings for the rows whose embedding value is NULL
+python/embedding_service - service that hosts endpoints that get called when user uploads an image of cards
+python/sealed_classifier_service - service that is called when user auto-label new entries in the db that are unlabeled
+python/card_training - run to train card detection model
+  - TODO: modify so that it can detect cards that aren't perfectly aligned at 90 degree angles
+
+src/sealed.ts - run to get last solds off eBay. This data will be used for sealed_classifier_service. Will be run in daily cron job
+src/tcgp.ts - run to get recent TCGPlayer card data. Will be run in daily cron job

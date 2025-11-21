@@ -1,16 +1,27 @@
+import dotenv from "dotenv";
+import { resolve } from "path";
+import path from "path";
+import fs from "fs";
+import { pipeline as hfPipeline } from "@xenova/transformers";
+import { prisma } from "@pokemon/shared";
+
+dotenv.config({ path: resolve(__dirname, "../../.env") });
+
+import { Prisma } from "@prisma/client";
+
 import { Router, Request, Response } from "express";
 import {
-  classifyText,
+  // classifyText,
   getAllSealedProducts,
   getPredictionsForSealedProducts,
   getSealedByTitle,
   getUnlabeledEntries,
   getUnlabledSealedProduct,
   labelSealedProduct,
-  loadModel,
+  // loadModel,
   updateLabeledEntries,
 } from "../services/sealedService";
-import { Prisma } from "@prisma/client";
+// import { Prisma } from "@prisma/client";
 
 const router = Router();
 
@@ -101,40 +112,136 @@ router.get("/sealed/predictions", async (req: Request, res: Response) => {
 
 router.post("/sealed/auto-label", async (req: Request, res: Response) => {
   try {
-    await loadModel();
-
     const threshold: number = req.body.threshold ?? 0.9;
+    const batchSize = req.body.batchSize ?? 100;
 
-    const entries = await getUnlabeledEntries();
+    const PYTHON_URL =
+      process.env.PYTHON_CLASSIFIER_URL ??
+      "http://sealed-classifier-service:8000/classify";
+
+    const entries = await prisma.sealedPriceEntry.findMany({
+      where: { label: null },
+      include: { sealed: true },
+    });
+
     if (!entries.length) {
-      return res.json({ message: "No unlabeled entries found." });
+      return res.json({ message: "No unlabeled entries." });
     }
 
     const updates = [];
-    const skipped = [];
+    const skipped: any[] = [];
 
-    for (const entry of entries) {
-      const text = `${entry.sealed.product} ${entry.title} $${entry.price}`;
-      const { prediction, confidence } = await classifyText(text);
+    // Build all texts for classification
+    const texts = entries.map(
+      (e) => `${e.sealed.product} ${e.title} $${e.price}`
+    );
 
-      if (confidence >= threshold) {
-        updates.push({ id: entry.id, label: prediction });
-      } else {
-        skipped.push({ id: entry.id, score: confidence });
+    // Break into batches
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const chunk = texts.slice(i, i + batchSize);
+      const chunkEntries = entries.slice(i, i + batchSize);
+
+      const response = await fetch(PYTHON_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: chunk }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Classifier error: ${await response.text()}`);
+      }
+
+      const res = await response.json();
+
+      // Apply updates
+      for (let j = 0; j < res.predictions.length; j++) {
+        const { label, confidence } = res.predictions[j];
+        const entry = chunkEntries[j];
+
+        if (confidence >= threshold) {
+          updates.push(
+            prisma.sealedPriceEntry.update({
+              where: { id: entry.id },
+              data: { label },
+            })
+          );
+        } else {
+          skipped.push({ id: entry.id, confidence });
+        }
       }
     }
 
-    await updateLabeledEntries(updates);
+    if (updates.length > 0) {
+      await prisma.$transaction(updates);
+    }
 
-    return res.json({
-      message: `Auto-labeled ${updates.length} entries.`,
+    res.json({
+      labeled: updates.length,
       skipped: skipped.length,
       threshold,
+      batchSize,
     });
-  } catch (error) {
-    console.error("Auto-label error:", error);
-    return res.status(500).json({ error: "Failed to auto-label entries." });
+  } catch (err) {
+    console.error("Batch auto-label error:", err);
+    res.status(500).json({ error: "Batch auto-label failed" });
   }
 });
+
+// let classifier: any;
+// async function loadModel() {
+//   if (!classifier) {
+//     // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
+//     const modelDir = `file://${path.resolve(
+//       __dirname,
+//       "../../../trainer/model"
+//     )}`;
+//     console.log("Loading model from:", modelDir);
+//     console.log(
+//       "Files:",
+//       fs.readdirSync(path.resolve(__dirname, "../../../trainer/model"))
+//     );
+
+//     classifier = await hfPipeline("text-classification", modelDir, {
+//       local_files_only: true, // ⬅️ Tells Xenova to load from local dir
+//     });
+//   }
+// }
+// router.post("/sealed/auto-label", async (req: Request, res: Response) => {
+// try {
+//   await loadModel();
+
+//   const threshold: number = req.body.threshold ?? 0.9;
+
+//   const entries = await getUnlabeledEntries();
+//   if (!entries.length) {
+//     return res.json({ message: "No unlabeled entries found." });
+//   }
+
+//   const updates = [];
+//   const skipped = [];
+
+//   for (const entry of entries) {
+//     const text = `${entry.sealed.product} ${entry.title} $${entry.price}`;
+//     const { prediction, confidence } = await classifyText(text);
+
+//     if (confidence >= threshold) {
+//       updates.push({ id: entry.id, label: prediction });
+//     } else {
+//       skipped.push({ id: entry.id, score: confidence });
+//     }
+//   }
+
+//   await updateLabeledEntries(updates);
+
+//   return res.json({
+//     message: `Auto-labeled ${updates.length} entries.`,
+//     skipped: skipped.length,
+//     threshold,
+//   });
+// } catch (error) {
+//   console.error("Auto-label error:", error);
+//   return res.status(500).json({ error: "Failed to auto-label entries." });
+// }
+// });
 
 export default router;

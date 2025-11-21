@@ -3,15 +3,9 @@ FROM oven/bun:latest
 WORKDIR /app
 
 # Copy workspace configuration files first
-COPY package*.json ./
-COPY backend/package*.json ./backend/
-COPY mcp/package*.json ./mcp/
-COPY shared/package*.json ./shared/
-
-# Copy all workspace source code needed for dependencies
-COPY backend/ ./backend/
-COPY mcp/ ./mcp/
-COPY shared/ ./shared/
+COPY package.json ./
+COPY shared ./shared
+COPY backend ./backend
 
 # Install all workspace dependencies
 RUN bun install
@@ -19,12 +13,13 @@ RUN bun install
 # Install OpenSSL for Prisma
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# Generate Prisma client (run from backend, but using shared schema)
-WORKDIR /app/backend
-RUN bunx prisma generate --schema=../shared/prisma/schema.prisma
+RUN bunx prisma generate --schema=shared/prisma/schema.prisma
 
-# Return to backend
-WORKDIR /app/backend
+# Copy trained model files
+COPY scripts/python/sealed_classifier_service/model /app/trainer/model
 
-# Skip building - run from TypeScript source in development
+WORKDIR /app/backend
 EXPOSE 3457
+
+# this line can be overridden in docker-compose.yml. This is here if you want to run the backend container standalone.
+CMD ["bun", "run", "dev"]

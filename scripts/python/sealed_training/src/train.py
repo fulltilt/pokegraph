@@ -94,7 +94,7 @@ for epoch in range(3):
 # -----------------------
 # Save Model
 # -----------------------
-logging.info("Saving model to ./model...")
-model.save_pretrained("./model")
-tokenizer.save_pretrained("./model")
+logging.info("Saving model to ../../sealed_classifier_service/model...")
+model.save_pretrained("../../sealed_classifier_service/model")
+tokenizer.save_pretrained("../../sealed_classifier_service/model")
 logging.info("Model and tokenizer saved successfully.")

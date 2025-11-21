@@ -9,7 +9,7 @@ https://poke-trades.com/predictions
 #1 Train the model
 python train.py
 
-#2 Evaluate the model
+#2 Evaluate the model (optional)
 -This runs on your test set (split from labeled entries) and prints accuracy, 
  precision, recall, and F1 score.
 python eval.py
