@@ -1,15 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// output   = "../generated/prisma"
 generator client {
   provider = "prisma-client-js"
-  // output   = "../../backend/node_modules/.prisma/client"
-  // output   = "../../node_modules/.prisma/client"
-  // binaryTargets = ["native", "debian-openssl-1.1.x", "linux-musl", "linux-arm64-openssl-3.0.x"]
   binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
   previewFeatures = ["postgresqlExtensions"]
 }
@@ -69,6 +59,7 @@ model SealedPriceEntry {
   url       String
   soldAt    DateTime
   label     String? // "keep" | "remove"
+  preprocessed String?
 
   sealed    Sealed   @relation(fields: [sealedId], references: [id])
 
