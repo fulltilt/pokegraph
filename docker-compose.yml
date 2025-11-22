@@ -21,14 +21,14 @@ services:
       - "3457:3457"
     depends_on:
       - db
-      - embedding-service
-      - sealed-classifier-service
+      # - embedding-service
+      # - sealed-classifier-service
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/pokedex
       EMBEDDING_SERVICE_URL: http://embedding-service:8000
       SEALED_CLASSIFIER_URL: http://sealed-classifier-service:8000
     volumes:
-      - ./backend/src:/app/backend/src # Mount only src for hot reload
+      - ./backend:/app/backend
       - ./shared/src:/app/shared/src
     working_dir: /app/backend # Sets the default directory that commands will execute from. This is important because the command (like bun run dev) will run relative to this path.
     command: ["bun", "run", "dev"] # overrides the CMD in Dockerfile
@@ -47,27 +47,27 @@ services:
     working_dir: /app/frontend
     command: ["bun", "run", "dev"]
 
-  embedding-service:
-    build:
-      context: ./scripts/python/embedding_service
-      dockerfile: Dockerfile
-    container_name: pokemon-embedding-service
-    ports:
-      - "8000:8000"
-    environment:
-      - MODEL_CACHE=/models
-    volumes:
-      - model-cache:/models
+  # embedding-service:
+  #   build:
+  #     context: ./scripts/python/embedding_service
+  #     dockerfile: Dockerfile
+  #   container_name: pokemon-embedding-service
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - MODEL_CACHE=/models
+  #   volumes:
+  #     - model-cache:/models
 
-  sealed-classifier-service:
-    build:
-      context: ./scripts/python/sealed_classifier_service
-      dockerfile: Dockerfile
-    environment:
-      MODEL_NAME: "/app/model"
-    container_name: pokemon-sealed-classifier
-    ports:
-      - "8001:8000"
+  # sealed-classifier-service:
+  #   build:
+  #     context: ./scripts/python/sealed_classifier_service
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     MODEL_NAME: "/app/model"
+  #   container_name: pokemon-sealed-classifier
+  #   ports:
+  #     - "8001:8000"
 
   # mcp:
   #   build:
