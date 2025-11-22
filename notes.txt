@@ -1,3 +1,10 @@
+TODO:
+-fix embedding service
+-label data locally
+-train model and upload model to vps
+-setup cron job to pull in sealed data from eBay
+-improve card detection as well as embedding service to detect cards at various angles and perspectives
+
 # after cloning project, just run 'docker compose up'
 
 # Get all distinct series and order by release_date ascending
@@ -84,6 +91,10 @@ outliers AS (
 DELETE FROM "SealedPriceEntry"
 WHERE id IN (SELECT id FROM outliers);
 
+# copying file from remote to local using scp:
+scp [remote_username]@[remote_host]:/path/to/remote/file /path/to/local/destination
+scp ddoria@5.78.116.146:/home/ddoria/pokegraph/pokedex_backup_20251122_164155.dump /Users/fulltilt/Documents/temp
+
 # backing up DB
 -note: docker compose has the volume name as 'pgdata'. Docker Compose appends the volume name to the directory
  the docker-compose.yml file is, in this case it was 'pokegraph' hence the name 'pokegraph_pgdata'
@@ -91,6 +102,9 @@ docker run --rm \
   -v pokegraph_pgdata:/volume \
   -v "$(pwd)":/backup \
   alpine sh -c "tar czf /backup/pokegraph_pgdata-backup.tar.gz -C /volume ."
+
+# Run this command on your VPS machine
+docker exec -t pokedb pg_dump -U postgres -Fc pokedex > pokedex_backup_$(date +%Y%m%d_%H%M%S).dump
 
 -- other way I backed up the db
 -- This backs up all data without schema definitions, which avoids Prisma drift issues.
@@ -109,6 +123,55 @@ cat pokedex-data.sql | docker exec -i pokedb psql -U postgres -d pokedex
 
 docker exec -t pokedb pg_dump -U postgres -d postgres > backup.sql
 
+docker exec -it pokemon-backend bunx prisma migrate reset --schema=../shared/prisma/schema.prisma --force
+
+-backing up using pg_dump and pg_restore
+pg_dump -Fc --data-only -f backup_data.dump "postgres://postgres:password@localhost:5432/pokedex"
+pg_restore -d "postgres://postgres:password@localhost:5432/pokedex" backup_data.dump
+
+
+docker exec -it pokemon-backend bunx prisma migrate dev --schema=../shared/prisma/schema.prisma --skip-seed
+
+
+--schema=shared/prisma/schema.prisma
+
+
+Clear Migration History and Baseline
+# 1. Connect to database and clear migration history
+docker exec -it pokedb psql -U postgres -d pokedex -c "DELETE FROM _prisma_migrations;"
+
+# 2. Now baseline from scratch
+docker exec -it pokemon-backend bash -c '
+  # Create migration directory
+  MIGRATION_NAME="$(date +%Y%m%d%H%M%S)_baseline"
+  mkdir -p /app/shared/prisma/migrations/$MIGRATION_NAME
+  
+  # Generate migration SQL
+  bunx prisma migrate diff \
+    --from-empty \
+    --to-schema-datamodel=../shared/prisma/schema.prisma \
+    --script > /app/shared/prisma/migrations/$MIGRATION_NAME/migration.sql
+  
+  echo "Created migration: $MIGRATION_NAME"
+'
+
+# 3. Mark as applied
+docker exec -it pokemon-backend bunx prisma migrate resolve --applied [baseline from previous step (looks like: 20251122060703_baseline)] --schema=../shared/prisma/schema.prisma
+
+docker exec -it pokemon-backend bunx prisma migrate reset --schema=../shared/prisma/schema.prisma
+
+RECREATE SCHEMA
+docker exec -it pokemon-backend bunx prisma migrate dev --schema=../shared/prisma/schema.prisma --skip-seed
+docker exec -it pokemon-backend bunx prisma migrate dev --create-only --name baseline --schema=../shared/prisma/schema.prisma
+
+
+docker exec -it pokedb psql -U postgres -d pokedex
+DROP TABLE IF EXISTS "_prisma_migrations";
+
+docker exec -it pokemon-backend bunx prisma migrate dev --create-only --name baseline --schema=../shared/prisma/schema.prisma
+bunx prisma@6 migrate resolve \
+  --applied 20251122005229_baseline \
+  --schema=../shared/prisma/schema.prisma
 
 // everyday at 4 run script (nohup ensures it doesn't terminate when you log out, also make sure you run ‘date’ to see what the time is on the server)
 0 16 \* \* \* /usr/bin/nohup /home/ddoria/.bun/bin/bun run /home/ddoria/pokegraph/scripts/src/tcgp.ts > /home/ddoria/logs/pokegraph-log.txt 2>&1 &
@@ -119,12 +182,16 @@ nohup bun run src/tcgp.ts > ~/logs/pokegraph-log.txt 2>&1 &
 
 ps aux | grep bun
 
-// to ssh into a docker container
+# to ssh into a docker container
 docker exec -it [docker container name] sh
 
-// Enter Postgres
+# Enter Postgres
 docker exec -it pokedb bash
 psql -U postgres -d pokedex
+# or on one line: docker exec -it pokedb psql -U postgres -d pokedex
+
+# get logs
+docker compose logs -f [service name]
 
 // run the pokeGraph server
 nohup docker compose up > /var/log/docker-compose.log 2>&1 &
@@ -172,3 +239,5 @@ https://chatgpt.com/s/t_691e7f62fbb081918573b62a43a9e64c
 https://gemini.google.com/share/e7821c15f3ba
 -Dockerfile installs dependencies BEFORE you mount the docker compose volumes
 -Never mount a directory that contains node_modules when using Bun, because you'll break the symlinks. Mount only the specific subdirectories you need for development.
+
+docker exec pokedb psql -U postgres -c "SELECT version();"

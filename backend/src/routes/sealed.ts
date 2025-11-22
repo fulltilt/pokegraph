@@ -112,8 +112,8 @@ router.get("/sealed/predictions", async (req: Request, res: Response) => {
 
 router.post("/sealed/auto-label", async (req: Request, res: Response) => {
   try {
-    const threshold: number = req.body.threshold ?? 0.9;
-    const batchSize = req.body.batchSize ?? 100;
+    const threshold: number = 0.9;
+    const batchSize = 100;
 
     const PYTHON_URL =
       process.env.PYTHON_CLASSIFIER_URL ??
@@ -155,7 +155,7 @@ router.post("/sealed/auto-label", async (req: Request, res: Response) => {
 
       // Apply updates
       for (let j = 0; j < res.predictions.length; j++) {
-        const { label, confidence } = res.predictions[j];
+        const { label, score: confidence } = res.predictions[j];
         const entry = chunkEntries[j];
 
         if (confidence >= threshold) {

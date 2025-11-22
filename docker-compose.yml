@@ -25,23 +25,11 @@ services:
       - sealed-classifier-service
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/pokedex
-      EMBEDDING_SERVICE_URL: http://embedding-service:8000 # Use the service name
+      EMBEDDING_SERVICE_URL: http://embedding-service:8000
       SEALED_CLASSIFIER_URL: http://sealed-classifier-service:8000
     volumes:
-      # - .:/app # Mounts the entire host project directory (.) into the container's /app directory, allowing for real-time code changes to be reflected inside the container
-      # - /app/node_modules # prevent the host machine's potentially incompatible node_modules from overwriting the dependencies installed inside the container during the build process
-      # - /app/backend/node_modules # Prevent overwriting backend node_modules with host machine's version
-      # # - /app/shared/node_modules    # Prevent overwriting shared node_modules too
-
-      # - ./backend:/app/backend # mount only backend source
-      # - ./shared:/app/shared # mount shared code
-      # - ./node_modules:/app/node_modules # mount root node_modules to avoid reinstalling all dependencies
-      # - /app/backend/node_modules # avoid overwriting
-
       - ./backend/src:/app/backend/src # Mount only src for hot reload
-      # - ./shared:/app/shared/src # Mount shared code
       - ./shared/src:/app/shared/src
-      # - ./node_modules/.prisma:/app/node_modules/.prisma # Mount Prisma client
     working_dir: /app/backend # Sets the default directory that commands will execute from. This is important because the command (like bun run dev) will run relative to this path.
     command: ["bun", "run", "dev"] # overrides the CMD in Dockerfile
 

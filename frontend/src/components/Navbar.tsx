@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,6 +33,7 @@ export function Navbar() {
               )}
             </button>
           </div>
+          <ThemeToggle />
         </div>
       </div>
 

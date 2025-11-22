@@ -1,68 +1,65 @@
 generator client {
-  provider = "prisma-client-js"
-  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "linux-arm64-openssl-3.0.x"]
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
   extensions = [vector]
 }
 
 model Card {
-  id        String       @id
-  data      Json
-  prices    PriceEntry[]
+  id           String                   @id
+  data         Json
+  imageUrl     String?
+  embedding    Unsupported("vector")?
   priceSummary CardPriceChangeSummary[]
-
-  imageUrl       String?
-  embedding     Unsupported("vector(512)")? // CLIP embeddings are 512-dim
+  prices       PriceEntry[]
 }
 
 model PriceEntry {
-  id        Int      @id @default(autoincrement())
-  cardId    String
-  price     Float
-  quantity  Int?
-  date      DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  cardId   String
+  price    Float
+  quantity Int?
+  date     DateTime @default(now())
+  card     Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  @@unique([cardId, date])  // only one price per day can be entered
+  @@unique([cardId, date])
 }
 
 model CardPriceChangeSummary {
-  id         Int      @id @default(autoincrement())
-  setId      String?  // For grouping by set
-  series     String?  // For grouping by series
-  timeframe  String   // '10d', '1m', '6m', '1y', 'all'
-  type       String   // 'gainer' or 'loser'
-  cardId     String   // reference to Card
-  changePct  Float
-  createdAt  DateTime @default(now())
-
-  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  setId     String?
+  series    String?
+  timeframe String
+  type      String
+  cardId    String
+  changePct Float
+  createdAt DateTime @default(now())
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
 }
 
 model Sealed {
-  id        String      @id @default(cuid())
-  product   String      @unique
+  id        String             @id @default(cuid())
+  product   String             @unique
+  createdAt DateTime           @default(now())
   prices    SealedPriceEntry[]
-  createdAt DateTime    @default(now())
 }
 
 model SealedPriceEntry {
-  id        String   @id @default(cuid())
-  sealedId  String
-  price     Float
-  title     String
-  url       String
-  soldAt    DateTime
-  label     String? // "keep" | "remove"
+  id           String   @id @default(cuid())
+  sealedId     String
+  price        Float
+  title        String
+  url          String
+  soldAt       DateTime
+  label        String?
   preprocessed String?
+  sealed       Sealed   @relation(fields: [sealedId], references: [id])
 
-  sealed    Sealed   @relation(fields: [sealedId], references: [id])
-
+  @@unique([title, soldAt])
   @@index([sealedId])
-  @@unique([title, soldAt]) // composite unique key
 }
