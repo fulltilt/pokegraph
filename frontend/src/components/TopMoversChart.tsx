@@ -96,7 +96,7 @@ export function TopMoversChart({
               if (!active || !payload?.length) return null;
               const d = payload[0].payload;
               return (
-                <div className="bg-white p-2 border rounded shadow">
+                <div className="bg-popover text-popover-foreground p-2 border border-border rounded shadow-lg">
                   <img
                     src={d.image}
                     alt={d.name}
@@ -105,7 +105,7 @@ export function TopMoversChart({
                   <div>
                     <strong>{d.card_name}</strong>
                   </div>
-                  <div>{d.set_name}</div>
+                  <div className="text-muted-foreground">{d.set_name}</div>
                   <div>Prev: ${d.early_price}</div>
                   <div>Current: ${d.recent_price}</div>
                   <div>

@@ -240,4 +240,4 @@ https://gemini.google.com/share/e7821c15f3ba
 -Dockerfile installs dependencies BEFORE you mount the docker compose volumes
 -Never mount a directory that contains node_modules when using Bun, because you'll break the symlinks. Mount only the specific subdirectories you need for development.
 
-docker exec pokedb psql -U postgres -c "SELECT version();"
+scp /Users/fulltilt/Documents/pokegraph/scripts/python/sealed_classifier_service/model ddoria@5.78.116.146:/home/ddoria/pokegraph/scripts/python/sealed_classifier_service

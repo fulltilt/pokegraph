@@ -22,6 +22,8 @@ RUN mkdir -p /app/models
 # Copy your trained model
 COPY models/card_detector.pt /app/models/card_detector.pt
 
+# COPY /app/scripts//sealed_classifier_service/model /app/text_model
+
 # Set environment variable
 ENV YOLO_MODEL_PATH=/app/models/card_detector.pt
 

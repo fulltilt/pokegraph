@@ -25,10 +25,10 @@ async def lifespan(app: FastAPI):
     print("🔹 Loading models...")
     print("🔹 Loading text classifier...")
 
-    text_model = BertForSequenceClassification.from_pretrained("/app/text_model")
-    text_tokenizer = BertTokenizerFast.from_pretrained("/app/text_model")
-    text_model.eval()
-    text_model.to(device)
+    # text_model = BertForSequenceClassification.from_pretrained("/app/text_model")
+    # text_tokenizer = BertTokenizerFast.from_pretrained("/app/text_model")
+    # text_model.eval()
+    # text_model.to(device)
 
     print("✅ Text classifier loaded")
     
