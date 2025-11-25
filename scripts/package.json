@@ -1,5 +1,5 @@
 {
-  "name": "pokegraph",
+  "name": "@pokemon/scripts",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -7,18 +7,14 @@
     "cards": "tsc && bun dist/cards.js",
     "sealed": "tsc && bun dist/sealed.js"
   },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^22.15.3"
-  },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "@prisma/client": "6.19.0",
     "cheerio": "^1.0.0",
-    "dotenv": "^17.2.3",
-    "pg": "^8.16.3",
-    "prisma": "6.19.0"
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
   }
 }

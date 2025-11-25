@@ -60,6 +60,12 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       <Link to="/sealed" className={linkClass} onClick={onClick}>
         Sealed
       </Link>
+      <Link to="/match" className={linkClass} onClick={onClick}>
+        Match
+      </Link>
+      <Link to="/predictions" className={linkClass} onClick={onClick}>
+        Predict
+      </Link>
     </>
   );
 }
