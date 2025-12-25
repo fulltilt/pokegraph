@@ -1,9 +1,11 @@
 TODO:
--fix embedding service
+-revamp embedding as now that more data was added, the match got worse
+ -improve card detection as well as embedding service to detect cards at various angles and perspectives
+-fixed sealed
 -label data locally
 -train model and upload model to vps
 -setup cron job to pull in sealed data from eBay
--improve card detection as well as embedding service to detect cards at various angles and perspectives
+
 
 # after cloning project, just run 'docker compose up'
 
