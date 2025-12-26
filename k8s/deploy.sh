@@ -3,27 +3,36 @@ set -e
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}=== Deploying Pokemon App to Kubernetes ===${NC}"
 
 # Check if kubectl is configured
 if ! kubectl cluster-info &> /dev/null; then
-    echo "Error: Cannot connect to Kubernetes cluster"
+    echo -e "${RED}Error: Cannot connect to Kubernetes cluster${NC}"
     exit 1
 fi
 
 echo ""
-echo -e "${YELLOW}Step 1: Creating namespace and secrets...${NC}"
+echo -e "${YELLOW}Step 1: Creating namespace...${NC}"
 kubectl apply -f 00-namespace.yaml
-kubectl apply -f 01-secrets.yaml
+
+# Check if secrets exist
+if ! kubectl get secret postgres-secret -n pokemon-app &> /dev/null || \
+   ! kubectl get secret ghcr-secret -n pokemon-app &> /dev/null; then
+    echo -e "${YELLOW}Secrets not found. Running create-secrets.sh...${NC}"
+    ./create-secrets.sh
+else
+    echo -e "${GREEN}✓ Secrets already exist${NC}"
+fi
 
 echo ""
 echo -e "${YELLOW}Step 2: Deploying database storage and StatefulSet...${NC}"
 kubectl apply -f 02-database/
 echo "Waiting for database to be ready (this may take 1-2 minutes)..."
 kubectl wait --for=condition=ready pod -l app=postgres -n pokemon-app --timeout=300s || {
-    echo "Database failed to start. Checking logs:"
+    echo -e "${RED}Database failed to start. Checking logs:${NC}"
     kubectl logs -l app=postgres -n pokemon-app --tail=50
     exit 1
 }
