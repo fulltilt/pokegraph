@@ -4,3 +4,4 @@ metadata:
   name: pokemon-app
   labels:
     name: pokemon-app
+    environment: production

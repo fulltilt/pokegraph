@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: pokemon-app
+data:
+  DATABASE_URL: "postgres://postgres:password@db:5432/pokedex"
+  EMBEDDING_SERVICE_URL: "http://embedding-service:8000"
+  SEALED_CLASSIFIER_URL: "http://sealed-classifier-service:8000"
