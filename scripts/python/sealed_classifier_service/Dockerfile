@@ -19,12 +19,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p /app/model
 
 # Preload BERT classifier (optional but speeds first call)
-RUN python - <<EOF
-from transformers import BertForSequenceClassification, BertTokenizerFast
-m = BertForSequenceClassification.from_pretrained("/app/model")
-t = BertTokenizerFast.from_pretrained("/app/model")
-print("Model preloaded")
-EOF
+# RUN python - <<EOF
+# from transformers import BertForSequenceClassification, BertTokenizerFast
+# m = BertForSequenceClassification.from_pretrained("/app/model")
+# t = BertTokenizerFast.from_pretrained("/app/model")
+# print("Model preloaded")
+# EOF
 
 # Copy service code
 COPY classification_service.py .
