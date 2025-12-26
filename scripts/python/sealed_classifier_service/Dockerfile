@@ -13,7 +13,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy model directory containing config.json, pytorch_model.bin, tokenizer files
-COPY model /app/model
+# COPY model /app/model
+
+# Create empty model directory (will be mounted at runtime)
+RUN mkdir -p /app/model
 
 # Preload BERT classifier (optional but speeds first call)
 RUN python - <<EOF
