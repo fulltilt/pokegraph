@@ -37,3 +37,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 __pycache__
 model
 scripts/python/card_training/train
+
+# Kubernetes secrets (if they contain sensitive data)
+k8s/01-secrets.yaml
+k8s/**/secret*.yaml

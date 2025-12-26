@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: pokemon-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: frontend
+          image: ghcr.io/fulltilt/pokemon-frontend:latest
+          ports:
+            - containerPort: 5173
+          env:
+            - name: VITE_API_URL
+              value: "http://backend:3457"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: pokemon-app
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 5173
+  type: ClusterIP
