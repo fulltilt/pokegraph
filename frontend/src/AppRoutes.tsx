@@ -9,6 +9,7 @@ import Sealed from "./ui/Sealed";
 import Labeler from "./ui/Labeler";
 import Predictions from "./ui/Predictions";
 import CardRecognition from "./ui/CardRecognition";
+import CardSearch from "./components/CardSearch";
 
 export function AppRoutes() {
   return (
@@ -22,6 +23,7 @@ export function AppRoutes() {
         <Route path="label" element={<Labeler />} />
         <Route path="predictions" element={<Predictions />} />
         <Route path="match" element={<CardRecognition />} />
+        <Route path="search" element={<CardSearch />} />
       </Route>
     </Routes>
   );

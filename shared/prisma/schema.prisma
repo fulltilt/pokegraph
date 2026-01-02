@@ -13,7 +13,7 @@ datasource db {
 model Card {
   id           String                   @id
   data         Json
-  imageUrl     String?
+  tcgPlayerId  String?
   embedding    Unsupported("vector")?
   priceSummary CardPriceChangeSummary[]
   prices       PriceEntry[]

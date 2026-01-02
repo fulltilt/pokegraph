@@ -18,7 +18,7 @@ export default function Card() {
   const [card, setCard] = useState<DBCard | null>(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_ENDPOINT_URL}/api/cards/${id}`)
+    fetch(`${import.meta.env.VITE_ENDPOINT_URL}/api/cards/card/${id}`)
       .then((res) => res.json())
       .then(setCard);
   }, [id]);

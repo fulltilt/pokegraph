@@ -205,7 +205,7 @@ const CardPriceHistoryChart = ({
       const res = await fetch(
         `${
           import.meta.env.VITE_ENDPOINT_URL
-        }/api/card/history/${cardId}?timeframe=${timeframe}`
+        }/api/cards/history/${cardId}?timeframe=${timeframe}`
       );
       if (!res.ok) throw new Error("Failed to fetch card history");
       return res.json();

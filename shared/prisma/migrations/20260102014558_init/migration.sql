@@ -1,8 +1,11 @@
+-- CreateExtension
+CREATE EXTENSION IF NOT EXISTS "vector";
+
 -- CreateTable
 CREATE TABLE "Card" (
     "id" TEXT NOT NULL,
     "data" JSONB NOT NULL,
-    "imageUrl" TEXT,
+    "tcgPlayerId" TEXT,
     "embedding" vector,
 
     CONSTRAINT "Card_pkey" PRIMARY KEY ("id")

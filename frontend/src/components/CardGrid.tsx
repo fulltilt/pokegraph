@@ -13,7 +13,9 @@ export default function CardGrid({ set }: { set: string }) {
 
   useEffect(() => {
     fetch(
-      `${import.meta.env.VITE_ENDPOINT_URL}/api/cards?set=${encodeURIComponent(
+      `${
+        import.meta.env.VITE_ENDPOINT_URL
+      }/api/cards/bySet?set=${encodeURIComponent(
         set
       )}&page=${page}&pageSize=${pageSize}`
     )

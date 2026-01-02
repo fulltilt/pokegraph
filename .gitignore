@@ -42,3 +42,5 @@ scripts/python/card_training/train
 k8s/01-secrets/
 k8s/*secret*.yaml
 k8s/.secrets/
+
+djcollects-*.json

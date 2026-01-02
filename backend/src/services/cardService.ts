@@ -1,5 +1,5 @@
 import { DatabaseCardMatch, RawCardRecord } from "../types";
-import { prisma } from "@pokemon/shared";
+import { Prisma, prisma } from "@pokemon/shared";
 
 export async function getCardsFromSet(
   set: string,
@@ -79,17 +79,85 @@ export async function findSimilarCards(
  * @param limit The maximum number of results to return.
  * @returns A promise that resolves to an array of matching cards.
  */
+// export async function searchCardsByName(name: string, limit: number = 10) {
+//   return await prisma.$queryRawUnsafe(
+//     `
+//     SELECT *
+//     FROM "Card"
+//     WHERE SIMILARITY(data->>'name', $1) > 0.3
+//     ORDER BY SIMILARITY(data->>'name', $1) DESC
+//     LIMIT $2
+//     `,
+//     name,
+//     limit
+//   );
+// }
+
+function parseSearchQuery(input: string) {
+  const tokens = input.trim().toLowerCase().split(/\s+/);
+
+  const numbers: string[] = [];
+  const words: string[] = [];
+
+  for (const t of tokens) {
+    if (/^\d+$/.test(t)) numbers.push(t);
+    else words.push(t);
+  }
+
+  return {
+    text: words.join(" "), // "pikachu"
+    numbers, // ["12"]
+  };
+}
+
+/**
+ * Searches for cards using PostgreSQL's fuzzy text similarity function (SIMILARITY).
+ * @param name The card name query string.
+ * @param limit The maximum number of results to return.
+ * @returns A promise that resolves to an array of matching cards.
+ */
 export async function searchCardsByName(name: string, limit: number = 10) {
-  return await prisma.$queryRawUnsafe(
-    `
-    SELECT *
+  const { text, numbers } = parseSearchQuery(name);
+
+  // return await prisma.$queryRaw(
+  //   Prisma.sql`
+  //   SELECT
+  //     id,
+  //     data,
+  //     "imageUrl",
+  //     similarity(lower(data->>'name'), lower(${name})) AS sml
+  //   FROM "Card"
+  //   WHERE lower(data->>'name') % lower(${name})
+  //   ORDER BY sml DESC, to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC, data->>'name'
+  //   LIMIT ${limit}
+  // `
+  // );
+  return prisma.$queryRaw(
+    Prisma.sql`
+    SELECT
+      id,
+      data,
+      "imageUrl",
+      similarity(lower(data->>'name'), lower(${text})) AS sml
     FROM "Card"
-    WHERE SIMILARITY(data->>'name', $1) > 0.3
-    ORDER BY SIMILARITY(data->>'name', $1) DESC
-    LIMIT $2
-    `,
-    name,
-    limit
+    WHERE
+      -- Name must match
+      lower(data->>'name') % lower(${text})
+
+      -- If a number was provided, require it
+      ${
+        numbers.length > 0
+          ? Prisma.sql`
+            AND data->>'number' ILIKE ${"%" + numbers[0] + "%"}
+          `
+          : Prisma.empty
+      }
+
+    ORDER BY
+      sml DESC,
+      to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC
+    LIMIT ${limit}
+  `
   );
 }
 

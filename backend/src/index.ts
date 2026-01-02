@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 // // Health check endpoint
 // app.get("/api/health", async (req: Request, res: Response) => {
 //   try {
@@ -43,7 +45,7 @@ app.use(express.json());
 
 // Mount routes
 app.use("/api", cardRecognitionRouter);
-app.use("/api", cardsRouter);
+app.use("/api/cards", cardsRouter);
 app.use("/api", setsRouter);
 app.use("/api", sealedRouter);
 // Mount other routes...
