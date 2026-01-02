@@ -43,7 +43,7 @@ interface CardData {
     rarity?: string;
     [key: string]: any;
   };
-  imageUrl?: string;
+  tcgPlayerId?: string;
 }
 
 interface SelectedCard extends CardData {
@@ -103,22 +103,21 @@ export default function CardSearch() {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
-        setAccessToken(event.data.tokens.access_token);
+        const tokens = event.data.tokens;
+        setAccessToken(tokens.access_token);
 
-        // Store both access and refresh tokens
-        localStorage.setItem(
-          "google_access_token",
-          event.data.tokens.access_token
-        );
-        if (event.data.tokens.refresh_token) {
-          localStorage.setItem(
-            "google_refresh_token",
-            event.data.tokens.refresh_token
-          );
-          setRefreshToken(event.data.tokens.refresh_token);
+        // Store tokens with expiry time
+        const expiryTime = Date.now() + (tokens.expires_in || 3600) * 1000;
+        localStorage.setItem("google_access_token", tokens.access_token);
+        localStorage.setItem("google_token_expiry", expiryTime.toString());
+
+        if (tokens.refresh_token) {
+          localStorage.setItem("google_refresh_token", tokens.refresh_token);
+          setRefreshToken(tokens.refresh_token);
         }
 
-        toast("Connected to Google", {
+        toast({
+          title: "Connected to Google",
           description: "You can now export to Google Sheets",
         });
       }
@@ -126,10 +125,22 @@ export default function CardSearch() {
 
     window.addEventListener("message", handleMessage);
 
-    // Check for existing tokens
+    // Check for existing tokens and validate expiry
     const storedAccess = localStorage.getItem("google_access_token");
     const storedRefresh = localStorage.getItem("google_refresh_token");
-    if (storedAccess) setAccessToken(storedAccess);
+    const expiryTime = localStorage.getItem("google_token_expiry");
+
+    // If token exists but is expired, clear it
+    if (storedAccess && expiryTime) {
+      if (Date.now() > parseInt(expiryTime)) {
+        console.log("Access token expired, clearing...");
+        localStorage.removeItem("google_access_token");
+        localStorage.removeItem("google_token_expiry");
+      } else {
+        setAccessToken(storedAccess);
+      }
+    }
+
     if (storedRefresh) setRefreshToken(storedRefresh);
 
     return () => window.removeEventListener("message", handleMessage);
@@ -180,6 +191,9 @@ export default function CardSearch() {
       if (data.newAccessToken) {
         setAccessToken(data.newAccessToken);
         localStorage.setItem("google_access_token", data.newAccessToken);
+        // Update expiry time (tokens typically last 1 hour)
+        const expiryTime = Date.now() + 3600 * 1000;
+        localStorage.setItem("google_token_expiry", expiryTime.toString());
       }
 
       setShowExportDialog(false);

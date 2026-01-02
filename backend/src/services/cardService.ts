@@ -124,7 +124,7 @@ export async function searchCardsByName(name: string, limit: number = 10) {
   //   SELECT
   //     id,
   //     data,
-  //     "imageUrl",
+  //     "tcgPlayerId",
   //     similarity(lower(data->>'name'), lower(${name})) AS sml
   //   FROM "Card"
   //   WHERE lower(data->>'name') % lower(${name})
@@ -137,7 +137,7 @@ export async function searchCardsByName(name: string, limit: number = 10) {
     SELECT
       id,
       data,
-      "imageUrl",
+      "tcgPlayerId",
       similarity(lower(data->>'name'), lower(${text})) AS sml
     FROM "Card"
     WHERE

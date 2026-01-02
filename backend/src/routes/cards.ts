@@ -202,7 +202,6 @@ router.get("/oauth2callback", async (req, res) => {
   }
 });
 
-// Export endpoint (now accepts access token)
 router.post("/export", async (req, res) => {
   try {
     const {
@@ -243,19 +242,31 @@ router.post("/export", async (req, res) => {
     }
 
     const sheets = google.sheets({ version: "v4", auth: oauth2Client });
-    const drive = google.drive({ version: "v3", auth: oauth2Client });
 
     let spreadsheetId: string;
     let sheetId: number;
+    let startRow = 2; // Default: start at row 2 (after header)
 
     // Either use existing spreadsheet or create new one
     if (existingSpreadsheetId) {
       console.log("Using existing spreadsheet:", existingSpreadsheetId);
       spreadsheetId = existingSpreadsheetId;
 
-      // Get the first sheet's ID
+      // Get the spreadsheet info
       const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
       sheetId = spreadsheet.data.sheets?.[0]?.properties?.sheetId || 0;
+
+      // Find the last row with data to append after it
+      const existingData = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "Cards!A:A", // Get all data in column A
+      });
+
+      if (existingData.data.values && existingData.data.values.length > 0) {
+        // Last row + 1 blank row + start of new data
+        startRow = existingData.data.values.length + 2;
+        console.log("Appending data starting at row:", startRow);
+      }
     } else {
       console.log("Creating spreadsheet...");
 
@@ -301,18 +312,15 @@ router.post("/export", async (req, res) => {
         return String(field);
       };
 
-      const rowNumber = index + 2; // +2 because row 1 is header
+      const rowNumber = startRow + index; // Use startRow instead of index + 2
 
       return [
         // Card name with hyperlink
-        // card.tcgPlayerId
-        //   ? `=HYPERLINK("https://www.tcgplayer.com/product/${
-        //       card.tcgPlayerId
-        //     }", "${getName(card.data.name).replace(/"/g, '""')}")`
-        //   : getName(card.data.name),
-        `=HYPERLINK("https://www.tcgplayer.com/product/${
-          card.tcgPlayerId
-        }", "${getName(card.data.name).replace(/"/g, '""')}")`,
+        card.tcgPlayerId
+          ? `=HYPERLINK("https://www.tcgplayer.com/product/${
+              card.tcgPlayerId
+            }", "${getName(card.data.name).replace(/"/g, '""')}")`
+          : getName(card.data.name),
         // Image formula
         card.data.images?.small ? `=IMAGE("${card.data.images.small}")` : "",
         getName(card.data.number),
@@ -323,90 +331,93 @@ router.post("/export", async (req, res) => {
       ];
     });
 
-    // Clear existing content if using existing sheet
-    if (existingSpreadsheetId) {
-      await sheets.spreadsheets.values.clear({
-        spreadsheetId,
-        range: "Cards!A1:Z",
-      });
-    }
+    // Only write headers if it's a new sheet or starting at row 2
+    const dataToWrite = startRow === 2 ? [headers, ...rows] : rows;
+    const rangeStart = startRow === 2 ? "A1" : `A${startRow}`;
 
-    // Write data to the sheet
+    // Write data to the sheet (append mode)
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: "Cards!A1",
+      range: `Cards!${rangeStart}`,
       valueInputOption: "USER_ENTERED", // Changed to USER_ENTERED to process formulas
       requestBody: {
-        values: [headers, ...rows],
+        values: dataToWrite,
       },
     });
 
-    // Format the header row and set column widths
+    // Format the header row and set column widths (only if new sheet or first time)
+    const formatRequests: any[] = [];
+
+    // Always format new rows for images
+    formatRequests.push({
+      updateDimensionProperties: {
+        range: {
+          sheetId: sheetId,
+          dimension: "ROWS",
+          startIndex: startRow - 1, // -1 because API uses 0-based indexing
+          endIndex: startRow + rows.length,
+        },
+        properties: {
+          pixelSize: 100,
+        },
+        fields: "pixelSize",
+      },
+    });
+
+    // Only format header and columns if it's a new sheet
+    if (startRow === 2) {
+      formatRequests.push(
+        {
+          repeatCell: {
+            range: {
+              sheetId: sheetId,
+              startRowIndex: 0,
+              endRowIndex: 1,
+            },
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: { red: 0.2, green: 0.2, blue: 0.2 },
+                textFormat: {
+                  foregroundColor: { red: 1, green: 1, blue: 1 },
+                  bold: true,
+                },
+              },
+            },
+            fields: "userEnteredFormat(backgroundColor,textFormat)",
+          },
+        },
+        {
+          updateSheetProperties: {
+            properties: {
+              sheetId: sheetId,
+              gridProperties: {
+                frozenRowCount: 1,
+              },
+            },
+            fields: "gridProperties.frozenRowCount",
+          },
+        },
+        {
+          updateDimensionProperties: {
+            range: {
+              sheetId: sheetId,
+              dimension: "COLUMNS",
+              startIndex: 1,
+              endIndex: 2,
+            },
+            properties: {
+              pixelSize: 100,
+            },
+            fields: "pixelSize",
+          },
+        }
+      );
+    }
+
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
-        requests: [
-          {
-            repeatCell: {
-              range: {
-                sheetId: sheetId,
-                startRowIndex: 0,
-                endRowIndex: 1,
-              },
-              cell: {
-                userEnteredFormat: {
-                  backgroundColor: { red: 0.2, green: 0.2, blue: 0.2 },
-                  textFormat: {
-                    foregroundColor: { red: 1, green: 1, blue: 1 },
-                    bold: true,
-                  },
-                },
-              },
-              fields: "userEnteredFormat(backgroundColor,textFormat)",
-            },
-          },
-          {
-            updateSheetProperties: {
-              properties: {
-                sheetId: sheetId,
-                gridProperties: {
-                  frozenRowCount: 1,
-                },
-              },
-              fields: "gridProperties.frozenRowCount",
-            },
-          },
-          // Set image column width (column B, index 1)
-          {
-            updateDimensionProperties: {
-              range: {
-                sheetId: sheetId,
-                dimension: "COLUMNS",
-                startIndex: 1,
-                endIndex: 2,
-              },
-              properties: {
-                pixelSize: 100,
-              },
-              fields: "pixelSize",
-            },
-          },
-          // Set row heights for data rows to accommodate images
-          {
-            updateDimensionProperties: {
-              range: {
-                sheetId: sheetId,
-                dimension: "ROWS",
-                startIndex: 1, // Start from row 2 (after header)
-                endIndex: rows.length + 1,
-              },
-              properties: {
-                pixelSize: 100,
-              },
-              fields: "pixelSize",
-            },
-          },
-        ],
+        requests: formatRequests,
       },
     });
 
@@ -424,9 +435,12 @@ router.post("/export", async (req, res) => {
       error.message?.includes("authentication") ||
       error.message?.includes("credentials")
     ) {
-      return res.status(401).json({
-        error: "Invalid or expired authentication token. Please sign in again.",
-      });
+      return res
+        .status(401)
+        .json({
+          error:
+            "Invalid or expired authentication token. Please sign in again.",
+        });
     }
 
     res.status(500).json({ error: "Failed to export to Google Sheets" });

@@ -139,19 +139,26 @@ async function main() {
 
   let callCount = 0;
 
-  for (const key of Object.keys(sets)) {
-    const typedKey = key as keyof typeof sets; // key will always be a valid key of ids
+  for (const set of Object.keys(sets)) {
+    const typedKey = set as keyof typeof sets; // key will always be a valid key of ids
     const { startIdx, ids } = sets[typedKey];
 
-    console.log(`Initiating processing set ${key}...`);
+    console.log(`Initiating processing set ${set}...`);
     for (let idx = 0; idx < ids.length; idx++) {
-      const id = ids[idx];
+      const tcgPlayerId = ids[idx];
       try {
-        const buckets = await fetchPage(id);
-        await updateCard(
-          buckets,
-          `${key}-${normalizeCardNumber(key, startIdx + idx)}`
-        );
+        const buckets = await fetchPage(tcgPlayerId);
+        const cardId = `${set}-${normalizeCardNumber(set, startIdx + idx)}`;
+        await updateCard(buckets, cardId);
+
+        // await prisma.card.update({
+        //   where: {
+        //     id: cardId, // string
+        //   },
+        //   data: {
+        //     tcgPlayerId, // string | null
+        //   },
+        // });
 
         ++callCount;
         // If we've hit the limit, sleep and reset
@@ -161,11 +168,11 @@ async function main() {
           console.log("✅ Resuming...");
         }
       } catch (err) {
-        console.error(`Failed on card ${id}:`, err);
+        console.error(`Failed on card ${tcgPlayerId}:`, err);
       }
     }
 
-    console.log(`Finished processing set ${key}.`);
+    console.log(`Finished processing set ${set}.`);
   }
 
   console.log("All sets processed.");
