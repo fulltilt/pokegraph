@@ -99,6 +99,14 @@ export default function CardSearch() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [existingSpreadsheetId, setExistingSpreadsheetId] = useState("");
 
+  // Load saved spreadsheet ID on mount
+  useEffect(() => {
+    const savedSpreadsheetId = localStorage.getItem("last_spreadsheet_id");
+    if (savedSpreadsheetId) {
+      setExistingSpreadsheetId(savedSpreadsheetId);
+    }
+  }, []);
+
   // Listen for OAuth callback
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -116,11 +124,11 @@ export default function CardSearch() {
           setRefreshToken(tokens.refresh_token);
         }
 
-        toast({
-          title: "Connected to Google",
+        toast("Connected to Google", {
           description: "You can now export to Google Sheets",
         });
       }
+      ``;
     };
 
     window.addEventListener("message", handleMessage);
@@ -196,14 +204,26 @@ export default function CardSearch() {
         localStorage.setItem("google_token_expiry", expiryTime.toString());
       }
 
+      // Save the spreadsheet ID (whether new or existing)
+      if (data.spreadsheetId) {
+        localStorage.setItem("last_spreadsheet_id", data.spreadsheetId);
+        setExistingSpreadsheetId(data.spreadsheetId);
+      }
+
       setShowExportDialog(false);
-      setExistingSpreadsheetId("");
 
       toast("Export successful!", {
         description: "Google Sheet created successfully",
       });
-      // Open the sheet
-      window.open(data.url, "_blank");
+
+      // Open the sheet with range parameter to scroll to last row
+      // let urlToOpen = data.url;
+      // if (data.lastRow && data.sheetId !== undefined) {
+      //   // Use rangeid parameter which forces Google Sheets to scroll and select
+      //   const cellRange = `Cards!A${data.lastRow}`;
+      //   urlToOpen = `${data.url}#gid=${data.sheetId}&range=${cellRange}`;
+      // }
+      // window.open(urlToOpen, "_blank");
     },
     onError: (error: Error) => {
       // If token expired, clear and prompt re-auth
@@ -257,13 +277,25 @@ export default function CardSearch() {
   };
 
   const handleExport = () => {
+    // Reload saved spreadsheet ID when opening modal
+    const savedSpreadsheetId = localStorage.getItem("last_spreadsheet_id");
+    if (savedSpreadsheetId) {
+      setExistingSpreadsheetId(savedSpreadsheetId);
+    }
     setShowExportDialog(true);
   };
 
   const handleExportConfirm = (useExisting: boolean) => {
+    const spreadsheetIdToUse = useExisting ? existingSpreadsheetId : undefined;
+
+    // Save spreadsheet ID to localStorage if provided
+    if (spreadsheetIdToUse) {
+      localStorage.setItem("last_spreadsheet_id", spreadsheetIdToUse);
+    }
+
     exportMutation.mutate({
       cards: selectedCards,
-      spreadsheetId: useExisting ? existingSpreadsheetId : undefined,
+      spreadsheetId: spreadsheetIdToUse,
     });
   };
 
@@ -504,12 +536,27 @@ export default function CardSearch() {
               <Input
                 placeholder="Paste spreadsheet ID from URL"
                 value={existingSpreadsheetId}
-                onChange={(e) => setExistingSpreadsheetId(e.target.value)}
+                onChange={(e) =>
+                  setExistingSpreadsheetId(e.target.value.trim())
+                }
               />
               <p className="text-xs text-muted-foreground">
                 Leave empty to create a new spreadsheet. Or paste the ID from an
                 existing sheet's URL.
               </p>
+              {existingSpreadsheetId && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setExistingSpreadsheetId("");
+                    localStorage.removeItem("last_spreadsheet_id");
+                  }}
+                  className="text-xs"
+                >
+                  Clear saved ID
+                </Button>
+              )}
             </div>
           </div>
           <DialogFooter className="gap-2">
@@ -523,7 +570,11 @@ export default function CardSearch() {
               onClick={() => handleExportConfirm(false)}
               disabled={exportMutation.isPending}
             >
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              {exportMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+              )}
               Create New
             </Button>
             {existingSpreadsheetId && (
@@ -531,6 +582,9 @@ export default function CardSearch() {
                 onClick={() => handleExportConfirm(true)}
                 disabled={exportMutation.isPending}
               >
+                {exportMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
                 Update Existing
               </Button>
             )}

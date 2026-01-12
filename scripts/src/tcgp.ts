@@ -128,6 +128,21 @@ const normalizeCardNumber = (set: string, idx: number) => {
   } else if (set === "swsh12pt5gg") {
     if (idx < 10) return `GG0${idx}`;
     return `GG${idx}`;
+  } else if (set === "hsp") {
+    if (idx < 10) return `HGSS0${idx}`;
+    return `HGSS${idx}`;
+  } else if (set === "xyp") {
+    if (idx < 10) return `XY0${idx}`;
+    return `XY${idx}`;
+  } else if (set === "bw11") {
+    return `RC${idx}`;
+  } else if (set === "bwp") {
+    if (idx === 4 || idx === 5) return `BW00${idx}`;
+    else if (idx < 10) return `BW0${idx}`;
+    return `BW${idx}`;
+  } else if (set === "dpp") {
+    if (idx < 10) return `DP0${idx}`;
+    return `DP${idx}`;
   }
 
   return idx;

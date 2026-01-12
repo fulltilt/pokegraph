@@ -202,6 +202,79 @@ router.get("/oauth2callback", async (req, res) => {
   }
 });
 
+// Price fetching function
+async function fetchCardPrice(tcgPlayerId: string): Promise<number | null> {
+  try {
+    const res = await fetch(
+      `https://infinite-api.tcgplayer.com/price/history/${tcgPlayerId}/detailed?range=month`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+        },
+      }
+    );
+
+    if (!res.ok) {
+      console.error(
+        `Failed to fetch price for ${tcgPlayerId}: ${res.statusText}`
+      );
+      return null;
+    }
+
+    const json = await res.json();
+    const nmResults = json.result.filter(
+      (result: any) => result.condition === "Near Mint"
+    )[0];
+
+    return nmResults?.buckets?.[0]?.marketPrice || null;
+  } catch (error) {
+    console.error(`Error fetching price for ${tcgPlayerId}:`, error);
+    return null;
+  }
+}
+
+// Batch fetch prices with retry logic
+async function fetchPricesInBatches(cards: any[], batchSize = 5) {
+  const cardsWithPrices: any[] = [];
+
+  for (let i = 0; i < cards.length; i += batchSize) {
+    const batch = cards.slice(i, i + batchSize);
+
+    console.log(
+      `Fetching prices for batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+        cards.length / batchSize
+      )}`
+    );
+
+    const prices = await Promise.all(
+      batch.map((card) =>
+        card.tcgPlayerId
+          ? fetchCardPrice(card.tcgPlayerId)
+          : Promise.resolve(null)
+      )
+    );
+
+    batch.forEach((card, idx) => {
+      cardsWithPrices.push({
+        ...card,
+        price: prices[idx],
+      });
+    });
+
+    // Rate limit: wait 500ms between batches to avoid overwhelming the API
+    if (i + batchSize < cards.length) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+
+  return cardsWithPrices;
+}
+
 router.post("/export", async (req, res) => {
   try {
     const {
@@ -218,6 +291,13 @@ router.post("/export", async (req, res) => {
     if (!accessToken) {
       return res.status(401).json({ error: "No access token provided" });
     }
+
+    console.log(`Starting export for ${cards.length} cards...`);
+
+    // Fetch prices for all cards
+    console.log("Fetching prices from TCGPlayer...");
+    const cardsWithPrices = await fetchPricesInBatches(cards);
+    console.log("Price fetching complete");
 
     // Set credentials with user's tokens
     oauth2Client.setCredentials({
@@ -250,22 +330,29 @@ router.post("/export", async (req, res) => {
     // Either use existing spreadsheet or create new one
     if (existingSpreadsheetId) {
       console.log("Using existing spreadsheet:", existingSpreadsheetId);
-      spreadsheetId = existingSpreadsheetId;
+      spreadsheetId = existingSpreadsheetId.trim();
 
-      // Get the spreadsheet info
-      const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-      sheetId = spreadsheet.data.sheets?.[0]?.properties?.sheetId || 0;
+      try {
+        // Get the spreadsheet info
+        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+        sheetId = spreadsheet.data.sheets?.[0]?.properties?.sheetId || 0;
 
-      // Find the last row with data to append after it
-      const existingData = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "Cards!A:A", // Get all data in column A
-      });
+        // Find the last row with data to append after it
+        const existingData = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: "Cards!A:A", // Get all data in column A
+        });
 
-      if (existingData.data.values && existingData.data.values.length > 0) {
-        // Last row + 1 blank row + start of new data
-        startRow = existingData.data.values.length + 2;
-        console.log("Appending data starting at row:", startRow);
+        if (existingData.data.values && existingData.data.values.length > 0) {
+          // Last row + 1 blank row + start of new data
+          startRow = existingData.data.values.length + 2;
+          console.log("Appending data starting at row:", startRow);
+        }
+      } catch (error: any) {
+        console.error("Error accessing existing spreadsheet:", error.message);
+        return res.status(400).json({
+          error: `Could not access spreadsheet. Make sure the ID is correct and you have permission to edit it. Error: ${error.message}`,
+        });
       }
     } else {
       console.log("Creating spreadsheet...");
@@ -303,7 +390,7 @@ router.post("/export", async (req, res) => {
       "Price",
       "Total",
     ];
-    const rows = cards.map((card: any, index: number) => {
+    const rows = cardsWithPrices.map((card: any, index: number) => {
       const getName = (field: any) => {
         if (!field) return "";
         if (typeof field === "string") return field;
@@ -326,7 +413,7 @@ router.post("/export", async (req, res) => {
         getName(card.data.number),
         getName(card.data.setName || card.data.set),
         card.quantity || 1,
-        "", // Price - empty for user to fill in
+        card.price || "", // Use fetched price or empty string
         `=E${rowNumber}*F${rowNumber}`, // Total = Quantity * Price
       ];
     });
@@ -425,6 +512,7 @@ router.post("/export", async (req, res) => {
       message: "Export successful",
       spreadsheetId,
       url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
+      lastRow: startRow + rows.length - 1, // Last row with data for scrolling
       newAccessToken, // Send back new token if refreshed
     });
   } catch (error: any) {
@@ -435,12 +523,9 @@ router.post("/export", async (req, res) => {
       error.message?.includes("authentication") ||
       error.message?.includes("credentials")
     ) {
-      return res
-        .status(401)
-        .json({
-          error:
-            "Invalid or expired authentication token. Please sign in again.",
-        });
+      return res.status(401).json({
+        error: "Invalid or expired authentication token. Please sign in again.",
+      });
     }
 
     res.status(500).json({ error: "Failed to export to Google Sheets" });
