@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import { TopMoversChart } from "@/components/TopMoversChart";
-import CardSearchInput from "@/components/CardSearchInput";
+// import CardSearchInput from "@/components/CardSearchInput";
 import QuantitySpikesTable from "@/components/QuantitySpikesTable";
 
 const TopGainers = memo(({ timeframe }: { timeframe: string }) => (

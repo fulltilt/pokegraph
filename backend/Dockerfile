@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN bunx prisma generate --schema=shared/prisma/schema.prisma
 
 # Copy trained model files
-COPY scripts/python/sealed_classifier_service/model /app/trainer/model
+# COPY scripts/python/sealed_classifier_service/model /app/trainer/model
 
 WORKDIR /app/backend
 EXPOSE 3457

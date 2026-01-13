@@ -6,7 +6,7 @@ const seriesList = ["Scarlet & Violet", "Sword & Shield", "Sun & Moon"];
 export default function Sets() {
   const [activeSeries, setActiveSeries] = useState(seriesList[0]);
 
-  const { sets, loading, error } = useSetsBySeries(activeSeries);
+  const { sets, loading } = useSetsBySeries(activeSeries);
 
   return (
     <div className="p-4">

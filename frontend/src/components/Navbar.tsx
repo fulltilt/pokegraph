@@ -57,7 +57,10 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       <Link to="/sets" className={linkClass} onClick={onClick}>
         Sets
       </Link>
-      <Link to="/sealed" className={linkClass} onClick={onClick}>
+      <Link to="/search" className={linkClass} onClick={onClick}>
+        Search
+      </Link>
+      {/* <Link to="/sealed" className={linkClass} onClick={onClick}>
         Sealed
       </Link>
       <Link to="/match" className={linkClass} onClick={onClick}>
@@ -65,7 +68,7 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       </Link>
       <Link to="/predictions" className={linkClass} onClick={onClick}>
         Predict
-      </Link>
+      </Link> */}
     </>
   );
 }

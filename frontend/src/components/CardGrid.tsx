@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 export default function CardGrid({ set }: { set: string }) {
   const [cards, setCards] = useState<Card[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize] = useState(20);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 

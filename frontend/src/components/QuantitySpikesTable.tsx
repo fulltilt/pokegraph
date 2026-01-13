@@ -182,7 +182,7 @@ const QuantitySpikesTable = () => {
                   </td>
                 </tr>
               ) : (
-                spikes.map((spike: QuantitySpike, index: number) => (
+                spikes.map((spike: QuantitySpike) => (
                   <tr
                     key={`${spike.cardId}-${spike.date}`}
                     className="hover:bg-gray-50 transition-colors"

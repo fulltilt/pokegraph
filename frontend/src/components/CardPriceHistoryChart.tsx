@@ -28,11 +28,11 @@ type Bucket = {
   quantity: number;
 };
 
-function getEvenlySpacedTicks(dates: string[], tickCount = 5) {
-  if (dates.length <= tickCount) return dates;
-  const step = Math.floor(dates.length / (tickCount - 1));
-  return dates.filter((_, idx) => idx % step === 0);
-}
+// function getEvenlySpacedTicks(dates: string[], tickCount = 5) {
+//   if (dates.length <= tickCount) return dates;
+//   const step = Math.floor(dates.length / (tickCount - 1));
+//   return dates.filter((_, idx) => idx % step === 0);
+// }
 
 // function normalizePriceData(
 //   data: PriceHistory[],
@@ -171,7 +171,7 @@ function normalizePriceData(
   return buckets;
 }
 
-const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
+const CustomTooltip = ({ active, payload }: TooltipProps<any, any>) => {
   if (active && payload && payload.length > 0) {
     const { start, end, price, quantity } = payload[0].payload;
     return (

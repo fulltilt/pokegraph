@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -23,8 +21,8 @@ import {
   ResponsiveContainer,
   LineChart,
 } from "recharts";
-import { TopMoversChart } from "@/components/TopMoversChart";
-import CardSearchInput from "@/components/CardSearchInput";
+// import { TopMoversChart } from "@/components/TopMoversChart";
+// import CardSearchInput from "@/components/CardSearchInput";
 import useSealedSearch from "@/hooks/useSealedSearch";
 import { sealedProductNames } from "../../../shared/src/constants";
 
@@ -55,7 +53,7 @@ export default function Sealed() {
     "10d"
   );
 
-  const { data: prices, isLoading, error } = useSealedSearch(product, range);
+  const { data: prices } = useSealedSearch(product, range);
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -150,7 +148,7 @@ export default function Sealed() {
                     stroke="#4f46e5"
                     strokeWidth={2}
                     activeDot={{
-                      onClick: (e: any, props: any) => {
+                      onClick: (_: any, props: any) => {
                         const { payload } = props;
                         setSelectedPoint(payload);
                       },

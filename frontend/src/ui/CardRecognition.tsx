@@ -151,12 +151,12 @@ export default function CardRecognition() {
   });
 
   // Scroll to card section
-  const scrollToCard = (cardNumber: number) => {
-    const section = cardSectionRefs.current[cardNumber];
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
+  // const scrollToCard = (cardNumber: number) => {
+  //   const section = cardSectionRefs.current[cardNumber];
+  //   if (section) {
+  //     section.scrollIntoView({ behavior: "smooth", block: "start" });
+  //   }
+  // };
 
   // Draw bounding boxes on the uploaded image
   const drawBoundingBoxes = (imageUrl: string, results: CardResult[]) => {

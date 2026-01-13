@@ -95,7 +95,8 @@ WHERE id IN (SELECT id FROM outliers);
 
 # copying file from remote to local using scp:
 scp [remote_username]@[remote_host]:/path/to/remote/file /path/to/local/destination
-scp ddoria@5.78.116.146:/home/ddoria/pokedex_data.sql /Users/fulltilt/Documents
+scp ddoria@5.78.116.146:/home/ddoria/pokedex-data.sql /Users/fulltilt/Documents
+scp -i ~/.ssh/hetzner_id_ed25519 -o IdentitiesOnly=yes ddoria@5.78.116.146:/home/ddoria/pokedex-data.sql /Users/d0d0nns/Documents
 
 # backing up DB
 -note: docker compose has the volume name as 'pgdata'. Docker Compose appends the volume name to the directory
