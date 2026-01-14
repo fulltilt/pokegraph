@@ -271,3 +271,316 @@ ON "Card" ((data->>'number'));
 
 # Exit:
 \q
+
+
+### k8s workflow
+# === ON LOCAL MACHINE ===
+
+# 1. Make code changes and push to Git repo
+vim backend/src/index.ts
+
+# 3. SSH to VPS
+ssh your-vps
+
+# === NOW ON VPS ===
+# 3. Pull latest from repo and build and push images (build done on VPS due to architecture differences)
+docker build -t ghcr.io/fulltilt/pokemon-backend:latest -f backend/Dockerfile .
+docker push ghcr.io/fulltilt/pokemon-backend:latest
+
+# 4. Restart deployment to pull new image
+kubectl rollout restart deployment/backend -n pokemon-app
+
+# 5. Watch it deploy
+kubectl get pods -n pokemon-app -w
+
+# 6. Check logs
+kubectl logs -n pokemon-app -l app=backend --tail=50
+
+kubectl get pods -n pokemon-app
+kubectl get svc -n pokemon-app
+
+ddoria@k8s-1:~/pokegraph$ kubectl get ingress -n pokemon-app
+NAME              CLASS     HOSTS             ADDRESS        PORTS   AGE
+pokemon-ingress   traefik   poke-trades.com   5.78.146.145   80      37h
+ddoria@k8s-1:~/pokegraph$ kubectl get svc -n kube-system traefik
+NAME      TYPE           CLUSTER-IP      EXTERNAL-IP    PORT(S)                      AGE
+traefik   LoadBalancer   10.43.159.191   5.78.146.145   80:31614/TCP,443:31164/TCP   37h
+
+# Get the node IP
+kubectl get nodes -o wide
+
+# Create backend secrets
+kubectl create secret generic backend-secrets \
+  
+  
+  --from-literal=DATABASE_URL="postgres://postgres:password@db:5432/pokedex" \
+  -n pokemon-app
+
+# Create frontend secrets (if any)
+kubectl create secret generic frontend-secrets \
+  --from-literal=VITE_ENDPOINT_URL='http://localhost:3457' \
+  -n pokemon-app
+
+svp-255
+svp-253
+
+
+
+## Complete Workflow: Local Development → K8s Deployment
+
+### Step 1: Export Database from K8s VPS
+
+```bash
+# SSH into your K8s VPS
+ssh ddoria@5.78.146.145
+
+# Export the database from the postgres pod
+kubectl exec -n pokemon-app postgres-0 -- pg_dump -U postgres -d pokedex > ~/pokedex_export_$(date +%Y%m%d).sql
+
+# Download to your local machine
+# (run this from your LOCAL machine in a new terminal)
+scp ddoria@5.78.146.145:~/pokedex_export_*.sql ~/Downloads/
+
+# Or if you want custom format (better for large databases)
+kubectl exec -n pokemon-app postgres-0 -- pg_dump -U postgres -d pokedex -F c > ~/pokedex_export.dump
+scp ddoria@5.78.146.145:~/pokedex_export.dump ~/Downloads/
+```
+
+### Step 2: Import into Local Database
+
+**If using Docker Compose locally:**
+
+```bash
+# Start your local environment
+cd ~/path/to/your/project
+docker-compose up -d
+
+# Import the SQL dump
+docker exec -i pokedb psql -U postgres -d pokedex < ~/Downloads/pokedex_export_*.sql
+
+# Or if using custom format
+docker cp ~/Downloads/pokedex_export.dump pokedb:/tmp/
+docker exec pokedb pg_restore -U postgres -d pokedex --clean /tmp/pokedex_export.dump
+```
+
+**If using local PostgreSQL (not Docker):**
+
+```bash
+psql -U postgres -d pokedex < ~/Downloads/pokedex_export_*.sql
+```
+
+### Step 3: Develop and Test Locally
+
+```bash
+# Work on your project locally with your favorite editor
+code .
+
+# Make changes to scripts, backend, frontend, etc.
+# Test everything locally
+bun run scripts/scrape.ts
+bun run dev
+
+# Commit your changes
+git add .
+git commit -m "Updated scraping logic"
+git push
+```
+
+### Step 4: Export Database from Local (After Changes)
+
+If you made data changes locally that you want to push to K8s:
+
+```bash
+# Export from local Docker Compose
+docker exec pokedb pg_dump -U postgres -d pokedex > ~/pokedex_local_$(date +%Y%m%d).sql
+
+# Or custom format
+docker exec pokedb pg_dump -U postgres -d pokedex -F c -f /tmp/backup.dump
+docker cp pokedb:/tmp/backup.dump ~/pokedex_local.dump
+```
+
+### Step 5: Build and Push New Images
+
+```bash
+# Build updated images
+docker build -t ghcr.io/fulltilt/pokemon-backend:latest -f backend/Dockerfile .
+docker build -t ghcr.io/fulltilt/pokemon-frontend:latest -f frontend/Dockerfile .
+
+# Push to registry
+docker push ghcr.io/fulltilt/pokemon-backend:latest
+docker push ghcr.io/fulltilt/pokemon-frontend:latest
+```
+
+### Step 6: Import Database to K8s (If Needed)
+
+```bash
+# Upload the dump to VPS
+scp ~/pokedex_local.sql ddoria@5.78.146.145:~/
+
+# SSH to VPS
+ssh ddoria@5.78.146.145
+
+# Copy into the postgres pod
+kubectl cp ~/pokedex_local.sql pokemon-app/postgres-0:/tmp/
+
+# Import into the database
+kubectl exec -n pokemon-app postgres-0 -- psql -U postgres -d pokedex -f /tmp/pokedex_local.sql
+
+# Clean up
+kubectl exec -n pokemon-app postgres-0 -- rm /tmp/pokedex_local.sql
+rm ~/pokedex_local.sql
+```
+
+### Step 7: Deploy Updated Code to K8s
+
+```bash
+# On VPS (or via SSH)
+kubectl rollout restart deployment/backend -n pokemon-app
+kubectl rollout restart deployment/frontend -n pokemon-app
+
+# Watch the deployment
+kubectl get pods -n pokemon-app -w
+
+# Check logs
+kubectl logs -n pokemon-app -l app=backend --tail=50
+```
+
+## Quick Reference Scripts
+
+### Create `scripts/sync-db-from-k8s.sh` (Local)
+
+```bash
+#!/bin/bash
+# Download database from K8s to local
+
+echo "Exporting from K8s..."
+ssh ddoria@5.78.146.145 "kubectl exec -n pokemon-app postgres-0 -- pg_dump -U postgres -d pokedex" > /tmp/k8s_export.sql
+
+echo "Importing to local..."
+docker exec -i pokedb psql -U postgres -d pokedex < /tmp/k8s_export.sql
+
+echo "Done! Local database synced with K8s."
+rm /tmp/k8s_export.sql
+```
+
+### Create `scripts/deploy-to-k8s.sh` (Local)
+
+```bash
+#!/bin/bash
+# Deploy local changes to K8s
+
+set -e
+
+echo "Building images..."
+docker build -t ghcr.io/fulltilt/pokemon-backend:latest -f backend/Dockerfile .
+docker build -t ghcr.io/fulltilt/pokemon-frontend:latest -f frontend/Dockerfile .
+
+echo "Pushing to registry..."
+docker push ghcr.io/fulltilt/pokemon-backend:latest
+docker push ghcr.io/fulltilt/pokemon-frontend:latest
+
+echo "Restarting K8s deployments..."
+ssh ddoria@5.78.146.145 "kubectl rollout restart deployment/backend -n pokemon-app"
+ssh ddoria@5.78.146.145 "kubectl rollout restart deployment/frontend -n pokemon-app"
+
+echo "Watching pods..."
+ssh ddoria@5.78.146.145 "kubectl get pods -n pokemon-app -w"
+```
+
+### Create `scripts/sync-db-to-k8s.sh` (Local)
+
+```bash
+#!/bin/bash
+# Upload local database to K8s
+
+set -e
+
+echo "Exporting local database..."
+docker exec pokedb pg_dump -U postgres -d pokedex > /tmp/local_export.sql
+
+echo "Uploading to VPS..."
+scp /tmp/local_export.sql ddoria@5.78.146.145:~/
+
+echo "Importing to K8s..."
+ssh ddoria@5.78.146.145 "
+  kubectl cp ~/local_export.sql pokemon-app/postgres-0:/tmp/ &&
+  kubectl exec -n pokemon-app postgres-0 -- psql -U postgres -d pokedex -f /tmp/local_export.sql &&
+  kubectl exec -n pokemon-app postgres-0 -- rm /tmp/local_export.sql &&
+  rm ~/local_export.sql
+"
+
+echo "Done! K8s database synced with local."
+rm /tmp/local_export.sql
+```
+
+Make them executable:
+```bash
+chmod +x scripts/sync-db-from-k8s.sh
+chmod +x scripts/deploy-to-k8s.sh
+chmod +x scripts/sync-db-to-k8s.sh
+```
+
+## Typical Development Flow
+
+```bash
+# 1. Start fresh - sync K8s database to local
+./scripts/sync-db-from-k8s.sh
+
+# 2. Start local environment
+docker-compose up -d
+
+# 3. Develop locally
+code .
+# Edit files, test changes, run scripts locally
+
+# 4. When ready, deploy code changes
+./scripts/deploy-to-k8s.sh
+
+# 5. If you made data changes locally, sync them
+./scripts/sync-db-to-k8s.sh
+```
+
+## For One-Off Script Testing
+
+If you just want to test a script without deploying:
+
+```bash
+# 1. Edit script locally
+code scripts/scrape.ts
+
+# 2. Copy to VPS
+scp scripts/scrape.ts ddoria@5.78.146.145:~/pokegraph/scripts/
+
+# 3. Copy into pod and run
+ssh ddoria@5.78.146.145 "
+  kubectl cp ~/pokegraph/scripts/scrape.ts pokemon-app/backend-xxxxx:/app/scripts/ &&
+  kubectl exec -n pokemon-app backend-xxxxx -- bun run scripts/scrape.ts
+"
+
+# 4. When happy, rebuild and deploy permanently
+./scripts/deploy-to-k8s.sh
+```
+
+## Database-Only Changes Workflow
+
+If you only need to modify data (not code):
+
+```bash
+# Work with local database
+docker-compose up -d
+
+# Connect with Postico or psql
+# Make your data changes
+
+# Export and upload to K8s
+./scripts/sync-db-to-k8s.sh
+```
+
+This workflow gives you the best of both worlds:
+- ✅ Fast local development with VS Code
+- ✅ Full database for testing
+- ✅ Easy deployment to K8s
+- ✅ Data can flow both ways
+
+Which scripts would be most useful for you to set up first?
+  
