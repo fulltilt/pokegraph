@@ -4,11 +4,16 @@ metadata:
   name: pokemon-ingress
   namespace: pokemon-app
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  ingressClassName: traefik  # K3s uses Traefik by default
+  tls:
+  - hosts:
+    - poke-trades.com
+    secretName: pokemon-tls
   rules:
-  - host: poke-trades.com  # Update this
+  - host: poke-trades.com
     http:
       paths:
       - path: /api
@@ -24,4 +29,4 @@ spec:
           service:
             name: frontend
             port:
-              number: 5173
+              number: 80

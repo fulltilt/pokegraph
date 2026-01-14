@@ -7,8 +7,8 @@ spec:
   selector:
     app: frontend
   ports:
-  - port: 5173
-    targetPort: 5173
+  - port: 80
+    targetPort: 80
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -30,6 +30,9 @@ spec:
       - name: ghcr-secret
       containers:
       - name: frontend
-        image: ghcr.io/fulltilt/pokemon-frontend:latest  # Update this
+        image: ghcr.io/fulltilt/pokemon-frontend:latest
         ports:
-        - containerPort: 5173
+        - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: backend-secrets

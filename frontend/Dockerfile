@@ -22,6 +22,12 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
+# Accept build arguments
+ARG VITE_ENDPOINT_URL
+
+# Set as environment variables for build
+ENV VITE_ENDPOINT_URL=$VITE_ENDPOINT_URL
+
 # Copy root package.json for workspace
 COPY package.json bun.lockb* ./
 
@@ -39,19 +45,15 @@ RUN bun install
 # Build for production
 RUN bun run build
 
-# Production stage
-FROM oven/bun:1
+# Production stage - Use nginx to serve static files
+FROM nginx:alpine
 
-WORKDIR /app/frontend
+# Copy built files to nginx html directory
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
-# Copy built files
-COPY --from=builder /app/frontend/dist ./dist
-COPY --from=builder /app/frontend/package.json ./package.json
+# Copy nginx config
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Install minimal dependencies for serving
-RUN bun install --production
+EXPOSE 80
 
-EXPOSE 5173
-
-# Serve the built files
-CMD ["bunx", "vite", "preview", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["nginx", "-g", "daemon off;"]

@@ -33,12 +33,9 @@ spec:
         image: ghcr.io/fulltilt/pokemon-backend:latest  # Update this
         ports:
         - containerPort: 3457
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: DATABASE_URL
+        envFrom:
+        - secretRef:
+            name: backend-secrets
         resources:
           requests:
             memory: "256Mi"
