@@ -62,7 +62,7 @@ async function fetchPage(id: string) {
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
       },
-    }
+    },
   );
 
   if (!res.ok) {
@@ -71,7 +71,7 @@ async function fetchPage(id: string) {
 
   const json = await res.json();
   const nmResults = json.result.filter(
-    (result: CardData) => result.condition === "Near Mint"
+    (result: CardData) => result.condition === "Near Mint",
   )[0];
 
   return nmResults.buckets;

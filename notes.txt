@@ -118,7 +118,7 @@ npx prisma migrate reset
 -- another time I had to do this as reset removed the tables
 bunx prisma db push (in same directory where schema.prisma is)
 
--- restore from backup
+-- restore from backup (works only if receiving db is empty else you will have to truncate tables before doing this)
 cat pokedex-data.sql | docker exec -i pokedb psql -U postgres -d pokedex
 
 // the above restore didn't work for reasons I'm not clear so ended up doing the following
@@ -500,6 +500,7 @@ docker exec pokedb pg_dump -U postgres -d pokedex > /tmp/local_export.sql
 
 echo "Uploading to VPS..."
 scp /tmp/local_export.sql ddoria@5.78.146.145:~/
+scp -i ~/.ssh/hetzner_id_ed25519 pokedex-data2.sql ddoria@5.78.146.145:/tmp/
 
 echo "Importing to K8s..."
 ssh ddoria@5.78.146.145 "
@@ -584,3 +585,12 @@ This workflow gives you the best of both worlds:
 
 Which scripts would be most useful for you to set up first?
   
+### Using Postico to view DB in VPS in k8s
+ssh into VPS and run: kubectl port-forward -n pokemon-app svc/db 5432:5432 --address=0.0.0.0
+
+In Postico:
+Host: localhost
+Port: 5433
+User: postgres
+Password: password
+Database: pokedex
