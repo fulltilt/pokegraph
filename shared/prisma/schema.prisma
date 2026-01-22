@@ -63,3 +63,93 @@ model SealedPriceEntry {
   @@unique([title, soldAt])
   @@index([sealedId])
 }
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  upc         String    @unique
+  name        String
+  productType String?   @map("product_type")
+  setName     String?   @map("set_name")
+  releaseDate DateTime? @map("release_date")
+  msrp        Decimal?  @db.Decimal(10, 2)
+  imageUrl    String?   @map("image_url")
+  description String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  inventoryItems InventoryItem[]
+  priceHistory   ProductPriceHistory[]
+
+  @@index([upc])
+  @@index([setName])
+  @@map("products")
+}
+
+model InventoryItem {
+  id               Int      @id @default(autoincrement())
+  productId        Int      @map("product_id")
+  quantity         Int      @default(1)
+  condition        String   @default("Sealed")
+  gradeInfo        String?  @map("grade_info")
+  location         String?
+  purchaseDate     DateTime @map("purchase_date")
+  purchasePrice    Decimal  @map("purchase_price") @db.Decimal(10, 2)
+  purchasePlatform String?  @map("purchase_platform")
+  shippingCost     Decimal? @default(0) @map("shipping_cost") @db.Decimal(10, 2)
+  otherFees        Decimal? @default(0) @map("other_fees") @db.Decimal(10, 2)
+  notes            String?  @db.Text
+  status           String   @default("In Stock")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sales   Sale[]
+
+  @@index([productId])
+  @@index([status])
+  @@index([purchaseDate])
+  @@map("inventory_items")
+}
+
+model Sale {
+  id                     Int      @id @default(autoincrement())
+  inventoryItemId        Int      @map("inventory_item_id")
+  saleDate               DateTime @map("sale_date")
+  salePrice              Decimal  @map("sale_price") @db.Decimal(10, 2)
+  quantitySold           Int      @default(1) @map("quantity_sold")
+  platform               String?
+  buyerInfo              String?  @map("buyer_info") @db.Text
+  shippingCost           Decimal? @default(0) @map("shipping_cost") @db.Decimal(10, 2)
+  platformFees           Decimal? @default(0) @map("platform_fees") @db.Decimal(10, 2)
+  paymentProcessingFees  Decimal? @default(0) @map("payment_processing_fees") @db.Decimal(10, 2)
+  otherFees              Decimal? @default(0) @map("other_fees") @db.Decimal(10, 2)
+  trackingNumber         String?  @map("tracking_number")
+  grossProfit            Decimal? @map("gross_profit") @db.Decimal(10, 2)
+  netProfit              Decimal? @map("net_profit") @db.Decimal(10, 2)
+  profitMargin           Decimal? @map("profit_margin") @db.Decimal(5, 2)
+  notes                  String?  @db.Text
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+
+  @@index([inventoryItemId])
+  @@index([saleDate])
+  @@index([platform])
+  @@map("sales")
+}
+
+model ProductPriceHistory {
+  id         Int      @id @default(autoincrement())
+  productId  Int      @map("product_id")
+  price      Decimal  @db.Decimal(10, 2)
+  priceType  String   @default("Market") @map("price_type")
+  source     String?
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([recordedAt])
+  @@map("product_price_history")
+}

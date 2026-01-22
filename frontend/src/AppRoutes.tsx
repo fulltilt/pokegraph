@@ -10,6 +10,8 @@ import Labeler from "./ui/Labeler";
 import Predictions from "./ui/Predictions";
 import CardRecognition from "./ui/CardRecognition";
 import CardSearch from "./components/CardSearch";
+import InventoryManagement from "./ui/InventoryManagement";
+import BarcodeScanner from "./components/BarcodeScanner";
 
 export function AppRoutes() {
   return (
@@ -24,6 +26,8 @@ export function AppRoutes() {
         <Route path="predictions" element={<Predictions />} />
         <Route path="match" element={<CardRecognition />} />
         <Route path="search" element={<CardSearch />} />
+        <Route path="inventory" element={<InventoryManagement />} />
+        <Route path="scan" element={<BarcodeScanner />} />
       </Route>
     </Routes>
   );

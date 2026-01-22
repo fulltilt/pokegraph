@@ -582,8 +582,6 @@ This workflow gives you the best of both worlds:
 - ✅ Full database for testing
 - ✅ Easy deployment to K8s
 - ✅ Data can flow both ways
-
-Which scripts would be most useful for you to set up first?
   
 ### Using Postico to view DB in VPS in k8s
 ssh into VPS and run: kubectl port-forward -n pokemon-app svc/db 5432:5432 --address=0.0.0.0
@@ -594,3 +592,13 @@ Port: 5433
 User: postgres
 Password: password
 Database: pokedex
+
+
+## DB Migration (first 3 steps are to correct a manual db change)
+npx prisma migrate resolve --schema=shared/prisma/schema.prisma --applied 20260121000100_add_pg_trgm
+
+npx prisma migrate status --schema=shared/prisma/schema.prisma
+
+npx prisma migrate dev --name add_inventory_system --schema=shared/prisma/schema.prisma
+
+psql postgres://postgres:password@localhost:5432/pokedex -f shared/prisma/migrations/20260121000101_add_views_and_triggers/migration.sql
