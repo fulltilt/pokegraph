@@ -1,91 +1,203 @@
 services:
+  # ---------------------------------------------------------------------------
+  # deps
+  # ---------------------------------------------------------------------------
+  # This service exists ONLY to run dependency installation + Prisma generation
+  # exactly once, in a controlled, non-concurrent way.
+  #
+  # Why this is needed:
+  # - bun install is NOT concurrency-safe across shared node_modules
+  # - Running bun install in frontend + backend simultaneously caused EEXIST errors
+  # - Prisma client generation MUST happen before backend starts
+  #
+  # This container:
+  # - installs dependencies into mounted volumes
+  # - generates Prisma client into /app/node_modules/.prisma
+  # - exits successfully
+  #
+  # Other services depend_on this completing successfully.
+  deps:
+    image: oven/bun:1
+    container_name: pokegraph-deps
+
+    # Run everything from repo root so Bun workspaces resolve correctly
+    working_dir: /app
+
+    volumes:
+      # Mount entire repo so Bun sees ALL workspace packages
+      - ./:/app
+
+      # Root node_modules volume:
+      # - This is the SINGLE SOURCE OF TRUTH for hoisted workspace deps
+      - root_node_modules:/app/node_modules
+
+      # Per-package node_modules for packages that actually RUN code
+      # (frontend + backend)
+      - frontend_node_modules:/app/frontend/node_modules
+      - backend_node_modules:/app/backend/node_modules
+
+      # ⚠️ shared_node_modules intentionally NOT mounted
+      # Why:
+      # - shared is a library workspace, not an executable
+      # - mounting its own node_modules caused Prisma to generate
+      #   in the wrong place and break runtime resolution
+
+    command: [
+        "sh",
+        "-lc",
+
+        # 1. Install OS dependency required by Prisma engines
+        #    (Prisma requires OpenSSL inside Linux containers)
+        #
+        # 2. bun install
+        #    - resolves all workspaces
+        #    - hoists deps to /app/node_modules
+        #
+        # 3. prisma generate
+        #    - uses shared/prisma/schema.prisma
+        #    - writes generated client to /app/node_modules/.prisma
+        #
+        # 4. ls check
+        #    - hard assertion that Prisma client exists
+        #    - fails fast if generation went to wrong location
+        #
+        "apt-get update && \
+        apt-get install -y openssl && \
+        rm -rf /var/lib/apt/lists/* && \
+        bun install && \
+        bunx prisma generate --schema=shared/prisma/schema.prisma && \
+        ls -la /app/node_modules/.prisma/client/default.js",
+      ]
+
+  # ---------------------------------------------------------------------------
+  # db
+  # ---------------------------------------------------------------------------
+  # PostgreSQL + pgvector database
+  #
+  # This volume MUST persist between restarts or data is lost.
+  # DO NOT delete pgdata unless you explicitly want a fresh DB.
   db:
     image: ankane/pgvector:latest
     container_name: pokedb
     restart: always
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: pokedex
+
     ports:
+      # Expose DB to host for Postico / psql / debugging
       - "5432:5432"
+
     volumes:
+      # Persistent DB storage
       - pgdata:/var/lib/postgresql/data
 
+  # ---------------------------------------------------------------------------
+  # backend
+  # ---------------------------------------------------------------------------
+  # Bun-based backend API
+  #
+  # Important rules here:
+  # - MUST NOT run bun install
+  # - MUST NOT run prisma generate
+  # - MUST wait for deps to finish
+  #
+  # Backend only RUNS code, never mutates node_modules.
   backend:
     build:
-      context: . # Build from root to access shared folder
+      context: .
       dockerfile: backend/Dockerfile
     container_name: pokemon-backend
+
     ports:
       - "3457:3457"
+
     depends_on:
-      - db
-      # - embedding-service
-      # - sealed-classifier-service
+      # Guarantees:
+      # - dependencies installed
+      # - Prisma client generated
+      deps:
+        condition: service_completed_successfully
+
+      # DB must be reachable
+      db:
+        condition: service_started
+
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/pokedex
-      # EMBEDDING_SERVICE_URL: http://embedding-service:8000
-      # SEALED_CLASSIFIER_URL: http://sealed-classifier-service:8000
-    volumes:
-      # - ./backend:/app/backend # uncomment for VPS but comment for local
-      - ./backend/src:/app/backend/src # Mount only src for hot reload; uncomment for local but comment for VPS
-      - ./shared/src:/app/shared/src
-    working_dir: /app/backend # Sets the default directory that commands will execute from. This is important because the command (like bun run dev) will run relative to this path.
-    command: ["bun", "run", "dev"] # overrides the CMD in Dockerfile
 
+    volumes:
+      # Mount entire repo so imports & workspace links resolve
+      - ./:/app
+
+      # Root node_modules (read-only at runtime)
+      - root_node_modules:/app/node_modules
+
+      # Backend local node_modules (bin links, tsx, etc.)
+      - backend_node_modules:/app/backend/node_modules
+
+    # Backend runs from its own workspace folder
+    working_dir: /app/backend
+
+    # Only start dev server — NO installs here
+    command: ["sh", "-lc", "bun run dev"]
+
+  # ---------------------------------------------------------------------------
+  # frontend
+  # ---------------------------------------------------------------------------
+  # Vite + Bun frontend with hot reload
+  #
+  # Same philosophy as backend:
+  # - NO bun install
+  # - NO dependency mutation
+  # - Depends on deps service
   frontend:
     build:
-      context: . # Build from root if frontend needs shared resources
-      dockerfile: frontend/Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile.dev
     container_name: pokemon-frontend
+
     ports:
+      # Vite dev server
       - "5173:5173"
+
+    depends_on:
+      # Ensures deps + Prisma generation completed
+      deps:
+        condition: service_completed_successfully
+
     volumes:
-      - ./frontend:/app/frontend
-      - ./shared:/app/shared # Mount shared folder if frontend needs it
-      - /app/frontend/node_modules # Prevent overwriting
+      # Mount entire repo for workspace imports + hot reload
+      - ./:/app
+
+      # Root hoisted deps
+      - root_node_modules:/app/node_modules
+
+      # Frontend local node_modules
+      - frontend_node_modules:/app/frontend/node_modules
+
     working_dir: /app/frontend
-    command: ["bun", "run", "dev"]
 
-  # embedding-service:
-  #   build:
-  #     context: ./scripts/python/embedding_service
-  #     dockerfile: Dockerfile
-  #   container_name: pokemon-embedding-service
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - MODEL_CACHE=/models
-  #   volumes:
-  #     - model-cache:/models
+    # Run Vite dev server, bound to all interfaces so host can access it
+    command: ["sh", "-lc", "bun run dev --host 0.0.0.0 --port 5173"]
 
-  # sealed-classifier-service:
-  #   build:
-  #     context: ./scripts/python/sealed_classifier_service
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     MODEL_NAME: "/app/model"
-  #   container_name: pokemon-sealed-classifier
-  #   ports:
-  #     - "8001:8000"
-
-  # mcp:
-  #   build:
-  #     context: . # Build from root to access shared folder
-  #     dockerfile: mcp/Dockerfile
-  #   container_name: pokemon-mcp
-  #   ports:
-  #     - "3458:3458" # Different port for MCP
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     DATABASE_URL: postgres://postgres:password@db:5432/pokedex
-  #   volumes:
-  #     - .:/app # Mount entire project
-  #   working_dir: /app
-  #   command: ["bun", "dist/mcp/src/server.js"]
-
+# ---------------------------------------------------------------------------
+# volumes
+# ---------------------------------------------------------------------------
+# Explicitly named volumes so:
+# - they persist across restarts
+# - we can safely delete node_modules volumes without touching DB
 volumes:
+  # PostgreSQL data — NEVER DELETE unless you want a fresh DB
   pgdata:
-  model-cache:
+
+  # Hoisted workspace dependencies
+  root_node_modules:
+
+  # Runtime node_modules for frontend
+  frontend_node_modules:
+
+  # Runtime node_modules for backend
+  backend_node_modules:

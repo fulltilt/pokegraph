@@ -18,42 +18,65 @@
 
 # # Run Vite dev server
 # CMD ["bun", "run", "dev"]
+
+
+
+
+# -----------------------------------------------------------------------------
+# Frontend production image for Kubernetes (Build with Bun, Serve with Nginx)
+# -----------------------------------------------------------------------------
+# Stage 1 builds the Vite app into /dist
+# Stage 2 serves the static files with nginx
+#
+# Benefits for k8s:
+# - Small runtime image (nginx:alpine)
+# - No node_modules at runtime
+# - Deterministic build artifacts
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder
+# -----------------------------------------------------------------------------
 FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Accept build arguments
+# Build-time env injection (baked into Vite build output)
 ARG VITE_ENDPOINT_URL
-
-# Set as environment variables for build
 ENV VITE_ENDPOINT_URL=$VITE_ENDPOINT_URL
 
-# Copy root package.json for workspace
+# Copy workspace manifests first for caching
 COPY package.json bun.lockb* ./
 
-# Copy shared folder (in case frontend needs types/utils from shared)
+# shared is included because frontend imports from it (types/utils)
 COPY shared ./shared
 
-# Copy frontend
+# copy frontend source
 COPY frontend ./frontend
 
+# Move into frontend workspace
 WORKDIR /app/frontend
 
-# Install all dependencies
+# Install deps (in this workspace context)
+# If you ever hit workspace resolution issues, switch to root install:
+#   WORKDIR /app && RUN bun install && WORKDIR /app/frontend
 RUN bun install
 
-# Build for production
+# Build Vite production assets
 RUN bun run build
 
-# Production stage - Use nginx to serve static files
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime
+# -----------------------------------------------------------------------------
 FROM nginx:alpine
 
-# Copy built files to nginx html directory
+# Copy built assets into nginx html directory
 COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
-# Copy nginx config
+# SPA-friendly nginx config (try_files -> index.html)
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
+# Foreground process required for containers
 CMD ["nginx", "-g", "daemon off;"]

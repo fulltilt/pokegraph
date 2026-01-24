@@ -1,23 +1,40 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Camera, X, Check } from "lucide-react";
-import Quagga from "quagga";
+import Quagga, { type QuaggaJSResultObject } from "@ericblade/quagga2";
+interface BarcodeScannerProps {
+  onScanComplete: (upc: string) => void;
+  onCancel?: () => void;
+}
 
-const BarcodeScanner = ({ onScanComplete }) => {
-  const [isScanning, setIsScanning] = useState(false);
-  const [scannedCode, setScannedCode] = useState("");
-  const [manualCode, setManualCode] = useState("");
-  const [error, setError] = useState("");
-  const scannerRef = useRef(null);
+interface QuaggaError {
+  name: string;
+  message: string;
+}
 
-  const startScanner = () => {
+const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
+  onScanComplete,
+  onCancel,
+}) => {
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [scannedCode, setScannedCode] = useState<string>("");
+  const [manualCode, setManualCode] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const scannerRef = useRef<HTMLDivElement | null>(null);
+
+  const startScanner = (): void => {
     setError("");
+
+    const target = scannerRef.current;
+    if (!target) {
+      setError("Scanner element not ready. Please try again.");
+      return;
+    }
 
     Quagga.init(
       {
         inputStream: {
-          name: "Live",
           type: "LiveStream",
-          target: scannerRef.current,
+          target,
           constraints: {
             width: 640,
             height: 480,
@@ -48,7 +65,7 @@ const BarcodeScanner = ({ onScanComplete }) => {
         numOfWorkers: 4,
         frequency: 10,
       },
-      (err) => {
+      (err: QuaggaError | null) => {
         if (err) {
           console.error("Quagga initialization error:", err);
           setError(
@@ -65,7 +82,7 @@ const BarcodeScanner = ({ onScanComplete }) => {
     Quagga.onDetected(handleDetected);
   };
 
-  const handleDetected = (result) => {
+  const handleDetected = (result: QuaggaJSResultObject): void => {
     if (result && result.codeResult && result.codeResult.code) {
       const code = result.codeResult.code;
 
@@ -77,7 +94,7 @@ const BarcodeScanner = ({ onScanComplete }) => {
     }
   };
 
-  const stopScanner = () => {
+  const stopScanner = (): void => {
     if (isScanning) {
       Quagga.stop();
       Quagga.offDetected(handleDetected);
@@ -85,24 +102,32 @@ const BarcodeScanner = ({ onScanComplete }) => {
     }
   };
 
-  const handleManualSubmit = () => {
+  const handleManualSubmit = (): void => {
     if (manualCode.trim()) {
       setScannedCode(manualCode.trim());
       setManualCode("");
     }
   };
 
-  const handleReset = () => {
+  const handleReset = (): void => {
     setScannedCode("");
     setManualCode("");
     setError("");
   };
 
-  const handleContinue = () => {
+  const handleContinue = (): void => {
     if (onScanComplete) {
       onScanComplete(scannedCode);
     }
     handleReset();
+  };
+
+  const handleCancelClick = (): void => {
+    stopScanner();
+    handleReset();
+    if (onCancel) {
+      onCancel();
+    }
   };
 
   useEffect(() => {
@@ -123,31 +148,35 @@ const BarcodeScanner = ({ onScanComplete }) => {
               className="relative bg-gray-900 rounded-lg overflow-hidden"
               style={{ height: "300px" }}
             >
+              {/* Always render the target so scannerRef.current is never null after mount */}
+              <div
+                ref={scannerRef}
+                className="w-full h-full"
+                style={{ position: "relative" }}
+              >
+                {/* Only show the overlay canvas when scanning (Quagga can inject its own too) */}
+                {isScanning && (
+                  <canvas
+                    className="drawingBuffer"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  />
+                )}
+              </div>
+
               {isScanning ? (
                 <>
-                  <div
-                    ref={scannerRef}
-                    className="w-full h-full"
-                    style={{ position: "relative" }}
-                  >
-                    <canvas
-                      className="drawingBuffer"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                      }}
-                    />
-                  </div>
-
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="w-64 h-32 border-2 border-red-500 rounded-lg relative">
-                      <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-red-500"></div>
-                      <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-red-500"></div>
-                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-red-500"></div>
-                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-red-500"></div>
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-red-500" />
+                      <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-red-500" />
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-red-500" />
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-red-500" />
                     </div>
                   </div>
 
@@ -163,7 +192,7 @@ const BarcodeScanner = ({ onScanComplete }) => {
                   </button>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full">
+                <div className="absolute inset-0 flex items-center justify-center">
                   <button
                     onClick={startScanner}
                     className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition"
@@ -174,6 +203,7 @@ const BarcodeScanner = ({ onScanComplete }) => {
                 </div>
               )}
             </div>
+
             {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
             {isScanning && (
               <p className="mt-2 text-gray-600 text-sm text-center">
@@ -208,6 +238,17 @@ const BarcodeScanner = ({ onScanComplete }) => {
               Supports EAN, UPC, Code 128, and Code 39 formats
             </p>
           </div>
+
+          {onCancel && (
+            <div className="mt-4">
+              <button
+                onClick={handleCancelClick}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </>
       ) : (
         /* Scanned Result */

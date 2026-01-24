@@ -36,6 +36,7 @@ import cardRecognitionRouter from "./routes/cardRecognition";
 import cardsRouter from "./routes/cards";
 import setsRouter from "./routes/sets";
 import sealedRouter from "./routes/sealed";
+import salesRouter from "./routes/sales";
 // import { getQuantitySpikes } from "@pokemon/shared/db";
 import { getQuantitySpikes } from "../../shared/src/db";
 const app = express();
@@ -48,6 +49,7 @@ app.use("/api", cardRecognitionRouter);
 app.use("/api/cards", cardsRouter);
 app.use("/api", setsRouter);
 app.use("/api", sealedRouter);
+app.use("/api/sales", salesRouter);
 // Mount other routes...
 
 app.get("/api/quantity-spikes", async (req: Request, res: Response) => {

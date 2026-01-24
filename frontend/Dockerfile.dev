@@ -1,0 +1,12 @@
+FROM oven/bun:1
+
+WORKDIR /app
+
+# (Optional) copy just for convenience; not strictly needed for dev
+COPY package.json bun.lockb* ./
+
+WORKDIR /app/frontend
+EXPOSE 5173
+
+# Compose will run bun install + bun dev
+CMD ["sh", "-lc", "bun install && cd frontend && bun run dev --host 0.0.0.0 --port 5173"]

@@ -2,10 +2,9 @@
   "name": "pokeGraph",
   "private": true,
   "workspaces": [
-    "backend/*",
-    "frontend/*",
-    "mcp/*",
-    "shared/*"
+    "backend",
+    "shared",
+    "frontend"
   ],
   "scripts": {
     "build": "bun run build --workspaces",
