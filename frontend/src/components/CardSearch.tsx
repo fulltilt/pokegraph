@@ -54,7 +54,7 @@ async function searchCards(query: string): Promise<CardData[]> {
   if (!query.trim()) return [];
 
   const res = await fetch(
-    `/api/cards/search?q=${encodeURIComponent(query)}&limit=20`
+    `/api/cards/search?q=${encodeURIComponent(query)}&limit=20`,
   );
 
   if (!res.ok) throw new Error("Search failed");
@@ -73,7 +73,7 @@ async function exportToGoogleSheets(
   cards: SelectedCard[],
   accessToken: string,
   refreshToken?: string,
-  spreadsheetId?: string
+  spreadsheetId?: string,
 ) {
   const res = await fetch("/api/cards/export", {
     method: "POST",
@@ -128,7 +128,6 @@ export default function CardSearch() {
           description: "You can now export to Google Sheets",
         });
       }
-      ``;
     };
 
     window.addEventListener("message", handleMessage);
@@ -191,7 +190,7 @@ export default function CardSearch() {
         cards,
         accessToken,
         refreshToken || undefined,
-        spreadsheetId
+        spreadsheetId,
       );
     },
     onSuccess: (data) => {
@@ -246,7 +245,7 @@ export default function CardSearch() {
             ? "A popup window will open for Google sign-in"
             : "Failed to create Google Sheet",
           // variant: error.message.includes('authenticate') ? "default" : "destructive",
-        }
+        },
       );
     },
   });
@@ -267,8 +266,8 @@ export default function CardSearch() {
       prev.map((card) =>
         card.id === cardId
           ? { ...card, quantity: Math.max(1, card.quantity + delta) }
-          : card
-      )
+          : card,
+      ),
     );
   };
 
