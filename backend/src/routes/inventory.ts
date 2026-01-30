@@ -11,7 +11,7 @@ import {
 const router = Router();
 
 // GET all inventory items
-router.get("/api/inventory", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const { status, search } = req.query;
 
@@ -32,7 +32,7 @@ router.get("/api/inventory", async (req: Request, res: Response) => {
 });
 
 // GET inventory statistics
-router.get("/api/inventory/stats", async (req: Request, res: Response) => {
+router.get("/stats", async (req: Request, res: Response) => {
   try {
     const stats = await getInventoryStats();
 
@@ -48,7 +48,7 @@ router.get("/api/inventory/stats", async (req: Request, res: Response) => {
 });
 
 // GET single inventory item
-router.get("/api/inventory/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -66,7 +66,7 @@ router.get("/api/inventory/:id", async (req: Request, res: Response) => {
 });
 
 // POST create new inventory item
-router.post("/api/inventory", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const { productId, purchaseDate, purchasePrice } = req.body;
 
@@ -85,7 +85,7 @@ router.post("/api/inventory", async (req: Request, res: Response) => {
 });
 
 // PATCH update inventory item
-router.patch("/api/inventory/:id", async (req: Request, res: Response) => {
+router.patch("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -103,7 +103,7 @@ router.patch("/api/inventory/:id", async (req: Request, res: Response) => {
 });
 
 // DELETE inventory item
-router.delete("/api/inventory/:id", async (req: Request, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

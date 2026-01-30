@@ -12,7 +12,7 @@ import {
 const router = Router();
 
 // GET all sales
-router.get("/api/sales", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, platform } = req.query;
 
@@ -34,7 +34,7 @@ router.get("/api/sales", async (req: Request, res: Response) => {
 });
 
 // GET single sale
-router.get("/api/sales/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -52,7 +52,7 @@ router.get("/api/sales/:id", async (req: Request, res: Response) => {
 });
 
 // POST create new sale
-router.post("/api/sales", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const { inventoryItemId, saleDate, salePrice } = req.body;
 
@@ -76,7 +76,7 @@ router.post("/api/sales", async (req: Request, res: Response) => {
 });
 
 // PATCH update sale
-router.patch("/api/sales/:id", async (req: Request, res: Response) => {
+router.patch("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -94,7 +94,7 @@ router.patch("/api/sales/:id", async (req: Request, res: Response) => {
 });
 
 // DELETE sale
-router.delete("/api/sales/:id", async (req: Request, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -112,31 +112,28 @@ router.delete("/api/sales/:id", async (req: Request, res: Response) => {
 });
 
 // GET sales summary
-router.get(
-  "/api/reports/sales-summary",
-  async (req: Request, res: Response) => {
-    try {
-      const { startDate, endDate } = req.query;
+router.get("/sales-summary", async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.query;
 
-      const summary = await getSalesSummary({
-        startDate: startDate as string,
-        endDate: endDate as string,
-      });
+    const summary = await getSalesSummary({
+      startDate: startDate as string,
+      endDate: endDate as string,
+    });
 
-      if (!summary) {
-        return res.status(500).json({ error: "Failed to fetch sales summary" });
-      }
-
-      res.json(summary);
-    } catch (error) {
-      console.error("Error fetching sales summary:", error);
-      res.status(500).json({ error: "Failed to fetch sales summary" });
+    if (!summary) {
+      return res.status(500).json({ error: "Failed to fetch sales summary" });
     }
-  },
-);
+
+    res.json(summary);
+  } catch (error) {
+    console.error("Error fetching sales summary:", error);
+    res.status(500).json({ error: "Failed to fetch sales summary" });
+  }
+});
 
 // GET top performing products
-router.get("/api/reports/top-products", async (req: Request, res: Response) => {
+router.get("/top-products", async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
 

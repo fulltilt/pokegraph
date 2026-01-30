@@ -10,7 +10,7 @@ import {
 const router = Router();
 
 // GET all products
-router.get("/api/products", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const products = await getAllProducts();
 
@@ -26,7 +26,7 @@ router.get("/api/products", async (req: Request, res: Response) => {
 });
 
 // GET product by UPC
-router.get("/api/products/upc/:upc", async (req: Request, res: Response) => {
+router.get("/upc/:upc", async (req: Request, res: Response) => {
   try {
     const { upc } = req.params;
 
@@ -44,7 +44,7 @@ router.get("/api/products/upc/:upc", async (req: Request, res: Response) => {
 });
 
 // POST create new product
-router.post("/api/products", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const { upc, name } = req.body;
 
@@ -68,7 +68,7 @@ router.post("/api/products", async (req: Request, res: Response) => {
 });
 
 // PATCH update product
-router.patch("/api/products/:id", async (req: Request, res: Response) => {
+router.patch("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -86,7 +86,7 @@ router.patch("/api/products/:id", async (req: Request, res: Response) => {
 });
 
 // DELETE product
-router.delete("/api/products/:id", async (req: Request, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
