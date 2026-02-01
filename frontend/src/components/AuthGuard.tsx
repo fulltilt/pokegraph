@@ -1,5 +1,6 @@
 // components/AuthGuard.tsx
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -28,28 +29,8 @@ async function getUserInfo(accessToken: string) {
 export function AuthGuard({ children }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  const checkAuth = useCallback(() => {
-    const storedAccess = localStorage.getItem("google_access_token");
-    const expiryTime = localStorage.getItem("google_token_expiry");
-
-    // If token exists and is not expired
-    if (storedAccess && expiryTime) {
-      if (Date.now() < parseInt(expiryTime)) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        return;
-      } else {
-        // Token expired, clear it
-        localStorage.removeItem("google_access_token");
-        localStorage.removeItem("google_token_expiry");
-        localStorage.removeItem("user_info");
-      }
-    }
-
-    setIsAuthenticated(false);
-    setIsLoading(false);
-  }, []);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     checkAuth();
@@ -79,6 +60,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
           );
 
           setIsAuthenticated(true);
+
+          // Redirect to intended destination or home
+          const intendedPath = localStorage.getItem("intended_path");
+          if (intendedPath) {
+            localStorage.removeItem("intended_path");
+            navigate(intendedPath, { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
         } catch (error) {
           console.error("Failed to get user info:", error);
         }
@@ -87,9 +77,53 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [checkAuth]);
+  }, [navigate]);
+
+  const checkAuth = () => {
+    const storedAccess = localStorage.getItem("google_access_token");
+    const expiryTime = localStorage.getItem("google_token_expiry");
+
+    // If token exists and is not expired
+    if (storedAccess && expiryTime) {
+      if (Date.now() < parseInt(expiryTime)) {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        return;
+      } else {
+        // Token expired, clear it and store intended path
+        console.log("Token expired, storing current path:", location.pathname);
+        localStorage.setItem(
+          "intended_path",
+          location.pathname + location.search,
+        );
+        localStorage.removeItem("google_access_token");
+        localStorage.removeItem("google_token_expiry");
+        localStorage.removeItem("user_info");
+      }
+    } else {
+      // No token, store intended path if not already at root
+      if (location.pathname !== "/") {
+        console.log("No token, storing current path:", location.pathname);
+        localStorage.setItem(
+          "intended_path",
+          location.pathname + location.search,
+        );
+      }
+    }
+
+    setIsAuthenticated(false);
+    setIsLoading(false);
+  };
 
   const handleLogin = async () => {
+    // Store current path before opening auth popup
+    if (location.pathname !== "/") {
+      localStorage.setItem(
+        "intended_path",
+        location.pathname + location.search,
+      );
+    }
+
     const authUrl = await getGoogleAuthUrl();
     window.open(authUrl, "Google Auth", "width=600,height=600");
   };
@@ -111,6 +145,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
             <p className="text-muted-foreground">
               Sign in with Google to get started
             </p>
+            {location.pathname !== "/" && (
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                You'll be redirected to {location.pathname} after signing in
+              </p>
+            )}
           </div>
 
           <div className="space-y-4">
