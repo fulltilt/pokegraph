@@ -54,7 +54,7 @@ async function searchCards(query: string): Promise<CardData[]> {
   if (!query.trim()) return [];
 
   const res = await fetch(
-    `/api/cards/search?q=${encodeURIComponent(query)}&limit=20`,
+    `/api/cards/search?q=${encodeURIComponent(query)}&limit=40`,
   );
 
   if (!res.ok) throw new Error("Search failed");

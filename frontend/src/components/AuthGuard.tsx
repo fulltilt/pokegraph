@@ -39,7 +39,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     const handleMessage = async (event: MessageEvent) => {
       if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
         const tokens = event.data.tokens;
-
+        console.log(tokens);
         // Store tokens with expiry time
         const expiryTime = Date.now() + (tokens.expires_in || 3600) * 1000;
         localStorage.setItem("google_access_token", tokens.access_token);
