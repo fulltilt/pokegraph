@@ -4,7 +4,7 @@ import { Prisma, prisma } from "@pokemon/shared";
 export async function getCardsFromSet(
   set: string,
   skip: number,
-  take: number
+  take: number,
 ): Promise<any[]> {
   try {
     const cards = await prisma.$queryRawUnsafe<any[]>(
@@ -25,7 +25,7 @@ export async function getCardsFromSet(
       OFFSET ${skip}
       LIMIT ${take}
       `,
-      set
+      set,
     );
     // ORDER BY (data->>'number')::int
 
@@ -47,7 +47,7 @@ export async function getCardsFromSet(
 export async function findSimilarCards(
   embedding: number[],
   topK: number = 5,
-  threshold: number = 0.75
+  threshold: number = 0.75,
 ): Promise<DatabaseCardMatch[]> {
   try {
     // Format embedding array for PostgreSQL's 'vector' type
@@ -115,23 +115,16 @@ function parseSearchQuery(input: string) {
  * @param name The card name query string.
  * @param limit The maximum number of results to return.
  * @returns A promise that resolves to an array of matching cards.
+ *
+ * Note: The % operator in PostgreSQL uses a default similarity threshold (usually 0.3).
+ * If you want more control over which results are included, you could set a specific threshold:
+ * WHERE
+    -- Name must match with minimum similarity
+    similarity(lower(data->>'name'), lower(${text})) > 0.3
  */
 export async function searchCardsByName(name: string, limit: number = 10) {
   const { text, numbers } = parseSearchQuery(name);
 
-  // return await prisma.$queryRaw(
-  //   Prisma.sql`
-  //   SELECT
-  //     id,
-  //     data,
-  //     "tcgPlayerId",
-  //     similarity(lower(data->>'name'), lower(${name})) AS sml
-  //   FROM "Card"
-  //   WHERE lower(data->>'name') % lower(${name})
-  //   ORDER BY sml DESC, to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC, data->>'name'
-  //   LIMIT ${limit}
-  // `
-  // );
   return prisma.$queryRaw(
     Prisma.sql`
     SELECT
@@ -154,10 +147,9 @@ export async function searchCardsByName(name: string, limit: number = 10) {
       }
 
     ORDER BY
-      sml DESC,
       to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC
     LIMIT ${limit}
-  `
+  `,
   );
 }
 
@@ -183,7 +175,7 @@ export async function getCardById(id: string) {
 export async function getCardsBySet(
   setName: string,
   skip: number,
-  take: number
+  take: number,
 ): Promise<RawCardRecord[]> {
   // Note: The skip/limit are injected directly into the query string for raw queries
   return await prisma.$queryRawUnsafe(
@@ -206,7 +198,7 @@ export async function getCardsBySet(
     OFFSET ${skip}
     LIMIT ${take}
     `,
-    setName
+    setName,
   );
 }
 
@@ -229,6 +221,6 @@ export async function getCardPriceHistory(cardId: string, fromDate: Date) {
     ORDER BY DATE("date") ASC
     `,
     cardId,
-    fromDate
+    fromDate,
   );
 }
