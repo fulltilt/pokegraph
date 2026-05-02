@@ -147,10 +147,15 @@ export async function searchCardsByName(name: string, limit: number = 10) {
       }
 
     ORDER BY
+      sml DESC,
       to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC
     LIMIT ${limit}
   `,
   );
+  // ORDER BY
+  //     sml DESC,
+  //     to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC
+  //   LIMIT ${limit}
 }
 
 /**
