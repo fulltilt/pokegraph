@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import {
   searchCardsByName,
+  searchCardsByNamePaginated,
   getCardsBySet,
   getCardById,
   getCardPriceHistory,
@@ -110,15 +111,35 @@ router.get("/cards-search", async (req: Request, res: Response) => {
 router.get("/search", async (req, res) => {
   try {
     const query = req.query.q as string;
-    const limit = Number.parseInt(req.query.limit as string, 10) || 20;
+    const page = Number.parseInt(req.query.page as string, 10) || 1;
+    const pageSize = Number.parseInt(req.query.pageSize as string, 10) || 60;
+
+    const safePage = Math.max(1, page);
+    const safePageSize = Math.min(Math.max(1, pageSize), 200);
 
     if (!query || query.trim().length === 0) {
-      return res.json({ cards: [] });
+      return res.json({
+        cards: [],
+        total: 0,
+        page: safePage,
+        pageSize: safePageSize,
+        totalPages: 0,
+      });
     }
 
-    // Using pg_trgm similarity search
-    const cards = await searchCardsByName(query, limit);
-    res.json({ cards });
+    const { cards, total } = await searchCardsByNamePaginated(
+      query,
+      safePage,
+      safePageSize,
+    );
+
+    res.json({
+      cards,
+      total,
+      page: safePage,
+      pageSize: safePageSize,
+      totalPages: Math.ceil(total / safePageSize),
+    });
   } catch (error) {
     console.error("Search error:", error);
     res.status(500).json({ error: "Failed to search cards" });
@@ -188,6 +209,8 @@ router.get("/history/:id", async (req: Request, res: Response) => {
 router.get("/auth-url", (_req: Request, res: Response) => {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: true,
     scope: [
       "https://www.googleapis.com/auth/spreadsheets",
       "https://www.googleapis.com/auth/drive.file",

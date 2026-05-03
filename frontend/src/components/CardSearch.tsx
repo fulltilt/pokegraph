@@ -5,7 +5,6 @@ import {
   Search,
   Loader2,
   Image as ImageIcon,
-  ShoppingCart,
   Plus,
   Minus,
   X,
@@ -34,6 +33,7 @@ interface CardData {
     type?: string;
     set?: {
       name: string;
+      releaseDate?: string;
     };
     images: {
       small: string;
@@ -50,17 +50,37 @@ interface SelectedCard extends CardData {
   quantity: number;
 }
 
-async function searchCards(query: string): Promise<CardData[]> {
-  if (!query.trim()) return [];
+interface CardSearchResponse {
+  cards: CardData[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+const SEARCH_PAGE_SIZE = 120;
+
+async function searchCards(
+  query: string,
+  page: number,
+): Promise<CardSearchResponse> {
+  if (!query.trim()) {
+    return {
+      cards: [],
+      total: 0,
+      page,
+      pageSize: SEARCH_PAGE_SIZE,
+      totalPages: 0,
+    };
+  }
 
   const res = await fetch(
-    `/api/cards/search?q=${encodeURIComponent(query)}&limit=60`,
+    `/api/cards/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=${SEARCH_PAGE_SIZE}`,
   );
 
   if (!res.ok) throw new Error("Search failed");
 
-  const data = await res.json();
-  return data.cards || [];
+  return (await res.json()) as CardSearchResponse;
 }
 
 async function getGoogleAuthUrl() {
@@ -69,16 +89,26 @@ async function getGoogleAuthUrl() {
   return data.authUrl;
 }
 
+async function openGoogleAuthPopup() {
+  const authUrl = await getGoogleAuthUrl();
+  window.open(authUrl, "Google Auth", "width=600,height=600");
+}
+
 async function exportToGoogleSheets(
   cards: SelectedCard[],
-  accessToken: string,
+  accessToken?: string,
   refreshToken?: string,
   spreadsheetId?: string,
 ) {
   const res = await fetch("/api/cards/export", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cards, accessToken, refreshToken, spreadsheetId }),
+    body: JSON.stringify({
+      cards,
+      accessToken: accessToken ?? "",
+      refreshToken,
+      spreadsheetId,
+    }),
   });
 
   if (!res.ok) {
@@ -92,10 +122,12 @@ async function exportToGoogleSheets(
 export default function CardSearch() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedCards, setSelectedCards] = useState<SelectedCard[]>([]);
-  const [showCart, setShowCart] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isScrolledDown, setIsScrolledDown] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [existingSpreadsheetId, setExistingSpreadsheetId] = useState("");
 
@@ -132,45 +164,51 @@ export default function CardSearch() {
 
     window.addEventListener("message", handleMessage);
 
-    // Check for existing tokens and validate expiry
+    // Load saved tokens. Keep access token even if expired so backend can use refresh token.
     const storedAccess = localStorage.getItem("google_access_token");
     const storedRefresh = localStorage.getItem("google_refresh_token");
-    const expiryTime = localStorage.getItem("google_token_expiry");
 
-    // If token exists but is expired, clear it
-    if (storedAccess && expiryTime) {
-      if (Date.now() > parseInt(expiryTime)) {
-        console.log("Access token expired, clearing...");
-        localStorage.removeItem("google_access_token");
-        localStorage.removeItem("google_token_expiry");
-      } else {
-        setAccessToken(storedAccess);
-      }
-    }
+    if (storedAccess) setAccessToken(storedAccess);
 
     if (storedRefresh) setRefreshToken(storedRefresh);
 
     return () => window.removeEventListener("message", handleMessage);
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
+      setCurrentPage(1);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [query]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolledDown(window.scrollY > 120);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const {
-    data: cards = [],
+    data: searchResult,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["cards", debouncedQuery],
-    queryFn: () => searchCards(debouncedQuery),
+    queryKey: ["cards", debouncedQuery, currentPage],
+    queryFn: () => searchCards(debouncedQuery, currentPage),
     enabled: debouncedQuery.trim().length > 0,
     staleTime: 30000,
   });
+
+  const cards = searchResult?.cards ?? [];
+  const totalResults = searchResult?.total ?? 0;
+  const totalPages = searchResult?.totalPages ?? 0;
 
   const exportMutation = useMutation({
     mutationFn: async ({
@@ -180,15 +218,14 @@ export default function CardSearch() {
       cards: SelectedCard[];
       spreadsheetId?: string;
     }) => {
-      if (!accessToken) {
-        // Open OAuth popup
-        const authUrl = await getGoogleAuthUrl();
-        window.open(authUrl, "Google Auth", "width=600,height=600");
+      if (!accessToken && !refreshToken) {
+        await openGoogleAuthPopup();
         throw new Error("Please authenticate with Google first");
       }
+
       return exportToGoogleSheets(
         cards,
-        accessToken,
+        accessToken || undefined,
         refreshToken || undefined,
         spreadsheetId,
       );
@@ -230,23 +267,45 @@ export default function CardSearch() {
         error.message.includes("authentication") ||
         error.message.includes("token")
       ) {
+        const hasRefreshToken = Boolean(
+          refreshToken || localStorage.getItem("google_refresh_token"),
+        );
+
         localStorage.removeItem("google_access_token");
-        localStorage.removeItem("google_refresh_token");
+        localStorage.removeItem("google_token_expiry");
         setAccessToken(null);
-        setRefreshToken(null);
+
+        if (hasRefreshToken) {
+          toast("Session expired", {
+            description:
+              "Your next export will automatically refresh in the background.",
+          });
+        } else {
+          openGoogleAuthPopup().catch((popupError) => {
+            console.error("Failed to open Google auth popup:", popupError);
+          });
+
+          toast("Session expired", {
+            description:
+              "Please reauthenticate in the popup. You can stay on this screen.",
+          });
+        }
+
+        return;
       }
 
-      toast(
-        error.message.includes("authenticate")
-          ? "Authentication required"
-          : "Export failed",
-        {
-          description: error.message.includes("authenticate")
-            ? "A popup window will open for Google sign-in"
-            : "Failed to create Google Sheet",
-          // variant: error.message.includes('authenticate') ? "default" : "destructive",
-        },
-      );
+      if (error.message.includes("authenticate")) {
+        toast("Authentication required", {
+          description:
+            "Please sign in with Google in the popup. You can stay on this screen.",
+        });
+
+        return;
+      }
+
+      toast("Export failed", {
+        description: "Failed to create Google Sheet",
+      });
     },
   });
 
@@ -300,10 +359,53 @@ export default function CardSearch() {
 
   const isSelected = (cardId: string) =>
     selectedCards.some((c) => c.id === cardId);
+  const totalCardsInCart = selectedCards.reduce(
+    (sum, card) => sum + card.quantity,
+    0,
+  );
+
+  const canGoPreviousPage = currentPage > 1;
+  const canGoNextPage = currentPage < totalPages;
+  let resultsLabel = "Searching...";
+
+  if (!isLoading) {
+    const suffix = totalResults === 1 ? "" : "s";
+    resultsLabel = `${totalResults} result${suffix} found`;
+  }
+
+  const handlePreviousPage = () => {
+    if (canGoPreviousPage) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (canGoNextPage) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handleReconnectGoogle = async () => {
+    try {
+      setIsReconnecting(true);
+      await openGoogleAuthPopup();
+      toast("Reconnect started", {
+        description:
+          "Complete Google sign-in in the popup to refresh your session.",
+      });
+    } catch (error) {
+      console.error("Failed to start Google reconnect:", error);
+      toast("Reconnect failed", {
+        description: "Could not open Google sign-in popup.",
+      });
+    } finally {
+      setIsReconnecting(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
-      {/* Header with Cart */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2 flex-1">
           <h1 className="text-3xl font-bold tracking-tight">Card Search</h1>
@@ -311,19 +413,18 @@ export default function CardSearch() {
             Search and select cards to export to Google Sheets
           </p>
         </div>
-        <Button
-          onClick={() => setShowCart(!showCart)}
-          variant="outline"
-          className="relative"
-        >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Cart ({selectedCards.length})
-          {selectedCards.length > 0 && (
-            <Badge className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full">
-              {selectedCards.reduce((sum, c) => sum + c.quantity, 0)}
-            </Badge>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleReconnectGoogle}
+            variant="secondary"
+            disabled={isReconnecting}
+          >
+            {isReconnecting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : null}
+            Reconnect Google
+          </Button>
+        </div>
       </div>
 
       {/* Search Input */}
@@ -342,39 +443,92 @@ export default function CardSearch() {
       </div>
 
       {/* Cart Panel */}
-      {showCart && selectedCards.length > 0 && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Selected Cards</h2>
-            <Button
-              onClick={handleExport}
-              disabled={exportMutation.isPending}
-              size="sm"
-            >
-              {exportMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Export to Google Sheets
-            </Button>
-          </div>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+      <Card
+        className={`sticky top-3 z-10 w-full mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 transition-all duration-200 ${
+          isScrolledDown ? "p-3 max-w-3xl" : "p-4"
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2
+            className={`${isScrolledDown ? "text-base" : "text-lg"} font-semibold`}
+          >
+            Selected Cards ({totalCardsInCart})
+          </h2>
+          <Button
+            onClick={handleExport}
+            disabled={exportMutation.isPending || selectedCards.length === 0}
+            size={isScrolledDown ? "default" : "sm"}
+          >
+            {exportMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
+            Export to Google Sheets
+          </Button>
+        </div>
+
+        <div className="relative mb-3">
+          <Search
+            className={`absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground ${
+              isScrolledDown ? "h-3.5 w-3.5" : "h-4 w-4"
+            }`}
+          />
+          <Input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search cards by name..."
+            className={`pl-9 pr-9 ${isScrolledDown ? "h-9 text-sm" : "h-11 text-base"}`}
+          />
+          {isLoading && (
+            <Loader2
+              className={`absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin ${
+                isScrolledDown ? "h-3.5 w-3.5" : "h-4 w-4"
+              }`}
+            />
+          )}
+        </div>
+
+        {selectedCards.length === 0 ? (
+          <p
+            className={`${isScrolledDown ? "text-xs" : "text-sm"} text-muted-foreground`}
+          >
+            Cart is empty. Click cards below to add them.
+          </p>
+        ) : (
+          <div
+            className={`space-y-2 overflow-y-auto ${
+              isScrolledDown ? "max-h-48" : "max-h-96"
+            }`}
+          >
             {selectedCards.map((card) => (
               <div
                 key={card.id}
-                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                className={`flex items-center rounded-lg bg-muted/50 ${
+                  isScrolledDown ? "gap-2 p-1.5" : "gap-3 p-2"
+                }`}
               >
                 <img
                   src={card.data.images.small}
                   alt={card.data.name}
-                  className="w-12 h-16 object-contain rounded"
+                  className={`${
+                    isScrolledDown ? "w-8 h-10" : "w-12 h-16"
+                  } object-contain rounded`}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">
+                  <p
+                    className={`${
+                      isScrolledDown ? "text-xs" : "text-sm"
+                    } font-medium truncate`}
+                  >
                     {card.data.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p
+                    className={`${
+                      isScrolledDown ? "text-[10px]" : "text-xs"
+                    } text-muted-foreground`}
+                  >
                     {card.data.set?.name}
                     {card.data.number && ` #${card.data.number}`}
                   </p>
@@ -383,18 +537,22 @@ export default function CardSearch() {
                   <Button
                     size="icon"
                     variant="outline"
-                    className="h-8 w-8"
+                    className={isScrolledDown ? "h-6 w-6" : "h-8 w-8"}
                     onClick={() => updateQuantity(card.id, -1)}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
-                  <span className="w-8 text-center font-medium">
+                  <span
+                    className={`${
+                      isScrolledDown ? "w-6 text-xs" : "w-8"
+                    } text-center font-medium`}
+                  >
                     {card.quantity}
                   </span>
                   <Button
                     size="icon"
                     variant="outline"
-                    className="h-8 w-8"
+                    className={isScrolledDown ? "h-6 w-6" : "h-8 w-8"}
                     onClick={() => updateQuantity(card.id, 1)}
                   >
                     <Plus className="h-3 w-3" />
@@ -402,7 +560,7 @@ export default function CardSearch() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8"
+                    className={isScrolledDown ? "h-6 w-6" : "h-8 w-8"}
                     onClick={() => removeCard(card.id)}
                   >
                     <X className="h-3 w-3" />
@@ -411,17 +569,36 @@ export default function CardSearch() {
               </div>
             ))}
           </div>
-        </Card>
-      )}
+        )}
+      </Card>
 
       {/* Results Count */}
       {debouncedQuery && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {isLoading
-              ? "Searching..."
-              : `${cards.length} result${cards.length !== 1 ? "s" : ""} found`}
-          </p>
+          <p className="text-sm text-muted-foreground">{resultsLabel}</p>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousPage}
+                disabled={!canGoPreviousPage || isLoading}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={!canGoNextPage || isLoading}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -436,7 +613,7 @@ export default function CardSearch() {
 
       {/* Results Grid */}
       {cards.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
           {cards.map((card) => {
             const selected = isSelected(card.id);
             return (
@@ -455,7 +632,7 @@ export default function CardSearch() {
                       <img
                         src={card.data.images.small}
                         alt={card.data.name}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

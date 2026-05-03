@@ -118,14 +118,64 @@ export async function searchCardsByName(name: string, limit: number = 10) {
       lower(data->>'name') % lower($1)
       ${hasNumberFilter ? "AND data->>'number' ILIKE $2" : ""}
     ORDER BY
-      sml DESC,
-      to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC
+      to_date(NULLIF(data->'set'->>'releaseDate', ''), 'YYYY/MM/DD') DESC NULLS LAST,
+      sml DESC
     LIMIT ${hasNumberFilter ? "$3" : "$2"}
   `,
     text,
     ...(hasNumberFilter ? [`%${numbers[0]}%`] : []),
     limit,
   );
+}
+
+export async function searchCardsByNamePaginated(
+  name: string,
+  page: number,
+  pageSize: number,
+) {
+  const { text, numbers } = parseSearchQuery(name);
+  const hasNumberFilter = numbers.length > 0;
+  const offset = (page - 1) * pageSize;
+
+  const cards = await prisma.$queryRawUnsafe(
+    `
+    SELECT
+      id,
+      data,
+      "tcgPlayerId",
+      similarity(lower(data->>'name'), lower($1)) AS sml
+    FROM "Card"
+    WHERE
+      lower(data->>'name') % lower($1)
+      ${hasNumberFilter ? "AND data->>'number' ILIKE $2" : ""}
+    ORDER BY
+      to_date(NULLIF(data->'set'->>'releaseDate', ''), 'YYYY/MM/DD') DESC NULLS LAST,
+      sml DESC
+    OFFSET ${hasNumberFilter ? "$3" : "$2"}
+    LIMIT ${hasNumberFilter ? "$4" : "$3"}
+  `,
+    text,
+    ...(hasNumberFilter ? [`%${numbers[0]}%`] : []),
+    offset,
+    pageSize,
+  );
+
+  const totalResult = (await prisma.$queryRawUnsafe(
+    `
+    SELECT COUNT(*)::int AS total
+    FROM "Card"
+    WHERE
+      lower(data->>'name') % lower($1)
+      ${hasNumberFilter ? "AND data->>'number' ILIKE $2" : ""}
+  `,
+    text,
+    ...(hasNumberFilter ? [`%${numbers[0]}%`] : []),
+  )) as Array<{ total: number }>;
+
+  return {
+    cards,
+    total: totalResult[0]?.total ?? 0,
+  };
 }
 
 /**
