@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import FormData from "form-data";
 import { config } from "../config";
-import { EmbeddingServiceResponse } from "../types";
+import type { EmbeddingServiceResponse } from "../types";
 
 /**
  * Utility function to finalize FormData into a Buffer and set the Content-Length header.
@@ -32,7 +32,7 @@ const getFormDataBuffer = (formData: FormData): Promise<Buffer> => {
  */
 export async function getSingleEmbedding(
   file: Express.Multer.File,
-  baseUrl: string = config.embeddingServiceUrl
+  baseUrl: string = config.embeddingServiceUrl,
 ): Promise<number[]> {
   const formData = new FormData();
   formData.append("file", file.buffer, {
@@ -52,7 +52,7 @@ export async function getSingleEmbedding(
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `Embedding service error: ${response.statusText} - ${errorText}`
+      `Embedding service error: ${response.statusText} - ${errorText}`,
     );
   }
 
@@ -68,7 +68,7 @@ export async function getSingleEmbedding(
  */
 export async function detectAndEmbed(
   file: Express.Multer.File,
-  baseUrl: string = config.embeddingServiceUrl
+  baseUrl: string = config.embeddingServiceUrl,
 ): Promise<EmbeddingServiceResponse> {
   const formData = new FormData();
   formData.append("file", file.buffer, {
@@ -88,7 +88,7 @@ export async function detectAndEmbed(
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `Embedding service error: ${response.statusText} - ${errorText}`
+      `Embedding service error: ${response.statusText} - ${errorText}`,
     );
   }
 
@@ -101,7 +101,7 @@ export async function detectAndEmbed(
  * @returns A promise that resolves to true if the service is healthy, false otherwise.
  */
 export async function checkHealth(
-  baseUrl: string = config.embeddingServiceUrl
+  baseUrl: string = config.embeddingServiceUrl,
 ): Promise<boolean> {
   try {
     const response = await fetch(`${baseUrl}/health`);

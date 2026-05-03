@@ -1,13 +1,13 @@
-import { DatabaseCardMatch, RawCardRecord } from "../types";
-import { Prisma, prisma } from "@pokemon/shared";
+import type { DatabaseCardMatch, RawCardRecord } from "../types";
+import { prisma } from "@pokemon/shared";
 
 export async function getCardsFromSet(
   set: string,
   skip: number,
   take: number,
-): Promise<any[]> {
+): Promise<RawCardRecord[]> {
   try {
-    const cards = await prisma.$queryRawUnsafe<any[]>(
+    const cards = await prisma.$queryRawUnsafe(
       `
       SELECT *
       FROM "Card"
@@ -27,9 +27,8 @@ export async function getCardsFromSet(
       `,
       set,
     );
-    // ORDER BY (data->>'number')::int
 
-    return cards;
+    return cards as RawCardRecord[];
   } catch (error) {
     console.error("Database query error in getCards:", error);
     return [];
@@ -73,26 +72,6 @@ export async function findSimilarCards(
   }
 }
 
-/**
- * Searches for cards using PostgreSQL's fuzzy text similarity function (SIMILARITY).
- * @param name The card name query string.
- * @param limit The maximum number of results to return.
- * @returns A promise that resolves to an array of matching cards.
- */
-// export async function searchCardsByName(name: string, limit: number = 10) {
-//   return await prisma.$queryRawUnsafe(
-//     `
-//     SELECT *
-//     FROM "Card"
-//     WHERE SIMILARITY(data->>'name', $1) > 0.3
-//     ORDER BY SIMILARITY(data->>'name', $1) DESC
-//     LIMIT $2
-//     `,
-//     name,
-//     limit
-//   );
-// }
-
 function parseSearchQuery(input: string) {
   const tokens = input.trim().toLowerCase().split(/\s+/);
 
@@ -125,37 +104,28 @@ function parseSearchQuery(input: string) {
 export async function searchCardsByName(name: string, limit: number = 10) {
   const { text, numbers } = parseSearchQuery(name);
 
-  return prisma.$queryRaw(
-    Prisma.sql`
+  const hasNumberFilter = numbers.length > 0;
+
+  return prisma.$queryRawUnsafe(
+    `
     SELECT
       id,
       data,
       "tcgPlayerId",
-      similarity(lower(data->>'name'), lower(${text})) AS sml
+      similarity(lower(data->>'name'), lower($1)) AS sml
     FROM "Card"
     WHERE
-      -- Name must match
-      lower(data->>'name') % lower(${text})
-
-      -- If a number was provided, require it
-      ${
-        numbers.length > 0
-          ? Prisma.sql`
-            AND data->>'number' ILIKE ${"%" + numbers[0] + "%"}
-          `
-          : Prisma.empty
-      }
-
+      lower(data->>'name') % lower($1)
+      ${hasNumberFilter ? "AND data->>'number' ILIKE $2" : ""}
     ORDER BY
       sml DESC,
       to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC
-    LIMIT ${limit}
+    LIMIT ${hasNumberFilter ? "$3" : "$2"}
   `,
+    text,
+    ...(hasNumberFilter ? [`%${numbers[0]}%`] : []),
+    limit,
   );
-  // ORDER BY
-  //     sml DESC,
-  //     to_date(data->'set'->>'releaseDate', 'YYYY/MM/DD') DESC
-  //   LIMIT ${limit}
 }
 
 /**

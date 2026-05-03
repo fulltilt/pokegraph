@@ -4,7 +4,7 @@ import { config } from "../config";
 export const uploadMiddleware = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: config.uploadLimit },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {

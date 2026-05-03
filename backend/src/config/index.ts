@@ -1,4 +1,4 @@
-import { TimeframeKey } from "../types";
+import type { TimeframeKey } from "../types";
 
 export const config = {
   port: process.env.PORT ? Number(process.env.PORT) : 3457,

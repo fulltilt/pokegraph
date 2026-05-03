@@ -1,27 +1,20 @@
 import dotenv from "dotenv";
-import { resolve } from "path";
-import path from "path";
-import fs from "fs";
-import { pipeline as hfPipeline } from "@xenova/transformers";
+import { resolve } from "node:path";
 import { prisma } from "@pokemon/shared";
 
 dotenv.config({ path: resolve(__dirname, "../../.env") });
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import {
-  // classifyText,
   getAllSealedProducts,
   getPredictionsForSealedProducts,
   getSealedByTitle,
-  getUnlabeledEntries,
   getUnlabledSealedProduct,
   labelSealedProduct,
-  // loadModel,
-  updateLabeledEntries,
 } from "../services/sealedService";
-// import { Prisma } from "@prisma/client";
 
 const router = Router();
 
@@ -59,7 +52,7 @@ router.get("/sealed/unlabeled", async (_req: Request, res: Response) => {
   try {
     const entries = await getUnlabledSealedProduct();
 
-    const result = entries.map((entry: any) => ({
+    const result = entries.map((entry) => ({
       id: entry.id,
       sealedId: entry.sealedId,
       title: entry.title,
@@ -104,13 +97,16 @@ router.get("/sealed/predictions", async (req: Request, res: Response) => {
       where,
       search as string,
       Number(page),
-      Number(perPage)
+      Number(perPage),
     );
     res.json(prediction);
-  } catch (error) {}
+  } catch (error) {
+    console.error("Error fetching predictions:", error);
+    res.status(500).json({ error: "Failed to fetch predictions" });
+  }
 });
 
-router.post("/sealed/auto-label", async (req: Request, res: Response) => {
+router.post("/sealed/auto-label", async (_req: Request, res: Response) => {
   try {
     const threshold: number = 0.9;
     const batchSize = 100;
@@ -129,11 +125,11 @@ router.post("/sealed/auto-label", async (req: Request, res: Response) => {
     }
 
     const updates = [];
-    const skipped: any[] = [];
+    const skipped: Array<{ id: string; confidence: number }> = [];
 
     // Build all texts for classification
     const texts = entries.map(
-      (e) => `${e.sealed.product} ${e.title} $${e.price}`
+      (e) => `${e.sealed.product} ${e.title} $${e.price}`,
     );
 
     // Break into batches
@@ -163,7 +159,7 @@ router.post("/sealed/auto-label", async (req: Request, res: Response) => {
             prisma.sealedPriceEntry.update({
               where: { id: entry.id },
               data: { label },
-            })
+            }),
           );
         } else {
           skipped.push({ id: entry.id, confidence });
@@ -186,62 +182,5 @@ router.post("/sealed/auto-label", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Batch auto-label failed" });
   }
 });
-
-// let classifier: any;
-// async function loadModel() {
-//   if (!classifier) {
-//     // const modelDir = path.resolve(__dirname, "../../trainer/model"); // Adjust if needed
-//     const modelDir = `file://${path.resolve(
-//       __dirname,
-//       "../../../trainer/model"
-//     )}`;
-//     console.log("Loading model from:", modelDir);
-//     console.log(
-//       "Files:",
-//       fs.readdirSync(path.resolve(__dirname, "../../../trainer/model"))
-//     );
-
-//     classifier = await hfPipeline("text-classification", modelDir, {
-//       local_files_only: true, // ⬅️ Tells Xenova to load from local dir
-//     });
-//   }
-// }
-// router.post("/sealed/auto-label", async (req: Request, res: Response) => {
-// try {
-//   await loadModel();
-
-//   const threshold: number = req.body.threshold ?? 0.9;
-
-//   const entries = await getUnlabeledEntries();
-//   if (!entries.length) {
-//     return res.json({ message: "No unlabeled entries found." });
-//   }
-
-//   const updates = [];
-//   const skipped = [];
-
-//   for (const entry of entries) {
-//     const text = `${entry.sealed.product} ${entry.title} $${entry.price}`;
-//     const { prediction, confidence } = await classifyText(text);
-
-//     if (confidence >= threshold) {
-//       updates.push({ id: entry.id, label: prediction });
-//     } else {
-//       skipped.push({ id: entry.id, score: confidence });
-//     }
-//   }
-
-//   await updateLabeledEntries(updates);
-
-//   return res.json({
-//     message: `Auto-labeled ${updates.length} entries.`,
-//     skipped: skipped.length,
-//     threshold,
-//   });
-// } catch (error) {
-//   console.error("Auto-label error:", error);
-//   return res.status(500).json({ error: "Failed to auto-label entries." });
-// }
-// });
 
 export default router;

@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import {
   getAllInventory,
   getInventoryStats,
@@ -32,7 +33,7 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 // GET inventory statistics
-router.get("/stats", async (req: Request, res: Response) => {
+router.get("/stats", async (_req: Request, res: Response) => {
   try {
     const stats = await getInventoryStats();
 

@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import {
   getTopMoversPerSetByPercentage,
   getTopMoverPerSetByPrice,
@@ -72,7 +73,7 @@ router.get(
       console.error(err);
       res.status(500).json({ message: "Failed to fetch top movers by price." });
     }
-  }
+  },
 );
 
 router.get(
@@ -89,7 +90,7 @@ router.get(
       console.error("Error fetching top movers by set:", error);
       res.status(500).send("Error fetching top movers by set");
     }
-  }
+  },
 );
 
 export default router;

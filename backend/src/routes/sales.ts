@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import {
   getAllSales,
   getSale,
@@ -64,10 +65,13 @@ router.post("/", async (req: Request, res: Response) => {
 
     const sale = await createSale(req.body);
     res.status(201).json(sale);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating sale:", error);
 
-    if (error.message === "Inventory item not found") {
+    if (
+      error instanceof Error &&
+      error.message === "Inventory item not found"
+    ) {
       return res.status(404).json({ error: error.message });
     }
 
@@ -135,7 +139,7 @@ router.get("/sales-summary", async (req: Request, res: Response) => {
 // GET top performing products
 router.get("/top-products", async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = Number.parseInt(req.query.limit as string, 10) || 10;
 
     const topProducts = await getTopProducts(limit);
 

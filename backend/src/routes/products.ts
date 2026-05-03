@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import {
   getAllProducts,
   getProductByUpc,
@@ -10,7 +11,7 @@ import {
 const router = Router();
 
 // GET all products
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (_req: Request, res: Response) => {
   try {
     const products = await getAllProducts();
 
@@ -54,10 +55,15 @@ router.post("/", async (req: Request, res: Response) => {
 
     const product = await createProduct(req.body);
     res.status(201).json(product);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating product:", error);
 
-    if (error.code === "P2002") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
       return res
         .status(409)
         .json({ error: "Product with this UPC already exists" });

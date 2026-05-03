@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import {
   searchCardsByName,
   getCardsBySet,
@@ -6,25 +7,52 @@ import {
   getCardPriceHistory,
 } from "../services/cardService";
 import { convertTimeframeToDate } from "../utils/dateUtils";
-import { CardData } from "../types";
+import type { CardData, RawCardRecord } from "../types";
 import { google } from "googleapis";
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   process.env.GOOGLE_REDIRECT_URI ||
-    "http://localhost:3457/api/cards/oauth2callback"
+    "http://localhost:3457/api/cards/oauth2callback",
 );
 
 const router = Router();
 
+type ExportCard = {
+  tcgPlayerId?: string | number;
+  quantity?: number;
+  data: {
+    name?: unknown;
+    number?: unknown;
+    setName?: unknown;
+    set?: unknown;
+    images?: {
+      small?: string;
+    };
+  };
+};
+
+type ExportCardWithPrice = ExportCard & {
+  price: number | null;
+};
+
+type TcgApiResponse = {
+  result?: Array<{
+    condition?: string;
+    buckets?: Array<{
+      marketPrice?: number;
+    }>;
+  }>;
+};
+
 router.get("/bySet", async (req: Request, res: Response) => {
-  const { set, q = "", filter = "", page = "1", pageSize = "20" } = req.query;
+  const { set, page = "1", pageSize = "20" } = req.query;
 
-  const take = parseInt(pageSize as string);
-  const skip = (parseInt(page as string) - 1) * take;
+  const take = Number.parseInt(pageSize as string, 10);
+  const skip = (Number.parseInt(page as string, 10) - 1) * take;
 
-  if (!set || isNaN(skip) || isNaN(take)) {
+  if (!set || Number.isNaN(skip) || Number.isNaN(take)) {
     res.status(400).json({ message: "Invalid query params" });
     return;
   }
@@ -45,7 +73,7 @@ router.get("/bySet", async (req: Request, res: Response) => {
     const cards = await getCardsBySet(set as string, skip, take);
 
     res.json(
-      cards.map((card: any) => {
+      cards.map((card: RawCardRecord) => {
         const data = card.data as unknown as CardData;
 
         return {
@@ -54,7 +82,7 @@ router.get("/bySet", async (req: Request, res: Response) => {
           image: data.images?.small,
           set: data.set?.name,
         };
-      })
+      }),
     );
   } catch (err) {
     console.error("Error getting cards by set", err);
@@ -82,7 +110,7 @@ router.get("/cards-search", async (req: Request, res: Response) => {
 router.get("/search", async (req, res) => {
   try {
     const query = req.query.q as string;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = Number.parseInt(req.query.limit as string, 10) || 20;
 
     if (!query || query.trim().length === 0) {
       return res.json({ cards: [] });
@@ -101,10 +129,10 @@ router.get("/search", async (req, res) => {
 router.get("/cards", async (req: Request, res: Response) => {
   const { set, page = "1", pageSize = "20" } = req.query;
 
-  const take = parseInt(pageSize as string);
-  const skip = (parseInt(page as string) - 1) * take;
+  const take = Number.parseInt(pageSize as string, 10);
+  const skip = (Number.parseInt(page as string, 10) - 1) * take;
 
-  if (!set || isNaN(skip) || isNaN(take)) {
+  if (!set || Number.isNaN(skip) || Number.isNaN(take)) {
     return res.status(400).json({ message: "Invalid query params" });
   }
 
@@ -112,7 +140,7 @@ router.get("/cards", async (req: Request, res: Response) => {
     const cards = await getCardsBySet(set as string, skip, take);
 
     res.json(
-      (cards as any[]).map((card: any) => {
+      cards.map((card: RawCardRecord) => {
         const data = card.data as CardData;
         return {
           id: card.id,
@@ -120,7 +148,7 @@ router.get("/cards", async (req: Request, res: Response) => {
           image: data.images?.small,
           set: data.set?.name,
         };
-      })
+      }),
     );
   } catch (err) {
     console.error(err);
@@ -157,7 +185,7 @@ router.get("/history/:id", async (req: Request, res: Response) => {
 //       return;
 //     }
 // Get Google OAuth URL
-router.get("/auth-url", (req, res) => {
+router.get("/auth-url", (_req: Request, res: Response) => {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: [
@@ -189,7 +217,7 @@ router.get("/oauth2callback", async (req, res) => {
         <body>
           <script>
             window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', tokens: ${JSON.stringify(
-              tokens
+              tokens,
             )} }, '*');
             window.close();
           </script>
@@ -216,20 +244,20 @@ async function fetchCardPrice(tcgPlayerId: string): Promise<number | null> {
             "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "Accept-Language": "en-US,en;q=0.5",
         },
-      }
+      },
     );
 
     if (!res.ok) {
       console.error(
-        `Failed to fetch price for ${tcgPlayerId}: ${res.statusText}`
+        `Failed to fetch price for ${tcgPlayerId}: ${res.statusText}`,
       );
       return null;
     }
 
-    const json = await res.json();
-    const nmResults = json.result.filter(
-      (result: any) => result.condition === "Near Mint"
-    )[0];
+    const json = (await res.json()) as TcgApiResponse;
+    const nmResults = json.result?.find(
+      (result) => result.condition === "Near Mint",
+    );
 
     return nmResults?.buckets?.[0]?.marketPrice || null;
   } catch (error) {
@@ -239,24 +267,24 @@ async function fetchCardPrice(tcgPlayerId: string): Promise<number | null> {
 }
 
 // Batch fetch prices with retry logic
-async function fetchPricesInBatches(cards: any[], batchSize = 5) {
-  const cardsWithPrices: any[] = [];
+async function fetchPricesInBatches(cards: ExportCard[], batchSize = 5) {
+  const cardsWithPrices: ExportCardWithPrice[] = [];
 
   for (let i = 0; i < cards.length; i += batchSize) {
     const batch = cards.slice(i, i + batchSize);
 
     console.log(
       `Fetching prices for batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-        cards.length / batchSize
-      )}`
+        cards.length / batchSize,
+      )}`,
     );
 
     const prices = await Promise.all(
       batch.map((card) =>
         card.tcgPlayerId
-          ? fetchCardPrice(card.tcgPlayerId)
-          : Promise.resolve(null)
-      )
+          ? fetchCardPrice(String(card.tcgPlayerId))
+          : Promise.resolve(null),
+      ),
     );
 
     batch.forEach((card, idx) => {
@@ -275,14 +303,210 @@ async function fetchPricesInBatches(cards: any[], batchSize = 5) {
   return cardsWithPrices;
 }
 
-router.post("/export", async (req, res) => {
+type SpreadsheetContext = {
+  spreadsheetId: string;
+  sheetId: number;
+  startRow: number;
+};
+
+const EXPORT_HEADERS = [
+  "Card Name",
+  "Image",
+  "Card Number",
+  "Set",
+  "Quantity",
+  "Price",
+  "Total",
+];
+
+function normalizeCellValue(field: unknown): string {
+  if (!field) return "";
+  if (typeof field === "string") return field;
+  if (typeof field === "object") {
+    const namedField = field as { name?: unknown };
+    return typeof namedField.name === "string"
+      ? namedField.name
+      : JSON.stringify(field);
+  }
+  if (typeof field === "number" || typeof field === "boolean") {
+    return String(field);
+  }
+  return "";
+}
+
+function buildExportRows(
+  cardsWithPrices: ExportCardWithPrice[],
+  startRow: number,
+) {
+  return cardsWithPrices.map((card, index) => {
+    const rowNumber = startRow + index;
+
+    return [
+      card.tcgPlayerId
+        ? `=HYPERLINK("https://www.tcgplayer.com/product/${
+            card.tcgPlayerId
+          }", "${normalizeCellValue(card.data.name).replaceAll('"', '""')}")`
+        : normalizeCellValue(card.data.name),
+      card.data.images?.small ? `=IMAGE("${card.data.images.small}")` : "",
+      normalizeCellValue(card.data.number),
+      normalizeCellValue(card.data.setName || card.data.set),
+      card.quantity || 1,
+      card.price || "",
+      `=E${rowNumber}*F${rowNumber}`,
+    ];
+  });
+}
+
+function buildFormatRequests(
+  sheetId: number,
+  startRow: number,
+  rowCount: number,
+) {
+  const requests: Array<Record<string, unknown>> = [
+    {
+      updateDimensionProperties: {
+        range: {
+          sheetId,
+          dimension: "ROWS",
+          startIndex: startRow - 1,
+          endIndex: startRow + rowCount,
+        },
+        properties: {
+          pixelSize: 100,
+        },
+        fields: "pixelSize",
+      },
+    },
+  ];
+
+  if (startRow === 2) {
+    requests.push(
+      {
+        repeatCell: {
+          range: {
+            sheetId,
+            startRowIndex: 0,
+            endRowIndex: 1,
+          },
+          cell: {
+            userEnteredFormat: {
+              backgroundColor: { red: 0.2, green: 0.2, blue: 0.2 },
+              textFormat: {
+                foregroundColor: { red: 1, green: 1, blue: 1 },
+                bold: true,
+              },
+            },
+          },
+          fields: "userEnteredFormat(backgroundColor,textFormat)",
+        },
+      },
+      {
+        updateSheetProperties: {
+          properties: {
+            sheetId,
+            gridProperties: {
+              frozenRowCount: 1,
+            },
+          },
+          fields: "gridProperties.frozenRowCount",
+        },
+      },
+      {
+        updateDimensionProperties: {
+          range: {
+            sheetId,
+            dimension: "COLUMNS",
+            startIndex: 1,
+            endIndex: 2,
+          },
+          properties: {
+            pixelSize: 100,
+          },
+          fields: "pixelSize",
+        },
+      },
+    );
+  }
+
+  return requests;
+}
+
+async function refreshAccessTokenIfNeeded(accessToken: string) {
+  try {
+    const { credentials } = await oauth2Client.refreshAccessToken();
+    if (credentials.access_token && credentials.access_token !== accessToken) {
+      oauth2Client.setCredentials(credentials);
+      return credentials.access_token;
+    }
+  } catch {
+    console.log("Token refresh failed, trying with existing token");
+  }
+
+  return null;
+}
+
+async function getSpreadsheetContext(
+  sheets: ReturnType<typeof google.sheets>,
+  existingSpreadsheetId?: string,
+): Promise<SpreadsheetContext> {
+  if (existingSpreadsheetId) {
+    const spreadsheetId = existingSpreadsheetId.trim();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetId = spreadsheet.data.sheets?.[0]?.properties?.sheetId || 0;
+
+    const existingData = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Cards!A:A",
+    });
+
+    const startRow =
+      existingData.data.values && existingData.data.values.length > 0
+        ? existingData.data.values.length + 2
+        : 2;
+
+    return { spreadsheetId, sheetId, startRow };
+  }
+
+  const spreadsheet = await sheets.spreadsheets.create({
+    requestBody: {
+      properties: {
+        title: `Card Export - ${new Date().toISOString().split("T")[0]}`,
+      },
+      sheets: [
+        {
+          properties: {
+            title: "Cards",
+          },
+        },
+      ],
+    },
+  });
+
+  if (!spreadsheet.data.spreadsheetId) {
+    throw new Error("Failed to create spreadsheet");
+  }
+
+  return {
+    spreadsheetId: spreadsheet.data.spreadsheetId,
+    sheetId: spreadsheet.data.sheets?.[0]?.properties?.sheetId || 0,
+    startRow: 2,
+  };
+}
+
+// NOSONAR: This endpoint coordinates auth, external API calls, and sheet formatting in one transactional flow.
+router.post("/export", async (req: Request, res: Response) => {
   try {
     const {
       cards,
       accessToken,
       refreshToken,
       spreadsheetId: existingSpreadsheetId,
-    } = req.body;
+    } = req.body as {
+      cards?: ExportCard[];
+      accessToken?: string;
+      refreshToken?: string;
+      spreadsheetId?: string;
+    };
 
     if (!cards || cards.length === 0) {
       return res.status(400).json({ error: "No cards to export" });
@@ -305,121 +529,27 @@ router.post("/export", async (req, res) => {
       refresh_token: refreshToken,
     });
 
-    // Refresh token if needed
-    let newAccessToken = null;
-    try {
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      if (
-        credentials.access_token &&
-        credentials.access_token !== accessToken
-      ) {
-        newAccessToken = credentials.access_token;
-        oauth2Client.setCredentials(credentials);
-      }
-    } catch (error) {
-      // If refresh fails, try with existing token
-      console.log("Token refresh failed, trying with existing token");
-    }
+    const newAccessToken = await refreshAccessTokenIfNeeded(accessToken);
 
     const sheets = google.sheets({ version: "v4", auth: oauth2Client });
-
-    let spreadsheetId: string;
-    let sheetId: number;
-    let startRow = 2; // Default: start at row 2 (after header)
-
-    // Either use existing spreadsheet or create new one
-    if (existingSpreadsheetId) {
-      console.log("Using existing spreadsheet:", existingSpreadsheetId);
-      spreadsheetId = existingSpreadsheetId.trim();
-
-      try {
-        // Get the spreadsheet info
-        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-        sheetId = spreadsheet.data.sheets?.[0]?.properties?.sheetId || 0;
-
-        // Find the last row with data to append after it
-        const existingData = await sheets.spreadsheets.values.get({
-          spreadsheetId,
-          range: "Cards!A:A", // Get all data in column A
-        });
-
-        if (existingData.data.values && existingData.data.values.length > 0) {
-          // Last row + 1 blank row + start of new data
-          startRow = existingData.data.values.length + 2;
-          console.log("Appending data starting at row:", startRow);
-        }
-      } catch (error: any) {
-        console.error("Error accessing existing spreadsheet:", error.message);
-        return res.status(400).json({
-          error: `Could not access spreadsheet. Make sure the ID is correct and you have permission to edit it. Error: ${error.message}`,
-        });
-      }
-    } else {
-      console.log("Creating spreadsheet...");
-
-      // Create a new spreadsheet
-      const spreadsheet = await sheets.spreadsheets.create({
-        requestBody: {
-          properties: {
-            title: `Card Export - ${new Date().toISOString().split("T")[0]}`,
-          },
-          sheets: [
-            {
-              properties: {
-                title: "Cards",
-              },
-            },
-          ],
-        },
+    let spreadsheetContext: SpreadsheetContext;
+    try {
+      spreadsheetContext = await getSpreadsheetContext(
+        sheets,
+        existingSpreadsheetId,
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return res.status(400).json({
+        error: `Could not access spreadsheet. Make sure the ID is correct and you have permission to edit it. Error: ${message}`,
       });
-
-      console.log("Spreadsheet created:", spreadsheet.data.spreadsheetId);
-      spreadsheetId = spreadsheet.data.spreadsheetId!;
-      sheetId = spreadsheet.data.sheets?.[0]?.properties?.sheetId || 0;
     }
 
-    console.log("Sheet ID:", sheetId);
-
-    // Prepare the data with formulas
-    const headers = [
-      "Card Name",
-      "Image",
-      "Card Number",
-      "Set",
-      "Quantity",
-      "Price",
-      "Total",
-    ];
-    const rows = cardsWithPrices.map((card: any, index: number) => {
-      const getName = (field: any) => {
-        if (!field) return "";
-        if (typeof field === "string") return field;
-        if (typeof field === "object")
-          return field.name || JSON.stringify(field);
-        return String(field);
-      };
-
-      const rowNumber = startRow + index; // Use startRow instead of index + 2
-
-      return [
-        // Card name with hyperlink
-        card.tcgPlayerId
-          ? `=HYPERLINK("https://www.tcgplayer.com/product/${
-              card.tcgPlayerId
-            }", "${getName(card.data.name).replace(/"/g, '""')}")`
-          : getName(card.data.name),
-        // Image formula
-        card.data.images?.small ? `=IMAGE("${card.data.images.small}")` : "",
-        getName(card.data.number),
-        getName(card.data.setName || card.data.set),
-        card.quantity || 1,
-        card.price || "", // Use fetched price or empty string
-        `=E${rowNumber}*F${rowNumber}`, // Total = Quantity * Price
-      ];
-    });
+    const { spreadsheetId, sheetId, startRow } = spreadsheetContext;
+    const rows = buildExportRows(cardsWithPrices, startRow);
 
     // Only write headers if it's a new sheet or starting at row 2
-    const dataToWrite = startRow === 2 ? [headers, ...rows] : rows;
+    const dataToWrite = startRow === 2 ? [EXPORT_HEADERS, ...rows] : rows;
     const rangeStart = startRow === 2 ? "A1" : `A${startRow}`;
 
     // Write data to the sheet (append mode)
@@ -432,74 +562,7 @@ router.post("/export", async (req, res) => {
       },
     });
 
-    // Format the header row and set column widths (only if new sheet or first time)
-    const formatRequests: any[] = [];
-
-    // Always format new rows for images
-    formatRequests.push({
-      updateDimensionProperties: {
-        range: {
-          sheetId: sheetId,
-          dimension: "ROWS",
-          startIndex: startRow - 1, // -1 because API uses 0-based indexing
-          endIndex: startRow + rows.length,
-        },
-        properties: {
-          pixelSize: 100,
-        },
-        fields: "pixelSize",
-      },
-    });
-
-    // Only format header and columns if it's a new sheet
-    if (startRow === 2) {
-      formatRequests.push(
-        {
-          repeatCell: {
-            range: {
-              sheetId: sheetId,
-              startRowIndex: 0,
-              endRowIndex: 1,
-            },
-            cell: {
-              userEnteredFormat: {
-                backgroundColor: { red: 0.2, green: 0.2, blue: 0.2 },
-                textFormat: {
-                  foregroundColor: { red: 1, green: 1, blue: 1 },
-                  bold: true,
-                },
-              },
-            },
-            fields: "userEnteredFormat(backgroundColor,textFormat)",
-          },
-        },
-        {
-          updateSheetProperties: {
-            properties: {
-              sheetId: sheetId,
-              gridProperties: {
-                frozenRowCount: 1,
-              },
-            },
-            fields: "gridProperties.frozenRowCount",
-          },
-        },
-        {
-          updateDimensionProperties: {
-            range: {
-              sheetId: sheetId,
-              dimension: "COLUMNS",
-              startIndex: 1,
-              endIndex: 2,
-            },
-            properties: {
-              pixelSize: 100,
-            },
-            fields: "pixelSize",
-          },
-        }
-      );
-    }
+    const formatRequests = buildFormatRequests(sheetId, startRow, rows.length);
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
@@ -515,14 +578,12 @@ router.post("/export", async (req, res) => {
       lastRow: startRow + rows.length - 1, // Last row with data for scrolling
       newAccessToken, // Send back new token if refreshed
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Export error:", error);
 
     // Check if it's an auth error
-    if (
-      error.message?.includes("authentication") ||
-      error.message?.includes("credentials")
-    ) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("authentication") || message.includes("credentials")) {
       return res.status(401).json({
         error: "Invalid or expired authentication token. Please sign in again.",
       });

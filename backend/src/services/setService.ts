@@ -1,9 +1,11 @@
 import { prisma } from "@pokemon/shared";
 import { getTimeframeInterval } from "../utils/dateUtils";
 
-export async function getSetsBySeries(series: string): Promise<any[]> {
+type QueryRow = Record<string, unknown>;
+
+export async function getSetsBySeries(series: string): Promise<QueryRow[]> {
   try {
-    const sets = await prisma.$queryRawUnsafe<any[]>(
+    const sets = await prisma.$queryRawUnsafe(
       `
       SELECT DISTINCT
         c.data->'set'->>'id' AS set_id,
@@ -14,10 +16,10 @@ export async function getSetsBySeries(series: string): Promise<any[]> {
       WHERE c.data->'set'->>'series' = $1
       ORDER BY c.data->'set'->>'releaseDate' ASC
     `,
-      series
+      series,
     );
 
-    return sets;
+    return sets as QueryRow[];
   } catch (error) {
     console.error("Error fetching sets by series:", error);
     return [];
@@ -26,10 +28,10 @@ export async function getSetsBySeries(series: string): Promise<any[]> {
 
 export async function getTopMoversPerSetByPercentage(
   order: string,
-  timeframe: string
-): Promise<any[]> {
+  timeframe: string,
+): Promise<QueryRow[]> {
   try {
-    const results = await prisma.$queryRawUnsafe<any[]>(
+    const results = await prisma.$queryRawUnsafe(
       `
       -- Step 1: Pre-filter relevant PriceEntries
       WITH recent_prices AS (
@@ -95,10 +97,10 @@ export async function getTopMoversPerSetByPercentage(
       WHERE early_price IS NOT NULL AND recent_price IS NOT NULL AND early_price != 0
       ORDER BY set_id, percent_change ${order};  -- ${order} = DESC or ASC
     `,
-      timeframe
+      timeframe,
     );
 
-    return results;
+    return results as QueryRow[];
   } catch (error) {
     console.error("Database query error in getMoversPerSet:", error);
     return [];
@@ -107,10 +109,10 @@ export async function getTopMoversPerSetByPercentage(
 
 export async function getTopMoverPerSetByPrice(
   order: string,
-  timeframe: string
-): Promise<any[]> {
+  timeframe: string,
+): Promise<QueryRow[]> {
   try {
-    const results = await prisma.$queryRawUnsafe<any[]>(
+    const results = await prisma.$queryRawUnsafe(
       `-- Step 1: Pre-filter relevant PriceEntries
         WITH recent_prices AS (
           SELECT *
@@ -181,10 +183,10 @@ export async function getTopMoverPerSetByPrice(
         WHERE early_price IS NOT NULL AND recent_price IS NOT NULL AND early_price != 0
         ORDER BY set_id, absolute_change ${order};  -- ${order} = DESC (gainers) or ASC (losers)
         `,
-      timeframe
+      timeframe,
     );
 
-    return results;
+    return results as QueryRow[];
   } catch (error) {
     console.error("Database query error in getMoverPerSet:", error);
     return [];
@@ -194,8 +196,8 @@ export async function getTopMoverPerSetByPrice(
 export async function getTopMoversBySet(
   setName: string,
   order: string,
-  rawTimeframe: string
-): Promise<any[]> {
+  rawTimeframe: string,
+): Promise<QueryRow[]> {
   const interval = getTimeframeInterval(rawTimeframe);
 
   try {
@@ -256,13 +258,9 @@ export async function getTopMoversBySet(
         LIMIT 10;
     `;
 
-    const topGainers = await prisma.$queryRawUnsafe<any[]>(
-      query,
-      setName,
-      interval
-    );
+    const topGainers = await prisma.$queryRawUnsafe(query, setName, interval);
 
-    return topGainers;
+    return topGainers as QueryRow[];
   } catch (error) {
     console.error("Error fetching top gainers:", error);
     return [];

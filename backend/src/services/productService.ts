@@ -52,7 +52,7 @@ export async function createProduct(data: {
         productType: data.productType,
         setName: data.setName,
         releaseDate: data.releaseDate ? new Date(data.releaseDate) : null,
-        msrp: data.msrp ? parseFloat(data.msrp.toString()) : null,
+        msrp: data.msrp ? Number.parseFloat(data.msrp.toString()) : null,
         imageUrl: data.imageUrl,
         description: data.description,
       },
@@ -63,10 +63,10 @@ export async function createProduct(data: {
   }
 }
 
-export async function updateProduct(id: string, data: any) {
+export async function updateProduct(id: string, data: Record<string, unknown>) {
   try {
     return await prisma.product.update({
-      where: { id: parseInt(id) },
+      where: { id: Number.parseInt(id, 10) },
       data,
     });
   } catch (error) {
@@ -78,7 +78,7 @@ export async function updateProduct(id: string, data: any) {
 export async function deleteProduct(id: string) {
   try {
     await prisma.product.delete({
-      where: { id: parseInt(id) },
+      where: { id: Number.parseInt(id, 10) },
     });
     return true;
   } catch (error) {

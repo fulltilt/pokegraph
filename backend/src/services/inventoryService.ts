@@ -1,11 +1,12 @@
 import { prisma } from "@pokemon/shared";
+import type { Prisma } from "@prisma/client";
 
 export async function getAllInventory(filters?: {
   status?: string;
   search?: string;
 }) {
   try {
-    const where: any = {};
+    const where: Prisma.InventoryItemWhereInput = {};
 
     if (filters?.status && filters.status !== "all") {
       where.status = filters.status;
@@ -58,7 +59,7 @@ export async function getInventoryStats() {
       },
     });
 
-    const totalValue = inventoryItems.reduce((sum: number, item: any) => {
+    const totalValue = inventoryItems.reduce((sum, item) => {
       const itemCost =
         Number(item.purchasePrice) +
         Number(item.shippingCost || 0) +
@@ -89,7 +90,7 @@ export async function getInventoryStats() {
 export async function getInventoryItem(id: string) {
   try {
     return await prisma.inventoryItem.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: Number.parseInt(id, 10) },
       include: {
         product: true,
         sales: true,
@@ -123,12 +124,14 @@ export async function createInventoryItem(data: {
         gradeInfo: data.gradeInfo,
         location: data.location,
         purchaseDate: new Date(data.purchaseDate),
-        purchasePrice: parseFloat(data.purchasePrice.toString()),
+        purchasePrice: Number.parseFloat(data.purchasePrice.toString()),
         purchasePlatform: data.purchasePlatform,
         shippingCost: data.shippingCost
-          ? parseFloat(data.shippingCost.toString())
+          ? Number.parseFloat(data.shippingCost.toString())
           : 0,
-        otherFees: data.otherFees ? parseFloat(data.otherFees.toString()) : 0,
+        otherFees: data.otherFees
+          ? Number.parseFloat(data.otherFees.toString())
+          : 0,
         notes: data.notes,
         status: "In Stock",
       },
@@ -142,11 +145,16 @@ export async function createInventoryItem(data: {
   }
 }
 
-export async function updateInventoryItem(id: string, data: any) {
+export async function updateInventoryItem(
+  id: string,
+  data: Record<string, unknown>,
+) {
   try {
+    const updateData = data;
+
     // Convert date strings to Date objects if present
-    if (data.purchaseDate) {
-      data.purchaseDate = new Date(data.purchaseDate);
+    if (typeof updateData.purchaseDate === "string") {
+      updateData.purchaseDate = new Date(updateData.purchaseDate);
     }
 
     // Convert numeric strings to numbers
@@ -157,17 +165,25 @@ export async function updateInventoryItem(id: string, data: any) {
       "quantity",
     ];
     numericFields.forEach((field) => {
-      if (data[field] !== undefined) {
-        data[field] =
+      if (updateData[field] !== undefined) {
+        const value = updateData[field];
+        const normalizedValue =
+          typeof value === "string" || typeof value === "number" ? value : null;
+
+        if (normalizedValue === null) {
+          return;
+        }
+
+        updateData[field] =
           field === "quantity"
-            ? parseInt(data[field])
-            : parseFloat(data[field]);
+            ? Number.parseInt(String(normalizedValue), 10)
+            : Number.parseFloat(String(normalizedValue));
       }
     });
 
     return await prisma.inventoryItem.update({
-      where: { id: parseInt(id) },
-      data,
+      where: { id: Number.parseInt(id, 10) },
+      data: updateData as Prisma.InventoryItemUpdateInput,
       include: {
         product: true,
       },
@@ -181,7 +197,7 @@ export async function updateInventoryItem(id: string, data: any) {
 export async function deleteInventoryItem(id: string) {
   try {
     await prisma.inventoryItem.delete({
-      where: { id: parseInt(id) },
+      where: { id: Number.parseInt(id, 10) },
     });
     return true;
   } catch (error) {

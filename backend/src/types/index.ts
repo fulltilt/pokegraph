@@ -62,7 +62,7 @@ export interface CardData {
   number?: string;
   rarity?: string;
   tcgplayer?: {
-    prices?: any;
+    prices?: Record<string, unknown>;
   };
 }
 

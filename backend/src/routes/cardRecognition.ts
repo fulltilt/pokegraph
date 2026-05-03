@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import { uploadMiddleware } from "../middleware/upload";
 import {
   getSingleEmbedding,
@@ -21,8 +22,9 @@ router.post(
         return res.status(400).json({ error: "No image file provided" });
       }
 
-      const topK = parseInt(req.query.topK as string) || 5;
-      const threshold = parseFloat(req.query.threshold as string) || 0.75;
+      const topK = Number.parseInt(req.query.topK as string, 10) || 5;
+      const threshold =
+        Number.parseFloat(req.query.threshold as string) || 0.75;
 
       console.log("📤 Generating embedding for single card...");
       const embedding = await getSingleEmbedding(req.file);
@@ -36,7 +38,7 @@ router.post(
         success: true,
         matches: matches.map((match) => ({
           id: match.id,
-          similarity: parseFloat(match.similarity.toFixed(4)),
+          similarity: Number.parseFloat(match.similarity.toFixed(4)),
           name: match.data.name,
           setName: match.data.set?.name,
           setId: match.data.set?.id,
@@ -53,7 +55,7 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  }
+  },
 );
 
 // Multiple card recognition
@@ -66,8 +68,9 @@ router.post(
         return res.status(400).json({ error: "No image file provided" });
       }
 
-      const topK = parseInt(req.query.topK as string) || 5;
-      const threshold = parseFloat(req.query.threshold as string) || 0.75;
+      const topK = Number.parseInt(req.query.topK as string, 10) || 5;
+      const threshold =
+        Number.parseFloat(req.query.threshold as string) || 0.75;
 
       console.log("📤 Detecting and embedding cards...");
       const responseData = await detectAndEmbed(req.file);
@@ -78,7 +81,7 @@ router.post(
         console.log(
           `🔍 Searching for card ${card.card_index + 1}/${
             responseData.cards_detected
-          }...`
+          }...`,
         );
 
         const matches = await findSimilarCards(card.embedding, topK, threshold);
@@ -93,13 +96,15 @@ router.post(
             matches.length > 0
               ? {
                   name: matches[0].data.name,
-                  similarity: parseFloat(matches[0].similarity.toFixed(4)),
+                  similarity: Number.parseFloat(
+                    matches[0].similarity.toFixed(4),
+                  ),
                   setName: matches[0].data.set?.name,
                 }
               : null,
           matches: matches.map((match) => ({
             id: match.id,
-            similarity: parseFloat(match.similarity.toFixed(4)),
+            similarity: Number.parseFloat(match.similarity.toFixed(4)),
             name: match.data.name,
             setName: match.data.set?.name,
             setId: match.data.set?.id,
@@ -134,11 +139,11 @@ router.post(
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  }
+  },
 );
 
 // Health check
-router.get("/health", async (req: Request, res: Response) => {
+router.get("/health", async (_req: Request, res: Response) => {
   try {
     const embeddingServiceHealthy = await checkHealth();
     await prisma.$queryRaw`SELECT 1`;
