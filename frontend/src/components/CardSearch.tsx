@@ -427,21 +427,6 @@ export default function CardSearch() {
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search cards by name..."
-          className="pl-9 pr-9 h-12 text-base"
-        />
-        {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
-        )}
-      </div>
-
       {/* Cart Panel */}
       <Card
         className={`sticky top-3 z-10 w-full mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 transition-all duration-200 ${
