@@ -29,17 +29,7 @@ router.get("/sets-by-series", async (req: Request, res: Response) => {
 
 router.get("/top-mover-per-set/:order", async (req: Request, res: Response) => {
   const { order } = req.params;
-  const timeframe = req.query.timeframe || "10d";
-
-  const intervalMap: Record<string, string> = {
-    "10d": "10 days",
-    "1m": "1 month",
-    "3m": "3 months",
-    "6m": "6 months",
-    "1y": "1 year",
-  };
-
-  const sqlInterval = intervalMap[timeframe as string] || "10 days";
+  const sqlInterval = getTimeframeInterval(req.query.timeframe);
 
   try {
     const results = await getTopMoversPerSetByPercentage(order, sqlInterval);
@@ -54,17 +44,7 @@ router.get(
   "/top-mover-per-set-price/:order",
   async (req: Request, res: Response) => {
     const { order } = req.params;
-    const timeframe = req.query.timeframe || "10d";
-
-    const intervalMap: Record<string, string> = {
-      "10d": "10 days",
-      "1m": "1 month",
-      "3m": "3 months",
-      "6m": "6 months",
-      "1y": "1 year",
-    };
-
-    const sqlInterval = intervalMap[timeframe as string] || "10 days";
+    const sqlInterval = getTimeframeInterval(req.query.timeframe);
 
     try {
       const results = await getTopMoverPerSetByPrice(order, sqlInterval);

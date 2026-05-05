@@ -1,7 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { DBCard } from "@/types";
+import type { DBCard } from "@/types";
 import CardPriceHistoryChart from "@/components/CardPriceHistoryChart";
+import { TimeframeTabs } from "@/components/TimeframeTabs";
 
 const TIMEFRAMES = [
   { label: "1M", value: "1m" },
@@ -26,31 +27,33 @@ export default function Card() {
   if (!card) return <p>Loading...</p>;
 
   return (
-    <div className="p-4">
-      <img
-        src={card.data.images.small}
-        alt={card.data.name}
-        className="w-64 mx-auto mb-4"
-      />
-      <h2 className="text-xl font-bold text-center">{card.data.name}</h2>
-      <p className="text-center">{card.data.set.name}</p>
+    <div className="mx-auto flex max-w-6xl flex-col gap-8 p-4 sm:p-6">
+      <section className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
+        <div className="rounded-[2rem] border border-border/60 bg-card/80 p-6 text-center shadow-lg shadow-black/5 backdrop-blur">
+          <img
+            src={card.data.images.small}
+            alt={card.data.name}
+            className="mx-auto mb-4 w-64 max-w-full"
+          />
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {card.data.name}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {card.data.set.name}
+          </p>
+          <div className="mt-6 flex justify-center">
+            <TimeframeTabs
+              options={TIMEFRAMES}
+              value={timeframe}
+              onChange={setTimeframe}
+            />
+          </div>
+        </div>
 
-      {card && <CardPriceHistoryChart cardId={card.id} timeframe={timeframe} />}
-      <div className="flex justify-center gap-3 mt-6">
-        {TIMEFRAMES.map((tf) => (
-          <button
-            key={tf.value}
-            onClick={() => setTimeframe(tf.value)}
-            className={`px-3 py-1 border rounded-md text-sm ${
-              tf.value === timeframe
-                ? "bg-blue-600 text-white border-blue-600"
-                : "border-gray-300 text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            {tf.label}
-          </button>
-        ))}
-      </div>
+        <div>
+          <CardPriceHistoryChart cardId={card.id} timeframe={timeframe} />
+        </div>
+      </section>
     </div>
   );
 }

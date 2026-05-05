@@ -3,6 +3,10 @@ import { getTimeframeInterval } from "../utils/dateUtils";
 
 type QueryRow = Record<string, unknown>;
 
+function sanitizeOrder(order: string): "ASC" | "DESC" {
+  return order === "ASC" ? "ASC" : "DESC";
+}
+
 export async function getSetsBySeries(series: string): Promise<QueryRow[]> {
   try {
     const sets = await prisma.$queryRawUnsafe(
@@ -31,16 +35,17 @@ export async function getTopMoversPerSetByPercentage(
   timeframe: string,
 ): Promise<QueryRow[]> {
   try {
+    const sortOrder = sanitizeOrder(order);
     const results = await prisma.$queryRawUnsafe(
       `
-      -- Step 1: Pre-filter relevant PriceEntries
       WITH recent_prices AS (
-        SELECT *
+        SELECT p."cardId", p.date, p.price, COALESCE(p.quantity, 0) AS quantity
         FROM "PriceEntry"
+        p
         WHERE date >= NOW() - $1::interval
+          AND price > 0
       ),
 
-      -- Step 2: Precompute price boundaries per card
       price_bounds AS (
         SELECT
           c.id AS card_id,
@@ -49,6 +54,7 @@ export async function getTopMoversPerSetByPercentage(
           (c.data->'name') AS card_name,
           (c.data->'images'->>'large') AS image,
           (c.data->'set'->>'releaseDate') AS release_date,
+          SUM(p.quantity)::integer AS total_sales,
           MIN(p.date) AS earliest_date,
           MAX(p.date) AS latest_date
         FROM "Card" c
@@ -58,7 +64,6 @@ export async function getTopMoversPerSetByPercentage(
         GROUP BY c.id, set_id, set_name, card_name, image, release_date
       ),
 
-      -- Step 3: Get early and recent prices with conditional aggregation
       price_changes AS (
         SELECT
           pb.set_id,
@@ -67,14 +72,14 @@ export async function getTopMoversPerSetByPercentage(
           pb.card_name,
           pb.image,
           pb.release_date,
+          pb.total_sales,
           MAX(CASE WHEN p.date = pb.earliest_date THEN p.price END) AS early_price,
           MAX(CASE WHEN p.date = pb.latest_date THEN p.price END) AS recent_price
         FROM price_bounds pb
         JOIN recent_prices p ON p."cardId" = pb.card_id
-        GROUP BY pb.set_id, pb.set_name, pb.card_id, pb.card_name, pb.image, pb.release_date
+        GROUP BY pb.set_id, pb.set_name, pb.card_id, pb.card_name, pb.image, pb.release_date, pb.total_sales
       ),
 
-      -- Step 4: Calculate percent change
       with_percent_change AS (
         SELECT
           *,
@@ -82,7 +87,6 @@ export async function getTopMoversPerSetByPercentage(
         FROM price_changes
       )
 
-      -- Step 5: Pick top movers per set
       SELECT DISTINCT ON (set_id)
         set_id,
         set_name,
@@ -91,11 +95,15 @@ export async function getTopMoversPerSetByPercentage(
         image,
         early_price,
         recent_price,
+        total_sales,
         release_date,
         percent_change
       FROM with_percent_change
-      WHERE early_price IS NOT NULL AND recent_price IS NOT NULL AND early_price != 0
-      ORDER BY set_id, percent_change ${order};  -- ${order} = DESC or ASC
+      WHERE early_price IS NOT NULL
+        AND recent_price IS NOT NULL
+        AND early_price != 0
+        ${sortOrder === "ASC" ? "AND total_sales > 0" : ""}
+      ORDER BY set_id, percent_change ${sortOrder};
     `,
       timeframe,
     );
@@ -112,16 +120,16 @@ export async function getTopMoverPerSetByPrice(
   timeframe: string,
 ): Promise<QueryRow[]> {
   try {
+    const sortOrder = sanitizeOrder(order);
     const results = await prisma.$queryRawUnsafe(
-      `-- Step 1: Pre-filter relevant PriceEntries
-        WITH recent_prices AS (
-          SELECT *
+      `WITH recent_prices AS (
+          SELECT p."cardId", p.date, p.price, COALESCE(p.quantity, 0) AS quantity
           FROM "PriceEntry"
+          p
           WHERE date >= NOW() - $1::interval
             AND price > 0
         ),
 
-        -- Step 2: Precompute price boundaries per card
         price_bounds AS (
           SELECT
             c.id AS card_id,
@@ -130,6 +138,7 @@ export async function getTopMoverPerSetByPrice(
             (c.data->'name') AS card_name,
             (c.data->'images'->>'large') AS image,
             (c.data->'set'->>'releaseDate') AS release_date,
+            SUM(p.quantity)::integer AS total_sales,
             MIN(p.date) AS earliest_date,
             MAX(p.date) AS latest_date
           FROM "Card" c
@@ -139,7 +148,6 @@ export async function getTopMoverPerSetByPrice(
           GROUP BY c.id, set_id, set_name, card_name, image, release_date
         ),
 
-        -- Step 3: Get early and recent prices with conditional aggregation
         price_changes AS (
           SELECT
             pb.set_id,
@@ -148,6 +156,7 @@ export async function getTopMoverPerSetByPrice(
             pb.card_name,
             pb.image,
             pb.release_date,
+            pb.total_sales,
             MAX(CASE WHEN p.date = pb.earliest_date THEN p.price END) AS early_price,
             COALESCE(
               MAX(CASE WHEN p.date = pb.latest_date THEN p.price END),
@@ -157,10 +166,9 @@ export async function getTopMoverPerSetByPrice(
             ) AS recent_price
           FROM price_bounds pb
           JOIN recent_prices p ON p."cardId" = pb.card_id
-          GROUP BY pb.set_id, pb.set_name, pb.card_id, pb.card_name, pb.image, pb.release_date
+          GROUP BY pb.set_id, pb.set_name, pb.card_id, pb.card_name, pb.image, pb.release_date, pb.total_sales
         ),
 
-        -- Step 4: Calculate absolute price change
         with_price_change AS (
           SELECT
             *,
@@ -168,7 +176,6 @@ export async function getTopMoverPerSetByPrice(
           FROM price_changes
         )
 
-        -- Step 5: Pick top movers per set by absolute price change
         SELECT DISTINCT ON (set_id)
           set_id,
           set_name,
@@ -177,11 +184,15 @@ export async function getTopMoverPerSetByPrice(
           image,
           early_price,
           recent_price,
+          total_sales,
           release_date,
           absolute_change
         FROM with_price_change
-        WHERE early_price IS NOT NULL AND recent_price IS NOT NULL AND early_price != 0
-        ORDER BY set_id, absolute_change ${order};  -- ${order} = DESC (gainers) or ASC (losers)
+        WHERE early_price IS NOT NULL
+          AND recent_price IS NOT NULL
+          AND early_price != 0
+          ${sortOrder === "ASC" ? "AND total_sales > 0" : ""}
+        ORDER BY set_id, absolute_change ${sortOrder};
         `,
       timeframe,
     );
@@ -201,21 +212,27 @@ export async function getTopMoversBySet(
   const interval = getTimeframeInterval(rawTimeframe);
 
   try {
-    // Execute the raw SQL query using Prisma
+    const sortOrder = sanitizeOrder(order);
     const query = `
-        WITH price_data AS (
+        WITH recent_prices AS (
+          SELECT p."cardId", p.date, p.price, COALESCE(p.quantity, 0) AS quantity
+          FROM "PriceEntry" p
+          WHERE p.date >= NOW() - $2::interval
+            AND p.price > 0
+        ),
+        price_data AS (
           SELECT
             c.id AS card_id,
             (c.data->'name') AS card_name,
             (c.data->'set'->>'name') AS set_name,
             (c.data->'images'->>'large') AS image,
             (c.data->'set'->>'releaseDate') AS release_date,
-            MIN(p.date) FILTER (WHERE p.date >= NOW() - $2::interval) AS earliest_date,
-            MAX(p.date) FILTER (WHERE p.date >= NOW() - $2::interval) AS latest_date
+            SUM(p.quantity)::integer AS total_sales,
+            MIN(p.date) AS earliest_date,
+            MAX(p.date) AS latest_date
           FROM "Card" c
-          JOIN "PriceEntry" p ON p."cardId" = c.id
+          JOIN recent_prices p ON p."cardId" = c.id
           WHERE (c.data->'set'->>'name') = $1
-            AND p.date >= NOW() - $2::interval
           GROUP BY c.id
         ),
         price_changes AS (
@@ -225,19 +242,12 @@ export async function getTopMoversBySet(
             pd.set_name,
             pd.release_date,
             pd.image,
-            (
-              SELECT pe1.price
-              FROM "PriceEntry" pe1
-              WHERE pe1."cardId" = pd.card_id AND pe1.date = pd.earliest_date
-              LIMIT 1
-            ) AS early_price,
-            (
-              SELECT pe2.price
-              FROM "PriceEntry" pe2
-              WHERE pe2."cardId" = pd.card_id AND pe2.date = pd.latest_date
-              LIMIT 1
-            ) AS recent_price
+            pd.total_sales,
+            MAX(CASE WHEN rp.date = pd.earliest_date THEN rp.price END) AS early_price,
+            MAX(CASE WHEN rp.date = pd.latest_date THEN rp.price END) AS recent_price
           FROM price_data pd
+          JOIN recent_prices rp ON rp."cardId" = pd.card_id
+          GROUP BY pd.card_id, pd.card_name, pd.set_name, pd.release_date, pd.image, pd.total_sales
         ),
         with_percent_change AS (
           SELECT
@@ -247,14 +257,18 @@ export async function getTopMoversBySet(
             image,
             early_price,
             recent_price,
+            total_sales,
             release_date,
             ROUND(((recent_price - early_price) / NULLIF(early_price, 0) * 100)::numeric, 2) AS percent_change
           FROM price_changes
         )
         SELECT *
         FROM with_percent_change
-        WHERE early_price IS NOT NULL AND recent_price IS NOT NULL
-        ORDER BY percent_change ${order}
+        WHERE early_price IS NOT NULL
+          AND recent_price IS NOT NULL
+          AND early_price != 0
+          ${sortOrder === "ASC" ? "AND total_sales > 0" : ""}
+        ORDER BY percent_change ${sortOrder}
         LIMIT 10;
     `;
 

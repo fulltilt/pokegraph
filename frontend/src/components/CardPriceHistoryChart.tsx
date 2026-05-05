@@ -8,143 +8,82 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Legend,
-  TooltipProps,
+  type TooltipProps,
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type PriceHistory = {
-  start: Date;
-  end: Date;
   date: string;
   price: number;
   quantity: number;
 };
 
 type Bucket = {
-  start: Date;
-  end: Date;
-  date: string;
+  start: string;
+  end: string;
   price: number;
   quantity: number;
+  label: string;
 };
 
-// function getEvenlySpacedTicks(dates: string[], tickCount = 5) {
-//   if (dates.length <= tickCount) return dates;
-//   const step = Math.floor(dates.length / (tickCount - 1));
-//   return dates.filter((_, idx) => idx % step === 0);
-// }
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2,
+});
 
-// function normalizePriceData(
-//   data: PriceHistory[],
-//   numberOfBuckets: number = 50
-// ): Bucket[] {
-//   //   if (!data.length) return [];
-
-//   //   // Parse and sort data by date
-//   //   const sortedData = [...data].sort(
-//   //     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-//   //   );
-
-//   //   const startDate = new Date(sortedData[0].date);
-//   //   const endDate = new Date(sortedData[sortedData.length - 1].date);
-
-//   //   const bucketDuration =
-//   //     (endDate.getTime() - startDate.getTime()) / numberOfBuckets;
-
-//   //   const buckets: Bucket[] = [];
-
-//   //   for (let i = 0; i < numberOfBuckets; i++) {
-//   //     const bucketStart = new Date(startDate.getTime() + i * bucketDuration);
-//   //     const bucketEnd = new Date(startDate.getTime() + (i + 1) * bucketDuration);
-
-//   //     const bucketData = sortedData.filter(
-//   //       (entry) =>
-//   //         new Date(entry.date) >= bucketStart && new Date(entry.date) < bucketEnd
-//   //     );
-
-//   //     const totalQuantity = bucketData.reduce((sum, d) => sum + d.quantity, 0);
-//   //     const averagePrice =
-//   //       bucketData.length > 0
-//   //         ? bucketData.reduce((sum, d) => sum + d.price * d.quantity, 0) /
-//   //           totalQuantity
-//   //         : 0;
-
-//   //     buckets.push({
-//   //       start: bucketStart,
-//   //       end: bucketEnd,
-//   //       date: bucketStart.toISOString(),
-//   //       price: parseFloat(averagePrice.toFixed(2)),
-//   //       quantity: totalQuantity,
-//   //     });
-//   //   }
-
-//   //   return buckets;
-//   if (!data.length) return [];
-
-//   const sortedData = [...data].sort(
-//     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-//   );
-
-//   const totalPoints = sortedData.length;
-//   const pointsPerBucket = Math.ceil(totalPoints / numberOfBuckets);
-
-//   const buckets: Bucket[] = [];
-
-//   for (let i = 0; i < totalPoints; i += pointsPerBucket) {
-//     const chunk = sortedData.slice(i, i + pointsPerBucket);
-
-//     const bucketStart = new Date(chunk[0].date);
-//     const bucketEnd = new Date(chunk[chunk.length - 1].date);
-
-//     const totalQuantity = chunk.reduce((sum, d) => sum + d.quantity, 0);
-//     const averagePrice =
-//       totalQuantity > 0
-//         ? chunk.reduce((sum, d) => sum + d.price * d.quantity, 0) /
-//           totalQuantity
-//         : 0;
-
-//     buckets.push({
-//       start: bucketStart,
-//       end: bucketEnd,
-//       date: bucketStart.toISOString(), // or use a range label
-//       price: parseFloat(averagePrice.toFixed(2)),
-//       quantity: totalQuantity,
-//     });
-//   }
-
-//   return buckets;
-// }
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+});
 
 function normalizePriceData(
   data: PriceHistory[],
-  targetBuckets: number = 50
+  targetBuckets: number = 50,
 ): Bucket[] {
   if (!data.length) return [];
 
   const sortedData = [...data].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
 
   const startDate = new Date(sortedData[0].date);
   const endDate = new Date(sortedData[sortedData.length - 1].date);
-  const totalDuration = endDate.getTime() - startDate.getTime();
-
-  // Adjust bucket size so that each contains data
-  const minTimeGap = totalDuration / targetBuckets;
+  const totalDuration = Math.max(endDate.getTime() - startDate.getTime(), 1);
+  const bucketDuration = Math.max(Math.ceil(totalDuration / targetBuckets), 1);
 
   const buckets: Bucket[] = [];
+  let index = 0;
 
-  let currentBucketStart = new Date(startDate);
-  let currentBucketEnd = new Date(currentBucketStart.getTime() + minTimeGap);
+  while (index < sortedData.length) {
+    const currentBucketStart = new Date(sortedData[index].date);
+    const currentBucketEnd = new Date(
+      Math.min(
+        currentBucketStart.getTime() + bucketDuration,
+        endDate.getTime() + 1,
+      ),
+    );
 
-  while (currentBucketStart < endDate) {
-    const bucketData = sortedData.filter((entry) => {
-      const time = new Date(entry.date).getTime();
-      return (
-        time >= currentBucketStart.getTime() &&
-        time < currentBucketEnd.getTime()
-      );
-    });
+    const bucketData: PriceHistory[] = [];
+
+    while (index < sortedData.length) {
+      const entry = sortedData[index];
+      const entryDate = new Date(entry.date).getTime();
+
+      if (entryDate >= currentBucketEnd.getTime()) {
+        break;
+      }
+
+      bucketData.push(entry);
+      index += 1;
+    }
 
     const totalQuantity = bucketData.reduce((sum, d) => sum + d.quantity, 0);
     const averagePrice =
@@ -153,35 +92,34 @@ function normalizePriceData(
           totalQuantity
         : 0;
 
-    // Only push non-empty buckets
     if (bucketData.length > 0) {
       buckets.push({
-        start: new Date(currentBucketStart),
-        end: new Date(currentBucketEnd),
-        date: currentBucketStart.toISOString(),
-        price: parseFloat(averagePrice.toFixed(2)),
+        start: currentBucketStart.toISOString(),
+        end: currentBucketEnd.toISOString(),
+        label: currentBucketStart.toISOString(),
+        price: Number.parseFloat(averagePrice.toFixed(2)),
         quantity: totalQuantity,
       });
     }
-
-    currentBucketStart = currentBucketEnd;
-    currentBucketEnd = new Date(currentBucketStart.getTime() + minTimeGap);
   }
 
   return buckets;
 }
 
-const CustomTooltip = ({ active, payload }: TooltipProps<any, any>) => {
+const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   if (active && payload && payload.length > 0) {
     const { start, end, price, quantity } = payload[0].payload;
     return (
-      <div className="p-2 bg-white border rounded shadow text-sm">
+      <div
+        className="pointer-events-none rounded-2xl border border-border/80 bg-background/95 p-4 text-sm shadow-xl backdrop-blur"
+        style={{ transform: "translate(-50%, calc(-100% - 16px))" }}
+      >
         <p>
-          <strong>Date Range:</strong> {start.toLocaleDateString("en")} –{" "}
-          {end.toLocaleDateString("en")}
+          <strong>Date Range:</strong> {dateFormatter.format(new Date(start))} -{" "}
+          {dateFormatter.format(new Date(end))}
         </p>
         <p>
-          <strong>Avg Price:</strong> ${price?.toFixed(2) ?? "N/A"}
+          <strong>Avg Price:</strong> {currencyFormatter.format(price ?? 0)}
         </p>
         <p>
           <strong>Sales:</strong> {quantity}
@@ -199,75 +137,143 @@ const CardPriceHistoryChart = ({
   cardId: string;
   timeframe: string;
 }) => {
-  const { data, isLoading } = useQuery<PriceHistory[]>({
+  const { data = [], isLoading } = useQuery<PriceHistory[], Error, Bucket[]>({
     queryKey: ["card-history", cardId, timeframe],
-    queryFn: async () => {
+    staleTime: 60_000,
+    queryFn: async ({ signal }) => {
       const res = await fetch(
         `${
           import.meta.env.VITE_ENDPOINT_URL
-        }/api/cards/history/${cardId}?timeframe=${timeframe}`
+        }/api/cards/history/${cardId}?timeframe=${timeframe}`,
+        { signal },
       );
       if (!res.ok) throw new Error("Failed to fetch card history");
       return res.json();
     },
+    select: (history) => normalizePriceData(history),
   });
 
-  if (isLoading) return <div>Loading chart...</div>;
+  if (isLoading) {
+    return (
+      <Card className="border-border/60 bg-card/85 shadow-lg shadow-black/5 backdrop-blur">
+        <CardHeader>
+          <CardTitle>Price history</CardTitle>
+          <CardDescription>
+            Weighted average price vs. recorded sales volume
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[360px] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
+            Loading chart...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <Card className="border-border/60 bg-card/85 shadow-lg shadow-black/5 backdrop-blur">
+        <CardHeader>
+          <CardTitle>Price history</CardTitle>
+          <CardDescription>
+            Weighted average price vs. recorded sales volume
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[360px] items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
+            No chart data available for this timeframe.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const tickCount = Math.min(5, data.length);
+  const tickStep = Math.max(1, Math.floor(data.length / tickCount));
+  const ticks = data
+    .filter((_, index) => index % tickStep === 0 || index === data.length - 1)
+    .map((bucket) => bucket.start);
 
   return (
-    <ResponsiveContainer width="70%" height={400} className="m-auto">
-      <ComposedChart data={data ? normalizePriceData(data) : []}>
-        <CartesianGrid stroke="#eee" strokeDasharray="3 3" />
-        {/* <XAxis
-          dataKey="date"
-          tickFormatter={(value) => new Date(value).toLocaleDateString("en-US")}
-          ticks={getEvenlySpacedTicks(data?.map((d) => d.date) || [], 5)}
-        />
-         */}
-        <XAxis
-          dataKey="start"
-          tickFormatter={(value) => new Date(value).toLocaleDateString("en-US")}
-          interval="preserveStartEnd"
-          ticks={
-            data?.length
-              ? data
-                  .filter((b) => b.start)
-                  .map((b) => b.start.toString())
-                  .filter((_, i) => i % Math.ceil(data.length / 5) === 0)
-              : []
-          }
-        />
-        <YAxis
-          yAxisId="left"
-          label={{ value: "Sales", angle: -90, position: "insideLeft" }}
-        />
-        <YAxis
-          yAxisId="right"
-          orientation="right"
-          label={{ value: "Price ($)", angle: 90, position: "insideRight" }}
-        />
-        <Tooltip
-          //   labelFormatter={(value) =>
-          //     new Date(value).toLocaleDateString("en-US")
-          //   }
-          content={<CustomTooltip />}
-        />
-        <Legend />
-        <Bar
-          yAxisId="left"
-          dataKey="quantity"
-          fill="#8884d8"
-          name="Sales Volume"
-        />
-        <Line
-          yAxisId="right"
-          type="monotone"
-          dataKey="price"
-          stroke="#82ca9d"
-          name="Avg Price"
-        />
-      </ComposedChart>
-    </ResponsiveContainer>
+    <Card className="border-border/60 bg-card/85 shadow-lg shadow-black/5 backdrop-blur">
+      <CardHeader className="border-b border-border/50">
+        <CardTitle className="text-xl tracking-tight">Price history</CardTitle>
+        <CardDescription>
+          Weighted average price vs. recorded sales volume
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-6">
+        <div className="h-[360px] overflow-visible rounded-2xl bg-gradient-to-b from-background to-muted/20 p-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={data}
+              margin={{ top: 10, right: 8, bottom: 0, left: 0 }}
+            >
+              <CartesianGrid
+                stroke="hsl(var(--border))"
+                strokeDasharray="3 3"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="start"
+                tickFormatter={(value) => dateFormatter.format(new Date(value))}
+                interval="preserveStartEnd"
+                ticks={ticks}
+                tickLine={false}
+                axisLine={false}
+                minTickGap={24}
+              />
+              <YAxis
+                yAxisId="left"
+                width={48}
+                label={{ value: "Sales", angle: -90, position: "insideLeft" }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                yAxisId="right"
+                width={64}
+                orientation="right"
+                label={{ value: "Price", angle: 90, position: "insideRight" }}
+                tickFormatter={(value) => currencyFormatter.format(value)}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                allowEscapeViewBox={{ x: true, y: true }}
+                cursor={false}
+                offset={12}
+                wrapperStyle={{
+                  pointerEvents: "none",
+                  zIndex: 20,
+                  overflow: "visible",
+                }}
+                content={<CustomTooltip />}
+              />
+              <Legend />
+              <Bar
+                yAxisId="left"
+                dataKey="quantity"
+                fill="hsl(217 91% 60%)"
+                name="Sales volume"
+                radius={[10, 10, 0, 0]}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="price"
+                stroke="hsl(158 64% 42%)"
+                strokeWidth={3}
+                dot={false}
+                activeDot={{ r: 5 }}
+                name="Avg price"
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
