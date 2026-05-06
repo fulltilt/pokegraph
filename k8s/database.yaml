@@ -5,8 +5,9 @@ metadata:
   namespace: pokemon-app
 spec:
   ports:
-  - port: 5432
-    targetPort: 5432
+    - name: postgres
+      port: 5432
+      targetPort: 5432
   clusterIP: None
   selector:
     app: postgres
@@ -27,31 +28,63 @@ spec:
       labels:
         app: postgres
     spec:
+      automountServiceAccountToken: false
       containers:
-      - name: postgres
-        image: ankane/pgvector:latest
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_USER
-          value: postgres
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: POSTGRES_PASSWORD
-        - name: POSTGRES_DB
-          value: pokedex
-        volumeMounts:
-        - name: pgdata
-          mountPath: /var/lib/postgresql/data
-          subPath: postgres  # Important: prevents permission issues
+        - name: postgres
+          image: ankane/pgvector:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: pokedex
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U postgres -d pokedex
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U postgres -d pokedex
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+              ephemeral-storage: "512Mi"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+              ephemeral-storage: "2Gi"
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres
   volumeClaimTemplates:
-  - metadata:
-      name: pgdata
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: local-path  # K3s default
-      resources:
-        requests:
-          storage: 10Gi
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path # K3s default
+        resources:
+          requests:
+            storage: 10Gi

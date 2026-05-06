@@ -7,8 +7,9 @@ spec:
   selector:
     app: backend
   ports:
-  - port: 3457
-    targetPort: 3457
+    - name: http
+      port: 3457
+      targetPort: 3457
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -18,6 +19,12 @@ metadata:
   namespace: pokemon-app
 spec:
   replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: backend
@@ -26,20 +33,42 @@ spec:
       labels:
         app: backend
     spec:
+      automountServiceAccountToken: false
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
       containers:
-      - name: backend
-        image: ghcr.io/fulltilt/pokemon-backend:latest  # Update this
-        ports:
-        - containerPort: 3457
-        envFrom:
-        - secretRef:
-            name: backend-secrets
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        - name: backend
+          image: ghcr.io/fulltilt/pokemon-backend:v2026-05-05-1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3457
+              name: http
+          envFrom:
+            - secretRef:
+                name: backend-secrets
+          readinessProbe:
+            tcpSocket:
+              port: 3457
+            initialDelaySeconds: 8
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 3457
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+              ephemeral-storage: "256Mi"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+              ephemeral-storage: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false

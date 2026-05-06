@@ -25,7 +25,6 @@
 # CMD ["bun", "run", "dev"]
 
 
-FROM oven/bun:latest
 # -----------------------------------------------------------------------------
 # Backend production image for Kubernetes (Bun + Prisma + built dist/)
 # -----------------------------------------------------------------------------
@@ -37,7 +36,7 @@ FROM oven/bun:latest
 # This uses a single-stage build for simplicity.
 # If you want a smaller image, we can convert this to a multi-stage build later.
 # -----------------------------------------------------------------------------
-FROM oven/bun:latest
+FROM oven/bun:1
 
 WORKDIR /app
 

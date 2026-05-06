@@ -5,19 +5,36 @@ metadata:
   namespace: pokemon-app
 spec:
   schedule: "0 12 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 1800
   jobTemplate:
     spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
       template:
         spec:
+          automountServiceAccountToken: false
           restartPolicy: OnFailure
           imagePullSecrets:
-          - name: ghcr-secret
+            - name: ghcr-secret
           containers:
-          - name: scraper
-            image: ghcr.io/fulltilt/pokemon-scraper:latest
-            env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: DATABASE_URL
+            - name: scraper
+              image: ghcr.io/fulltilt/pokemon-scraper:v2026-05-05-1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: app-secrets
+                      key: DATABASE_URL
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                  ephemeral-storage: "256Mi"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+                  ephemeral-storage: "1Gi"
