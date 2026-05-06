@@ -70,4 +70,4 @@ spec:
               ephemeral-storage: "512Mi"
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
