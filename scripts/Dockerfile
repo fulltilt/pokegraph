@@ -5,6 +5,8 @@ WORKDIR /app
 # Copy necessary files
 COPY package.json bun.lockb* ./
 COPY shared ./shared
+COPY backend ./backend
+COPY frontend ./frontend
 COPY scripts ./scripts
 
 # Install dependencies
