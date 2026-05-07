@@ -1,30 +1,3 @@
-# FROM oven/bun:latest
-
-# WORKDIR /app
-
-# # Copy workspace configuration files first
-# COPY package.json ./
-# COPY shared ./shared
-# COPY backend ./backend
-
-# # Install all workspace dependencies
-# RUN bun install
-
-# # Install OpenSSL for Prisma
-# RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-
-# RUN bunx prisma generate --schema=shared/prisma/schema.prisma
-
-# # Copy trained model files
-# # COPY scripts/python/sealed_classifier_service/model /app/trainer/model
-
-# WORKDIR /app/backend
-# EXPOSE 3457
-
-# # this line can be overridden in docker-compose.yml. This is here if you want to run the backend container standalone.
-# CMD ["bun", "run", "dev"]
-
-
 # -----------------------------------------------------------------------------
 # Backend production image for Kubernetes (Bun + Prisma + built dist/)
 # -----------------------------------------------------------------------------
@@ -56,22 +29,26 @@ COPY backend ./backend
 COPY frontend ./frontend
 
 # -----------------------------------------------------------------------------
+# Install OpenSSL (required by Prisma engines on Linux)
+# -----------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
 # Install dependencies at the workspace root
 # -----------------------------------------------------------------------------
 # This enables hoisting and correct workspace linking.
 RUN bun install
 
 # -----------------------------------------------------------------------------
-# Install OpenSSL (required by Prisma engines on Linux)
-# -----------------------------------------------------------------------------
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-
-# -----------------------------------------------------------------------------
 # Generate Prisma client at build-time
 # -----------------------------------------------------------------------------
 # Required to avoid:
 #   "@prisma/client did not initialize yet"
-RUN bunx prisma generate --schema=shared/prisma/schema.prisma
+RUN bunx prisma generate --schema=/app/shared/prisma/schema.prisma
+
+# verify prisma client exists
+RUN ls -la /app/node_modules/.prisma/client || true
+RUN ls -la /app/node_modules/@prisma/client || true
 
 # -----------------------------------------------------------------------------
 # Build backend into dist/
@@ -92,4 +69,5 @@ EXPOSE 3457
 # Your backend/package.json defines:
 #   "start": "bun dist/index.js"
 # This is correct for k8s (no watcher).
-CMD ["bun", "run", "start"]
+# CMD ["bun", "run", "start"]
+CMD ["bun", "dist/index.js"]
