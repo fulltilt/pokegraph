@@ -15,8 +15,36 @@ model Card {
   data         Json
   tcgPlayerId  String?
   embedding    Unsupported("vector")?
+  embeddings   CardEmbedding[]
+  hashes       CardHash[]
   priceSummary CardPriceChangeSummary[]
   prices       PriceEntry[]
+}
+
+model CardEmbedding {
+  id        String                @id @default(cuid())
+  cardId    String
+  source    String                @default("clip")
+  variant   String?
+  embedding Unsupported("vector")
+  createdAt DateTime              @default(now())
+  card      Card                  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([source])
+}
+
+model CardHash {
+  id        String   @id @default(cuid())
+  cardId    String
+  algorithm String   @default("phash")
+  hash      String
+  variant   String?
+  createdAt DateTime @default(now())
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, algorithm])
+  @@index([algorithm, hash])
 }
 
 model PriceEntry {

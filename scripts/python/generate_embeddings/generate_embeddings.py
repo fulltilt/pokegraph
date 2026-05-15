@@ -11,8 +11,8 @@ import psycopg2
 from tqdm import tqdm
 from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
-import numpy as np
 import random
+import uuid
 from torchvision import transforms
 
 # -----------------------------
@@ -77,7 +77,7 @@ for set in sets:
     # Embedding function (MUST match embedding_service.py exactly)
     # -----------------------------
     def get_embeddings_with_augmentation(image_url: str, num_augmentations=5):
-        """Generate multiple embeddings with augmentations"""
+        """Generate multiple embeddings with augmentations."""
         embeddings = []
         
         try:
@@ -109,15 +109,10 @@ for set in sets:
                     emb = emb / emb.norm(p=2, dim=-1, keepdim=True)
                 embeddings.append(emb[0].cpu().tolist())
             
-            # Average all embeddings
-            avg_embedding = np.mean(embeddings, axis=0)
-            # Re-normalize
-            avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
-            
-            return avg_embedding.tolist()
+            return embeddings
         except Exception as e:
             print(f"❌ Failed: {e}")
-            return None
+            return []
 
     # -----------------------------
     # Process each card
@@ -129,19 +124,31 @@ for set in sets:
             fail += 1
             continue
 
-        embedding = get_embeddings_with_augmentation(image_url)
-        if embedding:
-            # Verify embedding dimension
-            if len(embedding) != 512:
-                print(f"⚠️ Warning: Unexpected embedding dimension {len(embedding)} for {card_id}")
-                fail += 1
-                continue
-                
+        embeddings = get_embeddings_with_augmentation(image_url)
+        if embeddings:
+            # Replace any existing generated CLIP embeddings for this card.
             cur.execute(
-                'UPDATE "Card" SET embedding = %s::vector WHERE id = %s',
-                (f"[{','.join(map(str, embedding))}]", card_id),
+                'DELETE FROM "CardEmbedding" WHERE "cardId" = %s AND source = %s',
+                (card_id, "clip"),
             )
-            success += 1
+
+            inserted = 0
+            for emb_idx, emb in enumerate(embeddings):
+                if len(emb) != 512:
+                    print(f"⚠️ Warning: Unexpected embedding dimension {len(emb)} for {card_id}")
+                    continue
+
+                variant = "original" if emb_idx == 0 else f"aug_{emb_idx}"
+                cur.execute(
+                    'INSERT INTO "CardEmbedding" (id, "cardId", source, variant, embedding) VALUES (%s, %s, %s, %s, %s::vector)',
+                    (str(uuid.uuid4()), card_id, "clip", variant, f"[{','.join(map(str, emb))}]"),
+                )
+                inserted += 1
+
+            if inserted > 0:
+                success += 1
+            else:
+                fail += 1
         else:
             fail += 1
 

@@ -52,16 +52,17 @@ export async function findSimilarCards(
     // Format embedding array for PostgreSQL's 'vector' type
     const embeddingStr = `[${embedding.join(",")}]`;
 
-    // The query uses '<=>' (distance operator) and '1 - distance' for similarity
+    // Search across all stored embeddings and keep the best score per card.
     const results = await prisma.$queryRaw<DatabaseCardMatch[]>`
-      SELECT 
-        id,
-        data,
-        1 - (embedding <=> ${embeddingStr}::vector) as similarity
-      FROM "Card"
-      WHERE embedding IS NOT NULL
-        AND 1 - (embedding <=> ${embeddingStr}::vector) > ${threshold}
-      ORDER BY embedding <=> ${embeddingStr}::vector -- Order by distance (ascending)
+      SELECT
+        c.id,
+        c.data,
+        MAX(1 - (ce.embedding <=> ${embeddingStr}::vector)) as similarity
+      FROM "CardEmbedding" ce
+      INNER JOIN "Card" c ON c.id = ce."cardId"
+      WHERE 1 - (ce.embedding <=> ${embeddingStr}::vector) > ${threshold}
+      GROUP BY c.id, c.data
+      ORDER BY similarity DESC
       LIMIT ${topK}
     `;
 
